@@ -2,6 +2,7 @@
 
 from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, ToolSpec
 from code2env.runtime import Code2Env
+from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.selector import export_llm_candidate_jsonl
 
 __all__ = [
@@ -10,6 +11,7 @@ __all__ = [
     "FunctionCandidate",
     "RepoSnapshot",
     "ToolSpec",
+    "draft_specs_from_jsonl",
     "export_llm_candidate_jsonl",
 ]
 

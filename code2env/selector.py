@@ -19,6 +19,7 @@ class SelectionOptions:
     top_k: int = 20
     max_selected: int | None = None
     min_static_score: float | None = None
+    exclude_risk_flags: list[str] | None = None
     include_rejected: bool = False
     include_source: bool = False
     max_source_chars: int = 6000
@@ -198,6 +199,9 @@ def _filtered_candidates(
     yielded = 0
     for candidate in candidates:
         if options.min_static_score is not None and candidate.score < options.min_static_score:
+            continue
+        excluded_flags = set(options.exclude_risk_flags or [])
+        if excluded_flags.intersection(candidate.risk_flags):
             continue
         yield candidate
         yielded += 1

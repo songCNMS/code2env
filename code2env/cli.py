@@ -10,6 +10,7 @@ from code2env.builder import build_env_package
 from code2env.ingest import ingest_repo
 from code2env.indexer import index_repo
 from code2env.jsonio import loads_object, write_json
+from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
@@ -49,6 +50,12 @@ def main(argv: list[str] | None = None) -> int:
     select_parser.add_argument("--top-k", type=int, default=20)
     select_parser.add_argument("--max-selected", type=int, default=None)
     select_parser.add_argument("--min-static-score", type=float, default=None)
+    select_parser.add_argument(
+        "--exclude-risk-flag",
+        action="append",
+        default=[],
+        help="Skip candidates with this static risk flag. Repeatable.",
+    )
     select_parser.add_argument("--include-rejected", action="store_true")
     select_parser.add_argument("--include-source", action="store_true")
     select_parser.add_argument("--max-source-chars", type=int, default=6000)
@@ -62,6 +69,13 @@ def main(argv: list[str] | None = None) -> int:
     select_parser.add_argument("--llm-timeout", type=float, default=60)
     select_parser.add_argument("--llm-max-tokens", type=int, default=4096)
 
+    jsonl_draft_parser = subcommands.add_parser("draft-from-jsonl", help="Generate EnvSpec drafts from selected JSONL records")
+    jsonl_draft_parser.add_argument("jsonl")
+    jsonl_draft_parser.add_argument("--output-dir", required=True)
+    jsonl_draft_parser.add_argument("--fixture-json", default='{"args": [], "kwargs": {}}')
+    jsonl_draft_parser.add_argument("--include-unselected", action="store_true")
+    jsonl_draft_parser.add_argument("--compute-golden", action="store_true")
+
     args = parser.parse_args(argv)
     try:
         if args.command == "scan":
@@ -74,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
             return _smoke(args)
         if args.command == "select":
             return _select(args)
+        if args.command == "draft-from-jsonl":
+            return _draft_from_jsonl(args)
     except Exception as exc:  # noqa: BLE001 - CLI should return structured failure.
         print(f"code2env: error: {exc}", file=sys.stderr)
         return 1
@@ -163,12 +179,26 @@ def _select(args: argparse.Namespace) -> int:
             top_k=args.top_k,
             max_selected=args.max_selected,
             min_static_score=args.min_static_score,
+            exclude_risk_flags=args.exclude_risk_flag,
             include_rejected=args.include_rejected,
             include_source=args.include_source,
             max_source_chars=args.max_source_chars,
             description_language=args.description_language,
         ),
         endpoint_metadata=endpoint_metadata,
+    )
+    _print_json(summary)
+    return 0
+
+
+def _draft_from_jsonl(args: argparse.Namespace) -> int:
+    fixture = loads_object(args.fixture_json, label="fixture-json")
+    summary = draft_specs_from_jsonl(
+        args.jsonl,
+        output_dir=args.output_dir,
+        fixture=fixture,
+        include_unselected=args.include_unselected,
+        compute_golden=args.compute_golden,
     )
     _print_json(summary)
     return 0

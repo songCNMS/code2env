@@ -8,7 +8,8 @@ import unittest
 from pathlib import Path
 
 from code2env.ingest import ingest_repo
-from code2env.jsonio import read_jsonl
+from code2env.jsonio import read_json, read_jsonl
+from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, _extract_message_content, parse_llm_json, resolve_endpoint_config
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
 
@@ -29,8 +30,8 @@ class LlmCandidateSelectionTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             endpoint_file = Path(temp_dir) / "endpoints.txt"
             endpoint_file.write_text(
-                "https://example.invalid/v1/ kimi-k2.6 sk-test\n"
-                "https://example.invalid/v1/ deepseek-v4-pro sk-test-2\n",
+                "https://example.invalid/v1/ kimi-k2.6 test-key\n"
+                "https://example.invalid/v1/ deepseek-v4-pro test-key-2\n",
                 encoding="utf-8",
             )
             config = resolve_endpoint_config(model="kimi", endpoint_file=endpoint_file)
@@ -74,6 +75,61 @@ class LlmCandidateSelectionTest(unittest.TestCase):
             self.assertIn("source_excerpt", record)
             self.assertEqual(record["provenance"]["llm_model"], "mock")
 
+    def test_export_jsonl_excludes_risk_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "repo"
+            repo.mkdir(parents=True)
+            (repo / "sample.py").write_text(
+                """
+class Worker:
+    def needs_instance(self, value):
+        if value:
+            return value + 1
+        return 0
+
+
+def standalone(value):
+    if value:
+        return value + 2
+    return 1
+""".lstrip(),
+                encoding="utf-8",
+            )
+            output = Path(temp_dir) / "filtered.jsonl"
+            summary = export_llm_candidate_jsonl(
+                ingest_repo(str(repo)),
+                llm=MockCandidateLLM(),
+                output_path=output,
+                options=SelectionOptions(
+                    top_k=5,
+                    include_rejected=True,
+                    exclude_risk_flags=["requires_instance"],
+                ),
+            )
+            self.assertGreaterEqual(summary["written"], 1)
+            symbols = [record["symbol"] for record in read_jsonl(output)]
+            self.assertIn("sample:standalone", symbols)
+            self.assertNotIn("sample:Worker.needs_instance", symbols)
+
+    def test_draft_specs_from_selected_jsonl(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._create_repo(Path(temp_dir) / "repo")
+            jsonl_path = Path(temp_dir) / "candidates.jsonl"
+            export_llm_candidate_jsonl(
+                ingest_repo(str(repo)),
+                llm=MockCandidateLLM(),
+                output_path=jsonl_path,
+                options=SelectionOptions(top_k=5, max_selected=1),
+                endpoint_metadata={"model": "mock", "source": "test"},
+            )
+            output_dir = Path(temp_dir) / "specs"
+            summary = draft_specs_from_jsonl(jsonl_path, output_dir=output_dir)
+            self.assertEqual(summary["written"], 1)
+            spec = read_json(summary["specs"][0]["path"])
+            self.assertEqual(spec["source"]["entrypoint"], "sample:normalize_name")
+            self.assertEqual(spec["task"]["title"], "Complete the behavior of sample:normalize_name")
+            self.assertIn("llm_candidate_record", spec["provenance"])
+
     def test_cli_select_with_mock_llm(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo = self._create_repo(Path(temp_dir) / "repo")
@@ -91,6 +147,8 @@ class LlmCandidateSelectionTest(unittest.TestCase):
                     "5",
                     "--max-selected",
                     "1",
+                    "--exclude-risk-flag",
+                    "requires_instance",
                     "--output",
                     str(output),
                 ],
@@ -104,6 +162,27 @@ class LlmCandidateSelectionTest(unittest.TestCase):
             summary = json.loads(result.stdout)
             self.assertEqual(summary["selected"], 1)
             self.assertEqual(len(read_jsonl(output)), 1)
+
+            spec_dir = Path(temp_dir) / "specs"
+            draft_result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "code2env",
+                    "draft-from-jsonl",
+                    str(output),
+                    "--output-dir",
+                    str(spec_dir),
+                ],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if draft_result.returncode != 0:
+                self.fail(f"CLI failed\nstdout={draft_result.stdout}\nstderr={draft_result.stderr}")
+            draft_summary = json.loads(draft_result.stdout)
+            self.assertEqual(draft_summary["written"], 1)
 
     def _create_repo(self, path: Path) -> Path:
         path.mkdir(parents=True)

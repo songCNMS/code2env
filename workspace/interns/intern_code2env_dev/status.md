@@ -8,5 +8,5 @@
 | Status | Working |
 | Current Task | task003_targeted_selection_env_specs |
 | PR | https://github.com/songCNMS/code2env/pull/3 |
-| Session | 0 |
-| Progress | Accepted task for targeted selection and EnvSpec draft generation |
+| Session | 1 |
+| Progress | Implemented risk-filtered targeted selection and generated first EnvSpec drafts |
