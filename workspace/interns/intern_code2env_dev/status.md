@@ -8,4 +8,5 @@
 | Status | Working |
 | Current Task | task001_code2env_agentic_rl_prd |
 | PR | https://github.com/songCNMS/code2env/pull/1 |
-| Session | 0 |
+| Session | 1 |
+| Progress | Runnable MVP implemented: scan, draft, build, smoke, runtime scoring, tests |
