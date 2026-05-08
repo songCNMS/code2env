@@ -38,3 +38,23 @@ python -m code2env select /path/to/repo \
 ```
 
 Reasoning models may need a larger completion budget. The CLI default is `--llm-max-tokens 4096`; lower it only when the selected model reliably returns compact JSON.
+
+For targeted passes, skip static risks before calling the LLM:
+
+```bash
+python -m code2env select /path/to/repo \
+  --llm-model kimi \
+  --exclude-risk-flag requires_instance \
+  --exclude-risk-flag possible_side_effect \
+  --top-k 10 \
+  --output /tmp/targeted_candidates.jsonl
+```
+
+Generate EnvSpec drafts from selected JSONL rows:
+
+```bash
+python -m code2env draft-from-jsonl /tmp/targeted_candidates.jsonl \
+  --output-dir /tmp/env_specs
+```
+
+`draft-from-jsonl` does not compute golden answers by default because many candidate inputs are not JSON fixtures yet. Use `--compute-golden` only when the fixture is executable by the source function.

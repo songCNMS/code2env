@@ -9,4 +9,4 @@
 | Current Task | |
 | PR | N/A |
 | Session | 2 |
-| Progress | PR #2 ready for merge; first requests/flask/rich candidate JSONL files generated |
+| Progress | PR #3 merged; targeted selection outputs and EnvSpec drafts generated |

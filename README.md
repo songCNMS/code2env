@@ -40,3 +40,10 @@ python -m code2env select /path/to/python/repo \
 ```
 
 For offline tests or smoke runs, use `--llm-mode mock`.
+
+Draft EnvSpecs from selected JSONL records:
+
+```bash
+python -m code2env draft-from-jsonl /tmp/code2env_candidates.jsonl \
+  --output-dir /tmp/code2env_specs
+```
