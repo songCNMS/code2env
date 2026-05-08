@@ -11,3 +11,4 @@
 - Generated env packages should copy filtered source into `source/` and add both `source` and `source/src` to Python import paths to support common package layouts.
 - Initial scoring path uses exact match against the pinned source function output as the golden answer.
 - Kimi endpoint config is available in this environment at `/work-agents/endpoints.txt`; do not commit endpoint secrets, and prefer redacted provenance in generated JSONL summaries.
+- Targeted selection improves candidate quality by excluding static risk flags before LLM review; `requires_instance` and `possible_side_effect` were useful first filters for requests/rich.

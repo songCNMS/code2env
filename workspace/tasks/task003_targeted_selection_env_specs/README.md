@@ -1,6 +1,6 @@
 # task003_targeted_selection_env_specs
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_dev -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_dev -->
 
 ## Background
 
