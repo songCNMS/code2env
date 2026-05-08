@@ -11,6 +11,7 @@ from code2env.builder import build_env_package
 from code2env.ingest import ingest_repo
 from code2env.indexer import index_repo
 from code2env.jsonio import write_json
+from code2env.materialize import materialize_env_spec
 from code2env.runtime import Code2Env
 from code2env.spec import draft_env_spec
 
@@ -99,6 +100,27 @@ def double(value):
             spec_path = Path(temp_dir) / "spec.json"
             write_json(spec_path, spec.to_dict())
             package_root = build_env_package(spec_path, Path(temp_dir) / "generated")
+            self.assertTrue(Code2Env(package_root / "env_spec.json").scripted_smoke()["ok"])
+
+    def test_materialize_env_spec_then_build_and_smoke(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._create_sample_repo(Path(temp_dir) / "repo")
+            snapshot = ingest_repo(str(repo))
+            draft = draft_env_spec(snapshot, symbol="sample:normalize_name", compute_golden=False)
+            draft_path = Path(temp_dir) / "draft.json"
+            materialized_path = Path(temp_dir) / "materialized.json"
+            write_json(draft_path, draft.to_dict())
+
+            summary = materialize_env_spec(
+                draft_path,
+                output_path=materialized_path,
+                fixture={"args": [" ada lovelace "], "kwargs": {"shout": True}},
+            )
+            self.assertEqual(
+                summary["golden_answer"],
+                {"ok": True, "value": {"kind": "json", "value": "ADA LOVELACE"}},
+            )
+            package_root = build_env_package(materialized_path, Path(temp_dir) / "generated")
             self.assertTrue(Code2Env(package_root / "env_spec.json").scripted_smoke()["ok"])
 
     def test_nested_functions_are_not_exported_as_candidates(self) -> None:

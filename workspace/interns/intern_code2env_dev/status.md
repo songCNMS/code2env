@@ -6,7 +6,7 @@
 |------|-----|
 | Name | intern_code2env_dev |
 | Status | Idle |
-| Current Task | |
-| PR | N/A |
-| Session | 2 |
-| Progress | PR #3 merged; targeted selection outputs and EnvSpec drafts generated |
+| Current Task |  |
+| PR |  |
+| Session | 4 |
+| Progress | Completed task004 and prepared PR #4 for merge after fixture materialization and smoke validation |

@@ -12,6 +12,7 @@ from code2env.indexer import index_repo
 from code2env.jsonio import loads_object, write_json
 from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
+from code2env.materialize import materialize_env_spec
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
 from code2env.spec import draft_env_spec
@@ -76,6 +77,16 @@ def main(argv: list[str] | None = None) -> int:
     jsonl_draft_parser.add_argument("--include-unselected", action="store_true")
     jsonl_draft_parser.add_argument("--compute-golden", action="store_true")
 
+    materialize_parser = subcommands.add_parser(
+        "materialize",
+        help="Apply a fixture to an EnvSpec and compute its golden answer",
+    )
+    materialize_parser.add_argument("spec")
+    materialize_parser.add_argument("--fixture-json", required=True)
+    materialize_parser.add_argument("--output", required=True)
+    materialize_parser.add_argument("--no-golden", action="store_true")
+    materialize_parser.add_argument("--timeout", type=float, default=10)
+
     args = parser.parse_args(argv)
     try:
         if args.command == "scan":
@@ -90,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
             return _select(args)
         if args.command == "draft-from-jsonl":
             return _draft_from_jsonl(args)
+        if args.command == "materialize":
+            return _materialize(args)
     except Exception as exc:  # noqa: BLE001 - CLI should return structured failure.
         print(f"code2env: error: {exc}", file=sys.stderr)
         return 1
@@ -199,6 +212,19 @@ def _draft_from_jsonl(args: argparse.Namespace) -> int:
         fixture=fixture,
         include_unselected=args.include_unselected,
         compute_golden=args.compute_golden,
+    )
+    _print_json(summary)
+    return 0
+
+
+def _materialize(args: argparse.Namespace) -> int:
+    fixture = loads_object(args.fixture_json, label="fixture-json")
+    summary = materialize_env_spec(
+        args.spec,
+        output_path=args.output,
+        fixture=fixture,
+        compute_golden=not args.no_golden,
+        timeout_seconds=args.timeout,
     )
     _print_json(summary)
     return 0

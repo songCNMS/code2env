@@ -47,3 +47,11 @@ Draft EnvSpecs from selected JSONL records:
 python -m code2env draft-from-jsonl /tmp/code2env_candidates.jsonl \
   --output-dir /tmp/code2env_specs
 ```
+
+Apply a concrete JSON fixture and compute a golden answer:
+
+```bash
+python -m code2env materialize /tmp/code2env_specs/spec.json \
+  --fixture-json '{"args": ["user", "pass"], "kwargs": {}}' \
+  --output /tmp/materialized/spec.json
+```
