@@ -10,7 +10,9 @@ from code2env.builder import build_env_package
 from code2env.ingest import ingest_repo
 from code2env.indexer import index_repo
 from code2env.jsonio import loads_object, write_json
+from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
 from code2env.runtime import Code2Env
+from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
 from code2env.spec import draft_env_spec
 
 
@@ -41,6 +43,25 @@ def main(argv: list[str] | None = None) -> int:
     smoke_parser.add_argument("env_package_or_spec")
     smoke_parser.add_argument("--json", action="store_true")
 
+    select_parser = subcommands.add_parser("select", help="Use an LLM to screen repo candidates and export JSONL")
+    select_parser.add_argument("repo")
+    select_parser.add_argument("--output", required=True)
+    select_parser.add_argument("--top-k", type=int, default=20)
+    select_parser.add_argument("--max-selected", type=int, default=None)
+    select_parser.add_argument("--min-static-score", type=float, default=None)
+    select_parser.add_argument("--include-rejected", action="store_true")
+    select_parser.add_argument("--include-source", action="store_true")
+    select_parser.add_argument("--max-source-chars", type=int, default=6000)
+    select_parser.add_argument("--description-language", default="zh")
+    select_parser.add_argument("--cache-dir", default=None)
+    select_parser.add_argument("--llm-mode", choices=["endpoint", "mock"], default="endpoint")
+    select_parser.add_argument("--llm-model", default=None, help="Model name or alias, e.g. kimi")
+    select_parser.add_argument("--endpoint-file", default=None)
+    select_parser.add_argument("--llm-base-url", default=None)
+    select_parser.add_argument("--llm-api-key", default=None)
+    select_parser.add_argument("--llm-timeout", type=float, default=60)
+    select_parser.add_argument("--llm-max-tokens", type=int, default=4096)
+
     args = parser.parse_args(argv)
     try:
         if args.command == "scan":
@@ -51,6 +72,8 @@ def main(argv: list[str] | None = None) -> int:
             return _build(args)
         if args.command == "smoke":
             return _smoke(args)
+        if args.command == "select":
+            return _select(args)
     except Exception as exc:  # noqa: BLE001 - CLI should return structured failure.
         print(f"code2env: error: {exc}", file=sys.stderr)
         return 1
@@ -112,6 +135,43 @@ def _smoke(args: argparse.Namespace) -> int:
         print(f"ok={result['ok']} reward={result['reward']:.3f}")
         print(f"score={result['evaluation']['score']:.3f} steps={result['evaluation']['steps']}")
     return 0 if result["ok"] else 2
+
+
+def _select(args: argparse.Namespace) -> int:
+    snapshot = ingest_repo(args.repo, cache_dir=args.cache_dir)
+    if args.llm_mode == "mock":
+        llm = MockCandidateLLM()
+        endpoint_metadata = {"model": llm.model_name, "source": "mock"}
+    else:
+        endpoint_config = resolve_endpoint_config(
+            model=args.llm_model,
+            endpoint_file=args.endpoint_file,
+            base_url=args.llm_base_url,
+            api_key=args.llm_api_key,
+        )
+        llm = OpenAICompatibleLLM(
+            endpoint_config,
+            timeout_seconds=args.llm_timeout,
+            max_tokens=args.llm_max_tokens,
+        )
+        endpoint_metadata = endpoint_config.redacted()
+    summary = export_llm_candidate_jsonl(
+        snapshot,
+        llm=llm,
+        output_path=args.output,
+        options=SelectionOptions(
+            top_k=args.top_k,
+            max_selected=args.max_selected,
+            min_static_score=args.min_static_score,
+            include_rejected=args.include_rejected,
+            include_source=args.include_source,
+            max_source_chars=args.max_source_chars,
+            description_language=args.description_language,
+        ),
+        endpoint_metadata=endpoint_metadata,
+    )
+    _print_json(summary)
+    return 0
 
 
 def _print_json(data: Any) -> None:

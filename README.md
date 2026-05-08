@@ -27,3 +27,16 @@ python -m code2env smoke /tmp/generated_envs/<env_id>
 ```
 
 The generated runtime exposes `inspect_task`, `call_entrypoint`, optional `call_helper`, and `submit_answer` tools. The default scorer uses exact match against the pinned source function output.
+
+Export LLM-screened candidates as JSONL:
+
+```bash
+python -m code2env select /path/to/python/repo \
+  --llm-model kimi \
+  --endpoint-file /work-agents/endpoints.txt \
+  --top-k 20 \
+  --max-selected 5 \
+  --output /tmp/code2env_candidates.jsonl
+```
+
+For offline tests or smoke runs, use `--llm-mode mock`.

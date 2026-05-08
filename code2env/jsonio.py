@@ -18,6 +18,20 @@ def write_json(path: str | Path, data: Any) -> None:
         handle.write("\n")
 
 
+def write_jsonl(path: str | Path, records: list[dict[str, Any]]) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("w", encoding="utf-8") as handle:
+        for record in records:
+            json.dump(record, handle, ensure_ascii=False, sort_keys=True)
+            handle.write("\n")
+
+
+def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
+    with Path(path).open("r", encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
 def loads_object(raw: str, *, label: str) -> dict[str, Any]:
     value = json.loads(raw)
     if not isinstance(value, dict):
