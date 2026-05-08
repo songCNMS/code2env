@@ -1,6 +1,6 @@
 # task002_llm_repo_candidate_jsonl_export
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_dev -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_dev -->
 
 ## Background
 
