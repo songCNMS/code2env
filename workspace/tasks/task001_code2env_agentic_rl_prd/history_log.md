@@ -5,3 +5,4 @@
 ## Session 0
 
 - Initialized task for the code2env agentic RL PRD.
+- Created the PRD draft covering module design, data contracts, scoring, RL integration, corpus choices, implementation phases, risks, and acceptance metrics.

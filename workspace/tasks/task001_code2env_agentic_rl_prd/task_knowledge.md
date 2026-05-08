@@ -8,4 +8,5 @@ Record durable task-specific decisions, constraints, and implementation notes he
 
 ## Entries
 
-- No task-specific knowledge yet.
+- The repo default branch is `main`; the idle playbook examples mention `master`, so task work uses `main` as the target branch.
+- Initial PRD corpus is based on shallow clones of fastapi, flask, scrapy, rich, and requests under `/tmp/code2env_corpus`; external repos should not be committed into code2env.
