@@ -214,5 +214,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# code2env local clone/cache artifacts
+.code2env_cache/
+generated_envs/
+
 # Streamlit
 .streamlit/secrets.toml
