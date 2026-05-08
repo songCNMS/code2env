@@ -39,6 +39,14 @@ python -m code2env smoke /tmp/generated_envs/<env_id> --json
 2. `submit_answer` with the serialized result.
 3. Score by exact match against the golden source output.
 
+Before building a draft EnvSpec, materialize it with a concrete JSON fixture:
+
+```bash
+python -m code2env materialize /tmp/env_spec_draft.json \
+  --fixture-json '{"args": ["hello"], "kwargs": {}}' \
+  --output /tmp/env_spec.json
+```
+
 ## Runtime Tools
 
 - `inspect_task`: returns task, fixture, source metadata, and allowed helpers.
