@@ -1,0 +1,3 @@
+# code2env - Project Rules
+
+> Applies to all interns working under the code2env project.
