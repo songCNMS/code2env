@@ -1,6 +1,6 @@
 # task001_code2env_agentic_rl_prd History
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0
 
@@ -14,3 +14,9 @@
 - Added runtime guards for network and subprocess calls during tool execution.
 - Added unit and CLI tests covering toy repos, `src/` layout imports, nested-function filtering, and sandbox network blocking.
 - Verified a real repo flow using `/tmp/code2env_corpus/requests` with `requests.utils:super_len`.
+
+## Session 2
+
+- Supervisor requested merge of PR #1.
+- Marked task completed and intern status idle before merging, per working playbook.
+- Distilled reusable MVP implementation notes into the personal knowledge base.
