@@ -9,4 +9,4 @@
 | Current Task | |
 | PR | N/A |
 | Session | 2 |
-| Progress | PR #1 merged; task completed |
+| Progress | PR #2 ready for merge; first requests/flask/rich candidate JSONL files generated |

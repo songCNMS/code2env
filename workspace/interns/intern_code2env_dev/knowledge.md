@@ -10,3 +10,4 @@
 - The first runnable code2env MVP is dependency-free and uses JSON EnvSpec plus standard-library AST/subprocess/runtime components.
 - Generated env packages should copy filtered source into `source/` and add both `source` and `source/src` to Python import paths to support common package layouts.
 - Initial scoring path uses exact match against the pinned source function output as the golden answer.
+- Kimi endpoint config is available in this environment at `/work-agents/endpoints.txt`; do not commit endpoint secrets, and prefer redacted provenance in generated JSONL summaries.
