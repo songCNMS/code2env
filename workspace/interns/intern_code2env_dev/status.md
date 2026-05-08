@@ -1,11 +1,11 @@
 # intern_code2env_dev - status
 
-<!-- METADATA:STATUS=Idle,TASK= -->
+<!-- METADATA:STATUS=Working,TASK=task001_code2env_agentic_rl_prd -->
 
 | Field | Value |
 |------|-----|
 | Name | intern_code2env_dev |
-| Status | Idle |
-| Current Task | |
-| PR | N/A |
+| Status | Working |
+| Current Task | task001_code2env_agentic_rl_prd |
+| PR | https://github.com/songCNMS/code2env/pull/1 |
 | Session | 0 |
