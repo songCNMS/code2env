@@ -1,6 +1,6 @@
 # task004_fixture_golden_envpackage_smoke History
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0
 
@@ -23,3 +23,9 @@
 
 - Elaborated the end-to-end implementation workflow for the user, covering repo ingest, LLM candidate selection, EnvSpec drafting, fixture materialization, package build, smoke validation, and current limitations.
 - No functional code changes were made in this session.
+
+## Session 4
+
+- Completed task004 by marking the task metadata as completed and personal status as idle.
+- Preserved task004 fixture smoke outputs under `/work-agents/intern_code2env_dev/outputs/task004_fixture_smoke/`.
+- Prepared PR #4 for merge after successful checks and pushed completion metadata updates.

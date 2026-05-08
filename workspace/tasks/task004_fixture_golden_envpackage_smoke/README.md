@@ -1,6 +1,6 @@
 # task004_fixture_golden_envpackage_smoke
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_dev -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_dev -->
 
 ## Background
 

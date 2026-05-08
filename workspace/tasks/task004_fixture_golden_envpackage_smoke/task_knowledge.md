@@ -1,6 +1,6 @@
 # task004_fixture_golden_envpackage_smoke Knowledge
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Writing Rule
 
