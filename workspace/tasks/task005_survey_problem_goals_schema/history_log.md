@@ -1,6 +1,6 @@
 # task005_survey_problem_goals_schema History
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0
 
@@ -22,3 +22,8 @@
 
 - Revised `survey/02-related-work.md` after supervisor clarified the request was for practice details rather than time details.
 - Removed publication/recording/model-sequence timing emphasis and added technical practice details around RL-for-coding feedback, clean simple paths, context management, evaluation fragility, and execution-driven pipeline design.
+
+## Session 4
+
+- Condensed `survey/02-related-work.md` after supervisor requested fewer explanations and more original-phrase excerpts.
+- Reorganized the related-work note with attribution headings for Anthropic coding RL, agentic coding scale-up, infrastructure/evaluation, product feedback loop, future experiment loops, and code2env schema implications.

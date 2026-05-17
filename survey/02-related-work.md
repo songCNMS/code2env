@@ -4,33 +4,66 @@
 
 Source: Zhang Xiaojun Podcast EP140. Public pages and excerpts: [Xiaoyuzhou](https://www.xiaoyuzhoufm.com/episode/6a00aa051b7bd50295dfe41d), [Apple Podcasts](https://podcasts.apple.com/cn/podcast/140-%E5%AF%B9%E5%A7%9A%E9%A1%BA%E5%AE%87%E7%9A%844%E5%B0%8F%E6%97%B6%E8%AE%BF%E8%B0%88-%E8%AF%B7%E5%85%81%E8%AE%B8%E6%88%91%E5%B0%8F%E7%96%AF%E4%B8%80%E4%B8%8B-%E5%9C%A8anthropic%E5%92%8Cgemini%E8%AE%AD%E6%A8%A1%E5%9E%8B-%E6%8A%80%E6%9C%AF%E9%A2%84%E6%B5%8B-%E8%8B%B1%E9%9B%84%E4%B8%BB%E4%B9%89%E5%B7%B2%E8%BF%87%E5%8E%BB/id1634356920?i=1000767107736), [Podwise](https://podwise.ai/dashboard/episodes/7949463), [Scripod](https://scripod.com/episode/qz1rzztces6go9w5odxb2tdl), and a public excerpt reposted from `语言即世界language is world` on [发现AI](https://www.faxai.cn/archives/6724).
 
-This note only records points relevant to code-to-env / code2env planning. It is not a full summary of the episode.
+This note only keeps points relevant to code-to-env / code2env planning.
 
-## Practice Patterns Relevant To Code-To-Env
+## Anthropic: Coding RL And Environment Feedback
 
-- Coding was treated as a practical RL target because it gives unusually clean environment feedback. A code agent can act through files, tools, tests, logs, interpreters, and virtual machines; the environment can answer with compile errors, failing tests, runtime traces, and final correctness. This makes coding a useful proxy for broader tool use and environment interaction, not merely a software-engineering application.
-- The practice emphasis was "make the simple path clean." Yao contrasts simple RL algorithms such as policy gradient with more complex search-style methods, and frames the real work as choosing stable tradeoffs across algorithmic efficiency, infrastructure complexity, and reliability. For code2env, this argues for first-class quality gates around execution, fixture stability, and reward correctness before adding sophisticated agent scaffolding.
-- Post-training work is described as detail-heavy, experimental, and bottom-up. The practical pattern is to expose many candidate behaviors to controlled trials, then keep the paths that survive evaluation. code2env should mirror this by treating candidate generation, adapter design, materialization, smoke tests, determinism checks, and failure labeling as separate executable stages.
-- Context management is one concrete bridge from coding agents to long-horizon agents. The interview discusses systems that decide which context to drop, which context to store, and when to retrieve it later. For code2env, long-horizon environments should model memory and state explicitly rather than assuming one prompt can carry all repo or service context.
-- The product wrapper matters because it turns model capability into an experienced feedback loop. Cursor-style systems made agentic coding useful by giving users an interactive surface over model/tool/environment behavior. Generated environments should therefore expose inspectable state, tool outputs, trajectories, and errors, not just hidden benchmark scores.
-- Organization practice matters because large model work is not just ideas. The useful operating pattern is clear ownership, node-by-node execution, and explicit evaluation for relatively settled work; broader exploration remains useful where the target is uncertain. code2env's schema should support both: stable mandatory fields for source, fixture, reward, and provenance, plus explicit experiment/failure fields for adapters and richer environments.
-- The successful path was not one clever idea. Yao repeatedly pushes against individual hero narratives and stresses execution detail, responsibility, and collective work. For code2env, the value should be in repeatable small steps: candidate screening, fixture design, materialization, smoke, determinism checks, blocker labeling, and review.
+Original phrases:
 
-## Future Beliefs And Intuitions
+- "回馈信号足够清晰"
+- "把简单的事儿做的比谁都干净"
+- "回归信号清晰，数据充分"
 
-- Yao's central future bet is long-horizon tasks. He frames coding as a T-shaped path: horizontally extending from code into other tool/environment scenarios, and vertically extending from quick code completion into long projects such as AI or CS research.
-- His intuition is experimentability. Compared with areas where experiments lag theory, he argues AI can keep moving because many ideas can be tried if compute, infrastructure, and evaluation are ready. This is directly aligned with code2env: the environment generator should make experiments cheap, reproducible, and comparable.
-- Pretraining is not viewed as simply over, but its role differs from post-training. Public episode highlights summarize his view that pretraining is becoming more controllable as an engineering project, while post-training remains more bottom-up and trial-heavy. For code2env, this strengthens the case for high-quality, narrow-distribution environments where agents can repeatedly act, observe, and be scored.
-- He is skeptical of final-form product claims. The interview discusses chatbots, search, and super-app narratives; his view is that current interaction forms are not obviously final. For code2env, this means our planning schema should avoid baking in "chatbot" as the only interface and instead model observations, actions, tools, state, and rewards abstractly.
-- He treats evaluation as both necessary and fragile. Public highlights include a warning that evaluation frameworks can be hacked. This maps directly to our reward design: generated environments need provenance, hidden oracles where possible, determinism checks, and failure reports, rather than only visible benchmark scores.
-- He treats human-AI collaboration as a core skill. His interview exercise asks candidates to build a small RL project with AI support and then discuss what they built; the trap is whether they understand the AI-generated work. This is relevant to code2env as a downstream benchmark style: we should value environments that test whether an agent can use tools, inspect outputs, revise plans, and explain or submit reliable results, not merely emit code.
+Value for code2env:
 
-## Implications For The Planning Schema
+- Coding is useful as an RL target because the environment can return tests, logs, runtime errors, traces, and final correctness.
+- The hard part is less about fancy wrappers and more about making the execution path clean: stable fixtures, reliable reward, reproducible runs, and clear failure labels.
 
-- Add an explicit "environment interaction quality" lens to candidate selection. Good code-to-env targets should have clear feedback, enough data or examples, bounded side effects, and meaningful intermediate states.
-- Represent task horizon, not only function signature. Env specs should distinguish single-call, short tool sequence, long-context, and long-horizon project environments.
-- Keep fixture and adapter design first-class. The path from coding to broader agentic work depends on environments beyond JSON-callable functions: files, modules, object instances, service mocks, and persistent state should be expressible.
-- Make evaluation provenance mandatory. Every score should say where its oracle came from: pinned source execution, tests, golden traces, human review, or controlled service simulation.
-- Track failure modes as data. If a candidate fails due to nondeterminism, unavailable dependencies, object construction, import-time side effects, or weak oracle quality, that should become related-work knowledge for improving the generator.
-- Add context/state management fields for long-horizon environments: visible context, hidden state, external memory, retrieval hooks, and summarization or compaction rules.
-- Keep the system execution-driven. The most relevant lesson from this interview is that high-level ideas are cheap; value comes from turning them into small executable steps with feedback. code2env's schema should make those steps visible.
+## Anthropic: Agentic Coding Scale-Up
+
+Original phrase:
+
+- "制备各种各样的环境和data"
+
+Value for code2env:
+
+- Environment construction and data construction are linked. Candidate selection, adapter design, materialization, smoke tests, and failure reports should be explicit pipeline stages.
+
+## Infrastructure And Evaluation
+
+Original phrases:
+
+- "基础设施真的是很重要"
+- "算法设计...依赖于你的基础设施"
+
+Value for code2env:
+
+- Related work points to infra/eval as part of the method, not just support code. EnvSpec should record runtime constraints, oracle source, dependency assumptions, and evaluator provenance.
+
+## Product Surface And Feedback Loop
+
+Original phrase:
+
+- "提高自己或者同事的工作效率"
+
+Value for code2env:
+
+- A generated env should be inspectable by builders and agents. State, tool output, trajectory, and errors should be visible enough to debug and iterate.
+
+## Future Direction: Long-Horizon Experiment Loops
+
+Original phrase:
+
+- "不仅能写这个code，还能跑这个实验"
+
+Value for code2env:
+
+- The target should extend from single-call function environments to longer loops: plan, edit/use tools, run, observe, diagnose, and retry.
+
+## Implications For code2env Schema
+
+- Add environment feedback quality: tests, traces, logs, errors, final oracle.
+- Add task horizon: single-call, short tool sequence, long-context, long-horizon loop.
+- Add fixture/adapter fields: JSON args, files, modules, object instances, service mocks, persistent state.
+- Add evaluation provenance: pinned source, tests, golden traces, human review, controlled service simulation.
+- Add failure taxonomy: nondeterminism, dependency failure, object construction, import side effects, weak oracle, reward hacking.
