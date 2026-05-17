@@ -4,7 +4,7 @@
 
 Source: Zhang Xiaojun Podcast EP140. Public pages and excerpts: [Xiaoyuzhou](https://www.xiaoyuzhoufm.com/episode/6a00aa051b7bd50295dfe41d), [Apple Podcasts](https://podcasts.apple.com/cn/podcast/140-%E5%AF%B9%E5%A7%9A%E9%A1%BA%E5%AE%87%E7%9A%844%E5%B0%8F%E6%97%B6%E8%AE%BF%E8%B0%88-%E8%AF%B7%E5%85%81%E8%AE%B8%E6%88%91%E5%B0%8F%E7%96%AF%E4%B8%80%E4%B8%8B-%E5%9C%A8anthropic%E5%92%8Cgemini%E8%AE%AD%E6%A8%A1%E5%9E%8B-%E6%8A%80%E6%9C%AF%E9%A2%84%E6%B5%8B-%E8%8B%B1%E9%9B%84%E4%B8%BB%E4%B9%89%E5%B7%B2%E8%BF%87%E5%8E%BB/id1634356920?i=1000767107736), [Podwise](https://podwise.ai/dashboard/episodes/7949463), [Scripod](https://scripod.com/episode/qz1rzztces6go9w5odxb2tdl), and a public excerpt reposted from `语言即世界language is world` on [发现AI](https://www.faxai.cn/archives/6724).
 
-This note only keeps points relevant to code-to-env / code2env planning.
+This note only keeps points directly relevant to code-to-env / code2env planning.
 
 ## Anthropic: Coding RL And Environment Feedback
 
@@ -40,17 +40,7 @@ Value for code2env:
 
 - Related work points to infra/eval as part of the method, not just support code. EnvSpec should record runtime constraints, oracle source, dependency assumptions, and evaluator provenance.
 
-## Product Surface And Feedback Loop
-
-Original phrase:
-
-- "提高自己或者同事的工作效率"
-
-Value for code2env:
-
-- A generated env should be inspectable by builders and agents. State, tool output, trajectory, and errors should be visible enough to debug and iterate.
-
-## Future Direction: Long-Horizon Experiment Loops
+## Long-Horizon Experiment Loops
 
 Original phrase:
 
@@ -58,7 +48,7 @@ Original phrase:
 
 Value for code2env:
 
-- The target should extend from single-call function environments to longer loops: plan, edit/use tools, run, observe, diagnose, and retry.
+- Keep this only as a boundary marker: code2env should eventually support plan, run, observe, diagnose, and retry loops, not just one-shot function calls.
 
 ## Implications For code2env Schema
 
@@ -66,4 +56,3 @@ Value for code2env:
 - Add task horizon: single-call, short tool sequence, long-context, long-horizon loop.
 - Add fixture/adapter fields: JSON args, files, modules, object instances, service mocks, persistent state.
 - Add evaluation provenance: pinned source, tests, golden traces, human review, controlled service simulation.
-- Add failure taxonomy: nondeterminism, dependency failure, object construction, import side effects, weak oracle, reward hacking.

@@ -1,6 +1,6 @@
 # task005_survey_problem_goals_schema History
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0
 
@@ -27,3 +27,8 @@
 
 - Condensed `survey/02-related-work.md` after supervisor requested fewer explanations and more original-phrase excerpts.
 - Reorganized the related-work note with attribution headings for Anthropic coding RL, agentic coding scale-up, infrastructure/evaluation, product feedback loop, future experiment loops, and code2env schema implications.
+
+## Session 5
+
+- Further narrowed `survey/02-related-work.md` after supervisor noted some points were not directly relevant.
+- Removed the product-surface section and trimmed schema implications to the points most directly useful for code-to-env: feedback quality, task horizon, fixtures/adapters, and evaluation provenance.
