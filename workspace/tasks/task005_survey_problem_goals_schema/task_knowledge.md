@@ -1,6 +1,6 @@
 # task005_survey_problem_goals_schema Knowledge
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Writing Rule
 

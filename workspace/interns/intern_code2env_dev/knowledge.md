@@ -1,6 +1,6 @@
 # intern_code2env_dev - personal knowledge base
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=6 -->
 
 ---
 
@@ -14,3 +14,4 @@
 - Targeted selection improves candidate quality by excluding static risk flags before LLM review; `requires_instance` and `possible_side_effect` were useful first filters for requests/rich.
 - Materializing EnvSpec drafts with explicit JSON fixtures before build gives a clean checkpoint: fixture, golden answer, and runtime smoke failures can be debugged separately.
 - Some otherwise good candidates need non-JSON fixture adapters; Flask `find_app_by_string` requires a Python `ModuleType` with an app or factory, so it should not be forced through JSON-only args.
+- Lightweight survey docs should stay scoped: use quote-first related-work notes, concise implications, strict relevance to code2env schema/environment construction, and clear attribution headings.

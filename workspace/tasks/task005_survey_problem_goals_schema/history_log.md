@@ -1,6 +1,6 @@
 # task005_survey_problem_goals_schema History
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Session 0
 
@@ -32,3 +32,9 @@
 
 - Further narrowed `survey/02-related-work.md` after supervisor noted some points were not directly relevant.
 - Removed the product-surface section and trimmed schema implications to the points most directly useful for code-to-env: feedback quality, task horizon, fixtures/adapters, and evaluation provenance.
+
+## Session 6
+
+- Supervisor requested merging PR #5.
+- Marked task005 completed, set intern status to idle, and prepared completion metadata for merge.
+- Distilled survey writing guidance into the personal knowledge base.

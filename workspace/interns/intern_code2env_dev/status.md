@@ -1,12 +1,12 @@
 # intern_code2env_dev - status
 
-<!-- METADATA:STATUS=Working,TASK=task005_survey_problem_goals_schema -->
+<!-- METADATA:STATUS=Idle,TASK= -->
 
 | Field | Value |
 |------|-----|
 | Name | intern_code2env_dev |
-| Status | Working |
-| Current Task | task005_survey_problem_goals_schema |
-| PR | https://github.com/songCNMS/code2env/pull/5 |
-| Session | 5 |
-| Progress | Further narrowed EP140 related work to only directly relevant code-to-env schema implications |
+| Status | Idle |
+| Current Task |  |
+| PR |  |
+| Session | 6 |
+| Progress | Completed task005 survey schema docs and prepared PR #5 for merge |

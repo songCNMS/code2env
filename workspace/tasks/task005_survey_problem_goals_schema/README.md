@@ -1,6 +1,6 @@
 # task005_survey_problem_goals_schema
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_dev -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_dev -->
 
 ## Background
 
