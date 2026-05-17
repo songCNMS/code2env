@@ -8,5 +8,5 @@
 | Status | Working |
 | Current Task | task005_survey_problem_goals_schema |
 | PR | https://github.com/songCNMS/code2env/pull/5 |
-| Session | 1 |
-| Progress | Added lightweight survey problem/goals schema document grounded in current code2env pipeline |
+| Session | 2 |
+| Progress | Added related-work notes from Zhang Xiaojun EP140 Yao Shunyu interview with code-to-env implications |
