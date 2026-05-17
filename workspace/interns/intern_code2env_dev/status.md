@@ -1,12 +1,12 @@
 # intern_code2env_dev - status
 
-<!-- METADATA:STATUS=Idle,TASK= -->
+<!-- METADATA:STATUS=Working,TASK=task005_survey_problem_goals_schema -->
 
 | Field | Value |
 |------|-----|
 | Name | intern_code2env_dev |
-| Status | Idle |
-| Current Task |  |
-| PR |  |
-| Session | 4 |
-| Progress | Completed task004 and prepared PR #4 for merge after fixture materialization and smoke validation |
+| Status | Working |
+| Current Task | task005_survey_problem_goals_schema |
+| PR | pending |
+| Session | 0 |
+| Progress | Accepted lightweight survey problem/goals schema task |
