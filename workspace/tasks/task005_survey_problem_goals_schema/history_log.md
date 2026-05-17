@@ -1,6 +1,6 @@
 # task005_survey_problem_goals_schema History
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0
 
@@ -17,3 +17,8 @@
 - Researched public pages and excerpts for Zhang Xiaojun Podcast EP140 with Yao Shunyu.
 - Added `survey/02-related-work.md` focused on implications for code-to-env: coding as tool/environment interaction, long-horizon tasks, execution-driven progress, evaluation fragility, and organizational execution paths.
 - Kept the related-work note lightweight and direction-specific rather than a full episode summary.
+
+## Session 3
+
+- Revised `survey/02-related-work.md` after supervisor clarified the request was for practice details rather than time details.
+- Removed publication/recording/model-sequence timing emphasis and added technical practice details around RL-for-coding feedback, clean simple paths, context management, evaluation fragility, and execution-driven pipeline design.
