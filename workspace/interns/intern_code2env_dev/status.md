@@ -7,6 +7,6 @@
 | Name | intern_code2env_dev |
 | Status | Working |
 | Current Task | task005_survey_problem_goals_schema |
-| PR | pending |
+| PR | https://github.com/songCNMS/code2env/pull/5 |
 | Session | 0 |
 | Progress | Accepted lightweight survey problem/goals schema task |
