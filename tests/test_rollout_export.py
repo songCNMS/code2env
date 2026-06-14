@@ -81,6 +81,19 @@ class ValidateConversationTest(unittest.TestCase):
         self.assertTrue(has_submit_answer(obj))
         self.assertTrue(compute_qualified(obj))
 
+    def test_extra_trace_metadata_is_backward_compatible(self) -> None:
+        obj = _sample_conversation()
+        obj["subfunction_trace"] = {
+            "trace_mode": "subfunctions",
+            "required_helper_tools": ["call_split_words"],
+            "observed_tools": ["call_split_words", "call_entrypoint", "submit_answer"],
+            "helper_trace_complete": True,
+            "entrypoint_after_helpers": True,
+            "skipped_helpers": [],
+            "missing_helper_tools": [],
+        }
+        self.assertIs(validate_conversation(obj), obj)
+
     def test_missing_field_raises(self) -> None:
         obj = _sample_conversation()
         del obj["final"]
