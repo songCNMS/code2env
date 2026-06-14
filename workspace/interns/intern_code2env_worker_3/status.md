@@ -1,13 +1,13 @@
 # intern_code2env_worker_3 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task012_testlink_index_ingest,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_3 |
-| Status | Working |
+| Status | Idle |
 | Role | worker |
 | Team | code2env |
-| Current Task | task012_testlink_index_ingest |
-| PR | https://github.com/songCNMS/code2env/pull/7 |
-| Session | 0 |
+| Current Task |  |
+| PR | N/A (task012 PR#7 merged) |
+| Session | 2 |

@@ -1,6 +1,14 @@
 # task012_testlink_index_ingest - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
+
+## Session 2 - 2026-06-13 UTC - 修复阻塞缺陷 + rebase PR#9 + self-merge
+
+- lead review APPROVE、worker_4 四条验收全 PASS；1 阻塞缺陷：`test_links_for_candidate` 被 pytest 误收集。
+- 修复：重命名 `test_links_for_candidate` → `links_for_candidate`（indexer/__init__/spec/tests 四处）；`python3 -m pytest tests/` 收集错误消失。
+- rebase：PR#9(ToolExtractor, squash e2825ad) 已合 main；`git merge origin/main` ort 自动合并**无冲突**，双方功能共存（端到端验证）。
+- 全量 `python3 -m pytest tests/` → 21 passed 0 error（我 18 + PR#9 新增 3）。
+- self-merge PR#7 到 main，task 标记 Completed，状态切回 Idle，mailbox 回报。
 
 ## Session 1 - 2026-06-13 UTC - 实现 TestLinkIndex + tests 索引 + provenance>=2
 

@@ -1,6 +1,6 @@
 # task012_testlink_index_ingest - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -16,3 +16,6 @@
 5. spec：`_build_provenance` 始终给 source_span + signature 两条多样来源（保证 >=2），再追加 test_link/fixture/golden；无测试时 `test_link_status=no_test_links_found` 且写 `degradation` 说明（oracle 优先级降级为签名级证据）。
 6. RepoSnapshot 全程由 ingest_repo 构造、不反序列化（builder 重新 ingest），故加字段对 EnvSpec.from_dict/spec.json 无影响。
 7. 自测：新增 tests/test_testlink_index.py 5 例；全量 `python3 -m unittest discover -s tests` 18 例全绿。本机 `python` 不存在，用 `python3`。
+8. [阻塞修复] 公有 API 不能以 `test_` 开头：pytest 会把 `test_links_for_candidate` 当测试用例收集 → `fixture 'snapshot' not found`（unittest 不收集裸函数故漏检）。已重命名为 `links_for_candidate`（indexer 定义/__init__ 导出/spec 调用/tests import 四处）。验证用 `python3 -m pytest tests/` 而非 unittest。教训记 ERROR_BOOK。
+9. [rebase] PR#9(ToolExtractor, squash e2825ad) 先合入 main。`git merge origin/main` 用 ort 策略**自动合并无冲突**（双方改 spec.py/indexer.py/models.py/README/mvp_usage 但落在不同区域）。校验：grep 无冲突标记 + pytest 21 passed（我 18 + PR#9 新增 3）+ 端到端 draft 同时含 PR#9 语义工具(inspect_state/call_clean_text/ToolSpec.provenance) 与我的 task_sources=[source_span,signature,test_link]。models.py 两 dataclass(TestLink + ToolSpec.provenance/FunctionCandidate.steps)与字段(RepoSnapshot.test_files)均在。
+10. [backlog 非阻塞] 名称子串匹配偏宽(add→test_address 误关联)，后续改词边界匹配。
