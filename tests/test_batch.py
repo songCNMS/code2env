@@ -205,6 +205,7 @@ class BatchPipelineTest(unittest.TestCase):
                 "line_start",
                 "line_end",
                 "fixture",
+                "fixture_rich_params",
                 "draft_ok",
                 "build_ok",
                 "smoke_ok",
@@ -228,6 +229,7 @@ class BatchPipelineTest(unittest.TestCase):
                 self.assertEqual(env["determinism"], "deterministic")
                 self.assertIsInstance(env["semantic_helper_count"], int)
                 self.assertIsInstance(env["semantic_helpers"], list)
+                self.assertIsInstance(env["fixture_rich_params"], list)
                 self.assertEqual(env["deps_status"], "no_deps")
                 self.assertTrue(Path(env["spec_path"]).exists())
                 self.assertTrue((Path(env["package_path"]) / "env_spec.json").exists())

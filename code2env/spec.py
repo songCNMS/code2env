@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -46,6 +47,7 @@ def draft_env_spec(
         "line_end": candidate.end_lineno,
         "license_file": snapshot.license_file,
     }
+    runtime_environment = _runtime_environment()
     spec = EnvSpec(
         id=env_id or _default_env_id(candidate, snapshot),
         version=1,
@@ -63,6 +65,7 @@ def draft_env_spec(
             "python_executable": python_executable,
             "requirements": requirements or [],
             "deps_status": deps_status,
+            "environment": runtime_environment,
         },
         reward={
             "type": "exact_match",
@@ -89,6 +92,7 @@ def draft_env_spec(
                 disable_network=True,
                 disable_subprocess=True,
                 python_executable=python_executable,
+                extra_env=runtime_environment,
             )
 
         spec.golden_answer = _run_golden()
@@ -106,6 +110,18 @@ def draft_env_spec(
         spec.provenance["golden_status"] = "pending_golden"
         spec.provenance["determinism"] = None
     return spec
+
+
+def _runtime_environment() -> dict[str, str]:
+    """Persist narrowly scoped runtime env needed to replay package goldens.
+
+    Pinned source checkouts can rely on build-tool metadata env vars during golden
+    generation. Keep this allowlist small so generated packages do not capture
+    arbitrary local secrets or machine-specific process state.
+    """
+
+    names = ("SETUPTOOLS_SCM_PRETEND_VERSION",)
+    return {name: os.environ[name] for name in names if os.environ.get(name)}
 
 
 _TEST_LINK_KINDS = {"test": "test_link", "fixture": "fixture", "golden": "golden"}

@@ -489,6 +489,7 @@ class Code2Env:
             disable_network=sandbox.get("network") is False,
             disable_subprocess=sandbox.get("subprocess") in {False, "disabled"},
             python_executable=self._python_executable,
+            extra_env=self.spec.runtime.get("environment") or None,
         )
 
     @property

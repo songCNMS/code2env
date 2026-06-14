@@ -210,7 +210,9 @@ def _create_venv(
 
     python_path = _venv_python_path(venv_dir)
     if python_path.exists():
-        return str(python_path)
+        if _venv_has_pip(python_path, runner=runner):
+            return str(python_path)
+        shutil.rmtree(venv_dir, ignore_errors=True)
     venv_dir.parent.mkdir(parents=True, exist_ok=True)
     try:
         runner(
@@ -225,6 +227,8 @@ def _create_venv(
         uv = which("uv")
         if not uv:
             raise
+        if venv_dir.exists():
+            shutil.rmtree(venv_dir, ignore_errors=True)
         try:
             runner(
                 [uv, "venv", "--seed", "--python", base_python, str(venv_dir)],
@@ -236,6 +240,24 @@ def _create_venv(
         except (subprocess.CalledProcessError, OSError) as uv_exc:
             raise uv_exc from venv_exc
         return str(python_path)
+
+
+def _venv_has_pip(
+    python_path: Path,
+    *,
+    runner=subprocess.run,
+) -> bool:
+    try:
+        runner(
+            [str(python_path), "-m", "pip", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return False
+    return True
 
 
 def _venv_python_path(venv_dir: Path) -> Path:

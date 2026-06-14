@@ -11,15 +11,28 @@ import traceback
 from pathlib import Path
 from typing import Any
 
+from code2env.rich_fixtures import hydrate_args_kwargs, make_json_compatible, serialize_rich_value
+
 
 def serialize_value(value: Any) -> dict[str, Any]:
+    rich = serialize_rich_value(value)
+    if rich is not None:
+        return rich
     try:
         json.dumps(value)
     except (TypeError, ValueError):
+        compatible = make_json_compatible(value)
+        try:
+            json.dumps(compatible)
+        except (TypeError, ValueError):
+            return {
+                "kind": "repr",
+                "type": type(value).__name__,
+                "repr": repr(value),
+            }
         return {
-            "kind": "repr",
-            "type": type(value).__name__,
-            "repr": repr(value),
+            "kind": "json",
+            "value": compatible,
         }
     return {"kind": "json", "value": value}
 
@@ -40,6 +53,7 @@ def call_symbol(
     if Path(src_root).exists():
         sys.path.insert(0, src_root)
     try:
+        args, kwargs = hydrate_args_kwargs(args, kwargs, source_root=root)
         target: Any = importlib.import_module(module_name)
         for part in qualname.split("."):
             target = getattr(target, part)
@@ -65,6 +79,7 @@ def run_symbol_subprocess(
     disable_network: bool = False,
     disable_subprocess: bool = False,
     python_executable: str | None = None,
+    extra_env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run ``symbol`` in a subprocess and return its serialized result.
 
@@ -93,13 +108,18 @@ def run_symbol_subprocess(
     if disable_subprocess:
         command.append("--disable-subprocess")
     env = None
-    if python != sys.executable:
+    if python != sys.executable or extra_env:
         env = dict(os.environ)
+    if python != sys.executable:
+        assert env is not None
         package_parent = str(Path(__file__).resolve().parent.parent)
         existing = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = (
             package_parent + os.pathsep + existing if existing else package_parent
         )
+    if extra_env:
+        assert env is not None
+        env.update({str(key): str(value) for key, value in extra_env.items()})
     try:
         result = subprocess.run(
             command,
