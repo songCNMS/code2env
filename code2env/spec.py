@@ -17,8 +17,12 @@ def draft_env_spec(
     fixture: dict[str, Any] | None = None,
     env_id: str | None = None,
     compute_golden: bool = True,
+    candidates: list[FunctionCandidate] | None = None,
 ) -> EnvSpec:
-    candidates = index_repo(snapshot)
+    # ``candidates`` lets batch callers reuse a single index_repo() pass across many
+    # symbols in the same snapshot instead of re-indexing per draft.
+    if candidates is None:
+        candidates = index_repo(snapshot)
     candidate = find_candidate(candidates, symbol)
     normalized_fixture = _normalize_fixture(fixture)
     test_links = links_for_candidate(snapshot, candidate)

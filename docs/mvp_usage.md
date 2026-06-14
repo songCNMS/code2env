@@ -49,6 +49,58 @@ python -m code2env materialize /tmp/env_spec_draft.json \
   --output /tmp/env_spec.json
 ```
 
+## Batch generation
+
+```bash
+python -m code2env batch <repo-or-git-url> [<repo-or-git-url> ...] \
+  --output-dir generated_envs/batch --target 100 \
+  --cache-dir .code2env_cache/repos [--per-repo-limit N] [--no-smoke] [--include-side-effects]
+```
+
+`batch` (`code2env/batch.py`) drives `scan → synth fixture → draft → build [→ smoke]` across
+all given repos, stopping once `--target` successful builds are reached (counted globally,
+candidates taken in descending static score). It writes one `manifest.json` under
+`--output-dir`.
+
+**Fixture auto-synthesis** reads each candidate's AST signature:
+
+- No required parameters (all defaulted, or only `*args`/`**kwargs`) → `empty_signature`, `{"args": [], "kwargs": {}}`.
+- All required parameters carry a supported annotation → `typed_signature`. Mapping: `str→"x"`, `int→1`, `float→1.0`, `bool→false`, `complex/Any/object→…`; list-like (`list`, `tuple`, `set`, `Sequence`, `Iterable`, …) → `[]`; dict-like (`dict`, `Mapping`, …) → `{}`; `Optional`/`Union`/`None` → `null`; subscripted generics (`list[int]`) resolve to their base; forward-ref string annotations are re-parsed.
+- Otherwise the candidate is **skipped** with a reason in `manifest.skipped`: `untyped_required_param:<name>`, `unsupported_param_type:<name>:<type>`, `not_module_level`, `requires_instance`, or `possible_side_effect` (the latter only without `--include-side-effects`).
+
+A candidate counts as `build_ok` (toward `--target`) on a successful draft+build regardless of
+smoke; smoke failures are recorded in `smoke_fail_reason` (`golden_error:*`, `answer_mismatch`,
+`smoke_exception:*`). Side-effecting functions are skipped by default because the golden-answer
+subprocess sandboxes network/subprocess but **not** filesystem writes — exposing them safely
+needs a sandbox adapter (future work).
+
+### `manifest.json` contract
+
+Consumed by reporting (w4) and scale-out (w5) — field names are fixed:
+
+```json
+{
+  "generated_at": "<iso8601>",
+  "repos": ["<repo>", "..."],
+  "summary": {
+    "candidates_scanned": 0, "draft_ok": 0, "build_ok": 0, "smoke_ok": 0,
+    "skipped_no_fixture": 0,
+    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0}}
+  },
+  "envs": [{
+    "env_id": "...", "repo": "...", "symbol": "...", "file": "...",
+    "line_start": 0, "line_end": 0,
+    "fixture": {"ok": true, "strategy": "typed_signature", "value": {"args": [], "kwargs": {}}, "reason": null},
+    "draft_ok": true, "build_ok": true, "smoke_ok": true, "smoke_fail_reason": null,
+    "spec_path": "...", "package_path": "..."
+  }],
+  "skipped": [{"symbol": "...", "repo": "...", "reason": "..."}]
+}
+```
+
+Cloned repo source (`--cache-dir`, default `.code2env_cache/repos`) and generated packages
+(`--output-dir`, default `generated_envs/batch`) are gitignored and must not be committed.
+
 ## Runtime Tools
 
 The Tool Extractor (PRD 7.5) emits a semantic tool set per env, kept within the 3–8 tool window:
@@ -63,6 +115,37 @@ The Tool Extractor (PRD 7.5) emits a semantic tool set per env, kept within the 
 Each `ToolSpec` carries `input_schema`, `output_schema`, `side_effects`, and `provenance` (`kind`, `backing` symbol/source span, and the main-function steps a helper tool maps to).
 
 The runtime API is available as `code2env.runtime.Code2Env` with `reset`, `step`, `evaluate`, and `close`.
+
+## Rollout conversation export (D3)
+
+`code2env.rollout_export` is the persistence layer for rollout results. It takes a
+`RolloutResult` dict (produced by the rollout driver) and writes it to disk for
+human inspection and downstream reporting. It does not run rollouts.
+
+```bash
+python -m code2env rollout-export /path/to/results.jsonl --export-dir /path/to/out
+```
+
+For each record it writes a readable per-env `<env_id>.json` (atomic temp-file +
+`os.replace`) and appends one line to a merged `rollouts.jsonl`. `--export-dir`
+defaults to the coordinator's `outputs/rollouts/` directory (outside the repo, not
+tracked by git, auto-created); override with `--export-dir` or the
+`CODE2ENV_ROLLOUT_EXPORT_DIR` env var.
+
+Library API:
+
+- `write_conversation(result, out_dir=None, *, validate=True) -> Path` — write per-env JSON + append to `rollouts.jsonl`.
+- `validate_conversation(obj)` — enforce the shared schema; raises `ConversationSchemaError` on missing/typed-wrong fields or a `qualified` flag inconsistent with the contract.
+- `load_conversation(path)` / `iter_jsonl(path)` — load a single conversation or stream the merged log; `write → load` round-trips to an equal object.
+
+The conversation contract (shared verbatim with the rollout producer and the report
+consumer — **do not rename fields**) carries `env_id`, `model`, `endpoint_source`,
+`started_at`/`finished_at`, full `messages` (`system`/`user`/`assistant`/`tool`),
+per-step `steps` (`action` + `tool_result` + `reward` + `parse_error`), a `final`
+block (`submitted_answer`, `correct`, `score`, `score_breakdown`, `steps`),
+`num_tool_call_rounds`, `qualified`, `termination_reason`, `retries`, and `errors`.
+`qualified` is `num_tool_call_rounds >= 2` **and** a `submit_answer` appears in the
+messages or steps.
 
 ## Multi-dimensional reward (PRD 7.7 / F7)
 
