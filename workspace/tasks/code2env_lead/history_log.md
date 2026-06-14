@@ -31,3 +31,11 @@
 - 合并编排：PR#9 双签→批准 worker_1 self-merge(首合,对 main 干净)；PR#7/PR#8 待 PR#9 合并后各自 merge main 解冲突(spec/indexer/models/runtime/README/mvp_usage 重叠)+重测+复验再顺序 self-merge。
 - 关键校正：默认分支是 main（非 master）。
 - 监工采用事件驱动后台等待器（mailbox 有未读即唤醒），替代盲轮询 cron。
+
+### Session 1 完结 - 三项 P0 全 merge + 最终验证 + 回报 coordinator
+- 合并顺序执行无碍：PR#9(e2825ad) 先合(对 main 干净)；PR#7(c166e2f) 先修阻塞缺陷(test_links_for_candidate→links_for_candidate, pytest 误收集 test_ 前缀公有函数, unittest 漏检)再 merge main(ort 自动无冲突)；PR#8(f2b3b42) merge main 解 runtime.py 冲突(五维 reward + inspect_state/call_<helper> dispatch 两边共存)。
+- 最终 main HEAD f2b3b42 含三项；pytest=31 passed；worker_5 B 轮 E2E scan→select(mock)→draft→materialize→build→smoke 全绿(ok=true,score=1.0)，新能力端到端可见(语义工具+inspect_state+ToolSpec.provenance、task_sources>=2、五维 score_breakdown)，判无回归。
+- 已回报 coordinator(default 通道)；通知 w4/w5 self-merge QA 文档 PR#6/#10 并回 Idle。
+- 5 worker 全投入(w1/w2/w3 实现、w4/w5 tester)，符合用满 active workers 原则。
+- backlog：reward 默认权重 vs PRD 7.7 表对齐(裁定本轮保持现状)、TestLink 子串匹配改词边界。
+- team_lead 管理任务按生命周期规则保持 InProgress。

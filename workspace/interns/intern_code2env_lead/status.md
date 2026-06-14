@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 1 |
 
-最近进展：P0 三项实现 PR 全部完成且 lead 代码 review 全 APPROVE：PR#9 ToolExtractor(双签:lead+worker_4 PASS,已批准 self-merge)、PR#7 TestLinkIndex(lead APPROVE,worker_4 验证中)、PR#8 多维 reward(lead APPROVE,worker_5 验证中)。合并策略:PR#9 先合(对 main 干净)→PR#7/PR#8 各自 merge main 解冲突(spec/indexer/models/runtime 重叠)重测后顺序合并。等 PR#9 merge 确认 + 两 tester 报告。
+最近进展：✅ PRD P0 三项缺口全部交付完结，已回报 coordinator。三独立 PR 均 merged 到 main(HEAD f2b3b42)：PR#9 ToolExtractor(e2825ad)、PR#7 TestLinkIndex(c166e2f)、PR#8 多维 reward(f2b3b42)。lead review 全 APPROVE + 双 tester 独立验证；最终 main pytest=31 passed，E2E scan→...→smoke 全绿(ok=true,score=1.0)，worker_5 B 轮判无回归。5 worker 全投入。遗留权重对齐/子串匹配记 backlog。team_lead 管理任务保持 InProgress 待下一目标。
