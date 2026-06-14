@@ -1,6 +1,6 @@
 # intern_code2env_worker_5 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task024_integration_rollout_runner,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task034_rerun_rollouts_v2,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
@@ -8,8 +8,8 @@
 | Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task | task024_integration_rollout_runner |
-| PR | https://github.com/songCNMS/code2env/pull/15 |
-| Session | 7 |
+| Current Task | task034_rerun_rollouts_v2 |
+| PR | https://github.com/songCNMS/code2env/pull/21 |
+| Session | 8 |
 
-最近进展：Phase3 全部完成 — build_ok=100、rollout 100/100（合格率 99%、平均 score 0.3452、全 gpt-5.5 无回退）、conversation 导出 coordinator outputs/rollouts/、report.md+json 已出。最终数字+交付物路径已 mail lead。Phase1+Phase3 task024 实质交付完成，待 lead 验收/授权 merge 文档 PR#15。
+最近进展：task024 收尾（PR#15 self-merge、README Completed）；当前 Working task034（v2 重跑 runner），重跑计划已就绪，待 lead 确认 task030/031/033 三 PR merged 后 ping 启动。
