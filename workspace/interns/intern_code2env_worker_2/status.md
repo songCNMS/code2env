@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task021_llm_rollout_driver |
-| PR | https://github.com/songCNMS/code2env/pull/11 |
+| PR | https://github.com/songCNMS/code2env/pull/11 (APPROVED, 待 PR#14 后按序合并) |
 | Session | 2 |
