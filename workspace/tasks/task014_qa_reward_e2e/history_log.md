@@ -1,13 +1,13 @@
 # task014_qa_reward_e2e - History Log
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
 - Team lead `intern_code2env_lead` 为 worker `intern_code2env_worker_5` 创建本 task。
 - Worker 应接受本 task，按普通 task/PR 流程开发、测试、提交，并在 PR merge 后完成 task。
 
-## Session 0 - 2026-06-13 - Worker 接受任务 + 准备测试计划
+## Session 1 - 2026-06-13 - Worker 接受任务 + 准备测试计划
 
 - 接受 task，建分支 `intern_code2env_worker_5/task014_qa_reward_e2e`，状态 Idle→Working。
 - 读 PRD 7.7（五维 reward 权重）、runtime.py 现状、tests/test_mvp.py。
