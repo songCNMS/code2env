@@ -39,7 +39,7 @@ python -m code2env smoke /tmp/generated_envs/<env_id> --json
 
 1. `call_entrypoint` with the fixture.
 2. `submit_answer` with the serialized result.
-3. Score by exact match against the golden source output.
+3. Score with the multi-dimensional reward (see below); a clean correct run totals `1.0`.
 
 Before building a draft EnvSpec, materialize it with a concrete JSON fixture:
 
@@ -63,3 +63,35 @@ The Tool Extractor (PRD 7.5) emits a semantic tool set per env, kept within the 
 Each `ToolSpec` carries `input_schema`, `output_schema`, `side_effects`, and `provenance` (`kind`, `backing` symbol/source span, and the main-function steps a helper tool maps to).
 
 The runtime API is available as `code2env.runtime.Code2Env` with `reset`, `step`, `evaluate`, and `close`.
+
+## Multi-dimensional reward (PRD 7.7 / F7)
+
+Every episode accumulates raw signals for five dimensions, each weighted by
+`reward.weights` from the EnvSpec (falling back to the defaults below when a spec
+omits them):
+
+| Dimension | Default weight | Raw signal |
+|---|---:|---|
+| `schema_validity` | 0.05 | fraction of actions that are well-formed (valid `tool_call`, known tool, object arguments, parseable result) |
+| `process_progress` | 0.20 | staged milestones reached: explore → execute source → submit after progress |
+| `final_correctness` | 0.65 | exact-match against the pinned golden answer (1.0 / 0.0) |
+| `efficiency` | 0.05 | `1 − (error + duplicate calls)/max_steps`, minus a penalty for exhausting the step budget without submitting |
+| `safety` | 0.05 | `1.0`, dropped to `0.0` when a sandbox enforcement fires (blocked network/subprocess, timeout) |
+
+**Training reward vs. evaluation score are separate:**
+
+- `step(action)` returns a dense, per-step **training reward** — potential-based
+  shaping over the weighted total, so the per-step rewards telescope to the final
+  evaluation score. Each step's `info["score_breakdown"]` carries the live breakdown.
+- `evaluate()` returns the **evaluation score** and a fully explainable
+  `score_breakdown`: per dimension `raw` value, `weight`, `weighted` contribution
+  and a human-readable `detail`, plus a `total` clamped to `[0, 1]`.
+
+```python
+env = Code2Env("env_spec.json"); env.reset()
+env.step({"type": "tool_call", "tool": "call_entrypoint", "arguments": env.spec.fixture})
+env.step({"type": "tool_call", "tool": "submit_answer", "arguments": {"answer": ...}})
+evaluation = env.evaluate()
+evaluation["score"]                       # weighted total in [0, 1]
+evaluation["score_breakdown"]["dimensions"]["safety"]  # {raw, weight, weighted, detail}
+```

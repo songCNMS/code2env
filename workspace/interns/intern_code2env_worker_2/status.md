@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task |  |
-| PR | N/A |
-| Session | 0 |
+| PR | https://github.com/songCNMS/code2env/pull/8 (merged) |
+| Session | 1 |
