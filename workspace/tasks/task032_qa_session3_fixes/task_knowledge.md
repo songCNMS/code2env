@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -57,3 +57,15 @@
 - 加分: 对抗用例 test_fabricated_args_mismatch 证明自造 args→qualified 但 correct=False(根因B)。
 - 未覆盖(非阻塞): 真实模型遵从率需 w5 放量验证, 本 PR 仅静态验证指示句+回退行为。
 - 教训复用: 跨 worker 契约一致性可用自己模块的 validator 做交叉校验, 高效且权威。
+
+### [Phase2] task033 (PR#20, 分支 ...worker_4/task033_..., ab3cc66) — APPROVE 建议, 无阻塞
+- pytest tests/=91 passed; test_report.py 19 passed; merge main CLEAN + post-merge 91。
+- 1[PASS] true_correct_rate=_rate(true_correct,usable=非weak); 手验 raw 2/3 vs true 1/2。
+- 2[PASS] weak_oracle 单列 weak_oracle_excluded(手验=1)。
+- 3[PASS] 消费 golden_status, 缺失→unknown 且**留分母**(never silently shrink); 取值 real_value 精确 + weak_oracle 前缀匹配。
+- 4[PASS] --baseline-manifest 前后对比: golden error→real(手验=1) + 各 repo smoke before/after delta(flask 0→1); 无 baseline 安全降级。
+- 5[PASS] 原指标全保留(correct 改标 raw 仍在)。
+- 跨 PR 待核(记录): w4 读取 weak_oracle 用前缀匹配, 需 task030 写出形如 `weak_oracle:<reason>`(冒号分隔); 验 task030 时交叉核对两侧取值集合, 不一致→阻塞。
+
+### 踩坑(流程)
+- 验别人分支时 worker_3 自己的 status.md 会变成该分支上的旧副本(常是 main/已合并态), Stop hook 读当前分支的 status.md → 可能 Session 号不符。规避: 验证完务必 checkout 回自己 task 分支再结束回复, 并让 status.md Session 号 = checklist = 本轮预期。

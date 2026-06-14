@@ -1,6 +1,14 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
+
+## Session 3 - 2026-06-13 UTC - Phase2 验证 PR#20 task033
+
+- lead ping Phase2: 验 PR#20 task033(报告真实 correct 率)。
+- checkout intern_code2env_worker_4/task033 → pytest 91 passed(test_report 19); 逐条 5 项全 PASS。
+- 手验合成样例(real/weak/缺失+baseline): raw=2/3、true=1/2、weak_excluded=1、unknown=1 留分母、golden error→real=1、flask smoke 0→1。
+- merge main 干净且 post-merge 91; 建议 APPROVE, 无阻塞; mailbox 回报。
+- 记跨 PR 待核: w4 读 real_value 精确 + weak_oracle 前缀, 待 task030 到货核对 w1 写出取值一致。
 
 ## Session 2 - 2026-06-13 UTC - Phase1 验证 PR#17 task031
 

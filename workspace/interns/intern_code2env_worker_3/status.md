@@ -8,6 +8,6 @@
 | Status | Working |
 | Role | worker (本轮 tester) |
 | Team | code2env |
-| Current Task | task032_qa_session3_fixes (Phase1 done: PR#17 PASS) |
+| Current Task | task032_qa_session3_fixes (Phase1 PR#17 PASS, Phase2 PR#20 PASS) |
 | PR | https://github.com/songCNMS/code2env/pull/19 |
-| Session | 2 |
+| Session | 3 |
