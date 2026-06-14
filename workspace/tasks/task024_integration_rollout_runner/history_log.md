@@ -66,3 +66,13 @@
 - **放量 batch 完成**：`code2env batch <5 GitHub URLs> --target 100` → build_ok=**100**、draft_ok=100、candidates_scanned=1458、skipped=675、smoke_ok=56；by_repo=rich 43/requests 33/flask 24（达 100 即停，click/jinja 未触及）。注意：repo 须传 Git URL（裸名被当本地路径报错）。manifest：outputs/phase3/envs/manifest.json。
 - **放量 rollout 进行中**：自写 orchestrator outputs/phase3/run_rollouts.py（gpt-5.5 主 + gpt-oss-120b 回退，ThreadPool workers=4，max_rounds=6，per-env 隔离失败），对 100 env 跑 → write_conversation 导出到 coordinator outputs/rollouts/。后台 PID 见 outputs/phase3/rollouts.pid，日志 rollouts.log。合格判定按 D 定义=≥2轮+submit（correct/score 反映模型解题质量，不影响合格）。
 - 下一步：rollout 跑完 → `code2env report manifest --rollouts <coordinator rollouts> --output-dir <outputs>` 出 md+json → mailbox 报最终数字（manifest/rollouts/报告 路径 + 生成成功率/合格率/平均 score）。
+
+### Session 3 (续) - Phase3 完成
+
+- 放量 rollout 完成：100/100 跑通、0 失败；orchestrator 全程 gpt-5.5 主端点（fallback_used=0，未触发限速）。
+- 最终数字：生成 build_ok=100/draft_ok=100/candidates=1458（6.9%）/smoke_ok=56/skipped=675；rollout **合格率 99/100=99.0%**、correct=3/100、**平均 score=0.3452**、low_score=97。
+- 失败聚类：生成 fixture_unsynthesizable=675/dependency_failure=24/weak_oracle=20/other=0；rollout other=96(qualified 低分)/tool_granularity=1。
+- **D4 finding 已在合入版(91544a9)修复**：classify_reason 现正确把 untyped_required_param/unsupported_param_type/requires_instance 归入 fixture_unsynthesizable（报告该簇=675、other=0）。
+- 交付完整性校验：100 conversation 全过 D3 validate_conversation（0 invalid，99 qualified），rollouts.jsonl 100 distinct env_id。
+- 交付物路径：manifest=outputs/phase3/envs/manifest.json；rollouts=coordinator outputs/rollouts/（100 json+jsonl）；report=coordinator outputs/report/report.{md,json}；run 汇总=coordinator outputs/rollout_run_summary.json。
+- 最终数字已 mailbox 回报 lead。Phase3（格式门→放量 100→rollout→导出→报告）全部完成。

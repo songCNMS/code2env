@@ -26,6 +26,9 @@
 - 放量 rollout：orchestrator `outputs/phase3/run_rollouts.py`（gpt-5.5 主+gpt-oss-120b 回退，ThreadPool workers=4，max_rounds=6，per-env try/except 隔离，write_conversation 导出）。后台跑，PID/log 在 outputs/phase3/。
 - 路径：manifest=outputs/phase3/envs/manifest.json；rollouts=coordinator outputs/rollouts/；run 汇总=outputs/phase3/rollout_run_summary.json。
 - 报告：`code2env report <manifest> --rollouts <rollouts dir> --output-dir <outputs>`（report.py 已随 PR#13 91544a9 merged）。
+- **Phase3 最终数字**：build_ok=100/candidates 1458（6.9%）/smoke_ok 56/skipped 675；rollout 100/100 跑通、**合格率 99%**、correct 3%、**平均 score 0.3452**、全 gpt-5.5（0 回退）。100 conversation 全过 validate。
+- **D4 finding 已在合入版 91544a9 修复**：classify_reason 现把 untyped_required_param/unsupported_param_type/requires_instance 正确归 fixture_unsynthesizable（报告该簇=675、other=0）。PR 评审分支版的问题，merge 版已解决。
+- 交付物：manifest=outputs/phase3/envs/manifest.json；rollouts=coordinator outputs/rollouts/；report=coordinator outputs/report/report.{md,json}；run 汇总=coordinator outputs/rollout_run_summary.json。
 
 ## Knowledge Entries
 
