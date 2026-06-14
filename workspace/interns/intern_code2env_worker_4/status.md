@@ -12,8 +12,8 @@
 | PR | https://github.com/songCNMS/code2env/pull/13 |
 | Session | 1 |
 
-## 最近进展（Session 1）
+## 最近进展（Session 2）
 
-- 接受 task023（D4 汇总报告生成）；建分支、开 PR#13 (base main)。
-- 实现 code2env/report.py + `code2env report` 子命令 + 11 例单测 + 文档；`pytest tests/`=42 passed，CLI 端到端跑通。
-- 待 mailbox 回报 lead + tester(w5)/lead review。
+- 实现 code2env report (PR#13) 并通过 lead/w5 review(42 passed)。
+- 修 w5 medium finding：按 lead canonical reason→tag 映射重写 classify_reason(子串/前缀)，补 D1 真实词汇测试；`pytest tests/`=45 passed、`unittest`=45 OK。
+- 按 lead 指示暂不 self-merge；等 PR#14 merged 后再 merge origin/main 解 cli.py 冲突+重测+self-merge。已 mailbox 回报修复完成。

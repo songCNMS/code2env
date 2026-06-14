@@ -28,22 +28,22 @@ def _manifest() -> dict:
             "by_repo": {"repoA": {"build_ok": 4, "smoke_ok": 3}, "repoB": {"build_ok": 2, "smoke_ok": 1}},
         },
         "envs": [
-            # repoA: 4 built (3 smoke ok, 1 smoke fail -> tool granularity)
+            # repoA: 4 built (3 smoke ok, 1 smoke fail -> weak_oracle via golden_error)
             {"env_id": "a1", "repo": "repoA", "symbol": "m:f1", "draft_ok": True, "build_ok": True, "smoke_ok": True, "smoke_fail_reason": None},
             {"env_id": "a2", "repo": "repoA", "symbol": "m:f2", "draft_ok": True, "build_ok": True, "smoke_ok": True, "smoke_fail_reason": None},
             {"env_id": "a3", "repo": "repoA", "symbol": "m:f3", "draft_ok": True, "build_ok": True, "smoke_ok": True, "smoke_fail_reason": None},
-            {"env_id": "a4", "repo": "repoA", "symbol": "m:f4", "draft_ok": True, "build_ok": True, "smoke_ok": False, "smoke_fail_reason": "agent exhausted step budget, no progress"},
-            # repoB: 2 built (1 smoke ok, 1 smoke fail -> format error)
+            {"env_id": "a4", "repo": "repoA", "symbol": "m:f4", "draft_ok": True, "build_ok": True, "smoke_ok": False, "smoke_fail_reason": "golden_error:golden computation raised"},
+            # repoB: 2 built (1 smoke ok, 1 smoke fail -> weak_oracle via answer_mismatch)
             {"env_id": "b1", "repo": "repoB", "symbol": "m:g1", "draft_ok": True, "build_ok": True, "smoke_ok": True, "smoke_fail_reason": None},
-            {"env_id": "b2", "repo": "repoB", "symbol": "m:g2", "draft_ok": True, "build_ok": True, "smoke_ok": False, "smoke_fail_reason": "invalid json returned by tool"},
-            # build failure (dependency)
-            {"env_id": "b3", "repo": "repoB", "symbol": "m:g3", "draft_ok": True, "build_ok": False, "smoke_ok": False, "smoke_fail_reason": "ModuleNotFoundError: no module named lxml"},
-            # draft failure (fixture)
-            {"env_id": "c1", "repo": "repoC", "symbol": "m:h1", "draft_ok": False, "build_ok": False, "smoke_ok": False, "fixture": {"ok": False, "reason": "cannot synthesize fixture for required positional arg"}},
+            {"env_id": "b2", "repo": "repoB", "symbol": "m:g2", "draft_ok": True, "build_ok": True, "smoke_ok": False, "smoke_fail_reason": "answer_mismatch"},
+            # build failure (dependency, canonical build_error:ModuleNotFound*)
+            {"env_id": "b3", "repo": "repoB", "symbol": "m:g3", "draft_ok": True, "build_ok": False, "smoke_ok": False, "smoke_fail_reason": "build_error:ModuleNotFoundError: No module named 'lxml'"},
+            # draft failure (fixture, canonical token)
+            {"env_id": "c1", "repo": "repoC", "symbol": "m:h1", "draft_ok": False, "build_ok": False, "smoke_ok": False, "fixture": {"ok": False, "reason": "unsupported_param_type:numpy.ndarray"}},
         ],
         "skipped": [
-            {"symbol": "m:s1", "repo": "repoC", "reason": "fixture unsynthesizable: complex annotation"},
-            {"symbol": "m:s2", "repo": "repoC", "reason": "no golden oracle available"},
+            {"symbol": "m:s1", "repo": "repoC", "reason": "untyped_required_param"},
+            {"symbol": "m:s2", "repo": "repoC", "reason": "requires_instance"},
         ],
     }
 
@@ -68,14 +68,37 @@ def _conv(env_id, *, model="gpt-5.5", rounds=3, qualified=True, correct=True, sc
 
 
 class ClassifyReasonTest(unittest.TestCase):
-    def test_keyword_routing(self) -> None:
-        self.assertEqual(classify_reason("ModuleNotFoundError: no module named x"), "dependency_failure")
-        self.assertEqual(classify_reason("cannot synthesize fixture"), "fixture_unsynthesizable")
-        self.assertEqual(classify_reason("no golden oracle available"), "weak_oracle")
-        self.assertEqual(classify_reason("agent exhausted step budget"), "tool_granularity")
-        self.assertEqual(classify_reason("invalid json returned"), "format_error")
+    def test_canonical_d1_vocabulary(self) -> None:
+        # fixture_unsynthesizable: every canonical D1 token from the lead's contract.
+        for token in (
+            "untyped_required_param",
+            "unsupported_param_type",
+            "requires_instance",
+            "possible_side_effect",
+            "not_module_level",
+            "function_node_not_found",
+            "no_fixture",
+        ):
+            self.assertEqual(classify_reason(token), "fixture_unsynthesizable", token)
+            self.assertEqual(classify_reason(f"{token}:some detail"), "fixture_unsynthesizable", token)
+
+    def test_dependency_canonical(self) -> None:
+        self.assertEqual(classify_reason("build_error:ModuleNotFoundError: No module named 'lxml'"), "dependency_failure")
+        self.assertEqual(classify_reason("build_error:ImportError: cannot import name x"), "dependency_failure")
+        self.assertEqual(classify_reason("draft_error:failed to import numpy"), "dependency_failure")
+        # build_error without an import signal is not a dependency failure.
+        self.assertEqual(classify_reason("build_error:SyntaxError"), "other")
+
+    def test_weak_oracle_and_format_canonical(self) -> None:
+        self.assertEqual(classify_reason("golden_error:golden computation raised"), "weak_oracle")
+        self.assertEqual(classify_reason("answer_mismatch"), "weak_oracle")
+        self.assertEqual(classify_reason("parse_error"), "format_error")
+        self.assertEqual(classify_reason("schema:invalid action"), "format_error")
+
+    def test_other_and_empty(self) -> None:
         self.assertEqual(classify_reason("something weird"), "other")
         self.assertEqual(classify_reason(None), "other")
+        self.assertEqual(classify_reason(""), "other")
 
     def test_all_tags_known(self) -> None:
         self.assertIn("other", FAILURE_TAGS)
@@ -113,11 +136,13 @@ class ReportStatsTest(unittest.TestCase):
             gen = build_report(mpath, None)["failure_clusters"]["generation"]
             # 2 skipped + draft fail(c1) + build fail(b3) + 2 smoke fails(a4,b2) = 6
             self.assertEqual(gen["total"], 6)
-            self.assertEqual(gen["counts"]["fixture_unsynthesizable"], 2)  # skip s1 + draft c1
-            self.assertEqual(gen["counts"]["weak_oracle"], 1)              # skip s2
-            self.assertEqual(gen["counts"]["dependency_failure"], 1)       # build b3
-            self.assertEqual(gen["counts"]["tool_granularity"], 1)        # smoke a4
-            self.assertEqual(gen["counts"]["format_error"], 1)           # smoke b2
+            # skip s1(untyped_required_param) + skip s2(requires_instance) + draft c1(unsupported_param_type)
+            self.assertEqual(gen["counts"]["fixture_unsynthesizable"], 3)
+            self.assertEqual(gen["counts"]["dependency_failure"], 1)       # build b3 build_error:ModuleNotFound
+            self.assertEqual(gen["counts"]["weak_oracle"], 2)             # smoke a4 golden_error + b2 answer_mismatch
+            self.assertEqual(gen["counts"]["tool_granularity"], 0)        # generation never tool_granularity
+            self.assertEqual(gen["counts"]["format_error"], 0)
+            self.assertEqual(gen["counts"]["other"], 0)
             self.assertEqual(sum(gen["counts"].values()), 6)
 
     def test_rollout_stats_and_clustering(self) -> None:
@@ -125,7 +150,7 @@ class ReportStatsTest(unittest.TestCase):
             _conv("a1", score=0.9, correct=True, qualified=True),
             _conv("a2", score=0.7, correct=True, qualified=True),
             _conv("a4", score=0.1, correct=False, qualified=False, rounds=1, submit=False, termination="max_steps_exhausted"),
-            _conv("b2", score=0.0, correct=False, qualified=True, termination="invalid json parse error"),
+            _conv("b2", score=0.0, correct=False, qualified=True, termination="parse_error"),
             _conv("b1", score=0.4, correct=True, qualified=True, termination="submitted"),  # low score
         ]
         with tempfile.TemporaryDirectory() as tmp:

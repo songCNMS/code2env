@@ -36,7 +36,7 @@ from typing import Any
 from code2env.jsonio import read_json, read_jsonl, write_json
 
 # Explainable failure taxonomy. Order matters: ``classify_reason`` returns the
-# first tag whose keywords match, falling back to ``other``.
+# first matching rule wins, falling back to ``other``.
 FAILURE_TAGS: list[str] = [
     "dependency_failure",
     "fixture_unsynthesizable",
@@ -46,42 +46,66 @@ FAILURE_TAGS: list[str] = [
     "other",
 ]
 
-_TAG_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "dependency_failure": (
-        "modulenotfound", "importerror", "no module", "cannot import",
-        "pip", "install", "dependency", "requirement", "distribution",
-    ),
-    "fixture_unsynthesizable": (
-        "fixture", "synthes", "no_fixture", "required positional",
-        "required argument", "missing arg", "unsupported annotation",
-    ),
-    "weak_oracle": (
-        "oracle", "golden", "no test", "no_test", "weak", "no_golden",
-        "no assertion", "untestable",
-    ),
-    "tool_granularity": (
-        "tool granularity", "granularity", "too few tools", "blind",
-        "max_step", "max step", "step budget", "budget exhaust",
-        "no progress", "exhausted",
-    ),
-    "format_error": (
-        "parse", "format", "schema", "invalid json", "validation",
-        "malformed", "unparse", "decode", "json",
-    ),
-}
+# Canonical D1/D3 reason tokens -> tag (team-lead defined). Reasons are emitted as
+# ``tag:detail`` (e.g. "build_error:ModuleNotFoundError: ...") or bare tokens
+# (e.g. "untyped_required_param"), so substring/prefix matching is used.
+_FIXTURE_TOKENS: tuple[str, ...] = (
+    "untyped_required_param",
+    "unsupported_param_type",
+    "requires_instance",
+    "possible_side_effect",
+    "not_module_level",
+    "function_node_not_found",
+    "no_fixture",
+)
+_DEPENDENCY_IMPORT_SIGNALS: tuple[str, ...] = (
+    "modulenotfound",
+    "importerror",
+    "no module named",
+)
+_WEAK_ORACLE_SIGNALS: tuple[str, ...] = (
+    "golden_error",
+    "answer_mismatch",
+)
+_FORMAT_SIGNALS: tuple[str, ...] = (
+    "parse_error",
+    "schema",
+)
 
 
 def classify_reason(reason: str | None) -> str:
-    """Map a free-text failure reason to one explainable failure tag."""
+    """Map a canonical D1/D3 failure reason to one explainable failure tag.
+
+    Mapping (team-lead canonical contract):
+
+    - ``dependency_failure`` ← ``build_error:ModuleNotFound*`` / ``ImportError`` /
+      ``draft_error`` containing ``import``.
+    - ``weak_oracle`` ← ``golden_error*`` / ``answer_mismatch``.
+    - ``format_error`` ← (rollout) ``parse_error`` / ``schema``.
+    - ``fixture_unsynthesizable`` ← ``untyped_required_param`` /
+      ``unsupported_param_type`` / ``requires_instance`` / ``possible_side_effect`` /
+      ``not_module_level`` / ``function_node_not_found`` / ``no_fixture``.
+    - ``other`` ← anything else. (Unqualified rollouts with no other signal are
+      re-tagged ``tool_granularity`` at the rollout-clustering layer.)
+    """
 
     if not reason:
         return "other"
     text = str(reason).lower()
-    for tag in FAILURE_TAGS:
-        if tag == "other":
-            continue
-        if any(keyword in text for keyword in _TAG_KEYWORDS[tag]):
-            return tag
+    # Dependency: import-related build/draft errors.
+    if any(signal in text for signal in _DEPENDENCY_IMPORT_SIGNALS):
+        return "dependency_failure"
+    if text.startswith("draft_error") and "import" in text:
+        return "dependency_failure"
+    # Weak oracle.
+    if any(signal in text for signal in _WEAK_ORACLE_SIGNALS):
+        return "weak_oracle"
+    # Format error (rollout-stage parse/schema problems).
+    if any(signal in text for signal in _FORMAT_SIGNALS):
+        return "format_error"
+    # Fixture synthesis failures (D1 skipped / fixture.reason tokens).
+    if any(token in text for token in _FIXTURE_TOKENS):
+        return "fixture_unsynthesizable"
     return "other"
 
 
