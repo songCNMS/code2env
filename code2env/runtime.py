@@ -51,6 +51,40 @@ def _clamp_unit(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
+def _accepted_answer_forms(golden: Any) -> list[Any]:
+    """The exact submitted shapes that count as correct for a given golden answer.
+
+    The golden answer for a deterministic success is the executor's two-layer
+    envelope ``{"ok": True, "value": {"kind": "json", "value": X}}``. We peel
+    *exactly those two known layers* (and only when both are present) to recover
+    the canonical inner value ``X``, then accept three concrete shapes:
+
+    - ``X`` — the bare inner value,
+    - ``{"kind": "json", "value": X}`` — the serialization shell,
+    - the full envelope (``== golden``).
+
+    Comparison is exact equality against this fixed set — we never greedily peel
+    the *submitted* value. That matters when the target function itself returns a
+    wrapper-shaped dict (e.g. ``{"ok": True, "value": 5}`` or
+    ``{"kind": "json", "value": 7}``): ``X`` keeps that shape, so an agent that
+    submits a bare inner value is correctly judged INCORRECT instead of colliding.
+
+    Any other golden shape — error envelopes (``{"ok": False, ...}``) or non-JSON
+    ``{"kind": "repr", ...}`` payloads — requires an exact match against golden.
+    """
+    if isinstance(golden, dict) and golden.get("ok") is True and "value" in golden:
+        shell = golden["value"]
+        if isinstance(shell, dict) and shell.get("kind") == "json" and "value" in shell:
+            inner = shell["value"]
+            return [inner, {"kind": "json", "value": inner}, golden]
+    return [golden]
+
+
+def _answers_equal(submitted: Any, golden: Any) -> bool:
+    """True iff the submitted answer exactly matches one accepted shape of golden."""
+    return any(submitted == form for form in _accepted_answer_forms(golden))
+
+
 class Code2Env:
     """Tool-call runtime for generated Code2Env packages.
 
@@ -187,7 +221,7 @@ class Code2Env:
 
     def evaluate(self) -> dict[str, Any]:
         submitted = self.state.get("submitted_answer")
-        correct = submitted == self.spec.golden_answer
+        correct = _answers_equal(submitted, self.spec.golden_answer)
         breakdown = self._compute_breakdown()
         return {
             "score": breakdown["total"],
@@ -433,7 +467,7 @@ class Code2Env:
         if tool_name == "submit_answer":
             answer = arguments.get("answer")
             self.state["submitted_answer"] = copy.deepcopy(answer)
-            correct = answer == self.spec.golden_answer
+            correct = _answers_equal(answer, self.spec.golden_answer)
             return {
                 "ok": True,
                 "done": True,
