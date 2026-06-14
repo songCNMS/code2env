@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=13 -->
+<!-- METADATA:SESSION=14 -->
 
 ## Session 0 - Created with coordinator
 
@@ -105,3 +105,12 @@
 - qlib 预扫描：pinned qlib clone `../debug/qlib_cache/d7cf7c8de0969b81` 共 2,860 个候选；pure semantic helpers >=3 的候选 8 个；再应用当前 batch 基础过滤（module-level、非 side-effect、非 requires_instance）后剩 6 个。
 - 写出 handoff 文件 `../outputs/session13_min3_semantic_helpers_goal.md`，要求 lead 创建标准 task，添加可配置 batch gate（建议 `--min-semantic-helpers N`，默认 0 保持兼容），新增 skip reason/manifest metadata、focused tests、full pytest，并在 qlib 上用 `N=3` 产出 constrained batch/rollout summary。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task045_min3_semantic_helpers_gate` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status": "delivered"}`。
+
+## Session 14 - task045 completion verified
+
+- 收到 `intern_code2env_lead` 回报：`task045_min3_semantic_helpers_gate` 已完成；PR #31 `【task045_min3_semantic_helpers_gate】【intern_code2env_worker_1】Add min semantic helpers gate` 已 merge 到 `main`，merge commit `dc695ba9b17cb1d4a000eb1f08fb703517a21497`，mergedAt `2026-06-14T15:11:05Z`。
+- 验证实现口径：`code2env batch --min-semantic-helpers N` 已出现在 CLI help；默认 `0` 保持兼容；参数上限为 `MAX_SEMANTIC_HELPER_TOOLS=3`；计数通过 `semantic_helpers_for_candidate` 复用最终 dedicated safe `call_<helper>` ToolSpec 语义，排除 entrypoint/inspect/submit/generic `call_helper` 和 side-effect helper。
+- 在 `../debug/code2env_main_verify` detached `origin/main` 更新到 `dc695ba` 后复验：focused `python3 -m pytest tests/test_batch.py -q` 结果 `19 passed in 3.76s`；full `python3 -m pytest -q` 结果 `162 passed in 17.87s`。
+- 复验 qlib constrained batch：`SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0 python3 -m code2env batch ../debug/qlib_cache/d7cf7c8de0969b81 --target 20 --min-semantic-helpers 3 --no-install-deps --no-smoke --determinism-runs 2`，产物位于 `../outputs/session14_task045_verify/qlib_batch_min3_target20_no_deps/manifest.json`。
+- qlib 复验结果与 lead 回报一致：`candidates_scanned=2860`、`min_semantic_helpers=3`、`semantic_gate_passed=6`、`skipped_insufficient_semantic_helpers=267`、`draft_ok=0`、`build_ok=0`、`real_value=0`、`usable=0`。
+- 结论：PR #31 已正确产品化“至少 3 个 dedicated semantic helpers” gate；在真实 qlib 上该严格门槛会筛出 6 个基础合格候选，但它们全部被现有 fixture synthesis 阻断（DataFrame 参数、untyped `positions`/`all_preds`、`qlib_dir:None` 等），因此本轮无法生成 endpoint rollout JSONL。
