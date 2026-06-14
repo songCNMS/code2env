@@ -36,6 +36,7 @@ The ``manifest.json`` contract is fixed (do not rename fields)::
 from __future__ import annotations
 
 import ast
+import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -47,6 +48,13 @@ from code2env.indexer import index_repo
 from code2env.ingest import ingest_repo
 from code2env.jsonio import write_json
 from code2env.models import FunctionCandidate, RepoSnapshot
+from code2env.rich_fixtures import (
+    dataframe_descriptor,
+    numpy_array_descriptor,
+    rich_fixture_audit,
+    series_descriptor,
+    timestamp_descriptor,
+)
 from code2env.runtime import Code2Env
 from code2env.spec import (
     MAX_SEMANTIC_HELPER_TOOLS,
@@ -194,8 +202,21 @@ def generate_batch(
             semantic_gate_passed += 1
             by_repo[repo_label]["semantic_gate_passed"] += 1
 
+            unsafe_reason = _rich_fixture_unsafe_reason(candidate)
+            if unsafe_reason:
+                skipped.append(
+                    {
+                        "symbol": candidate.symbol,
+                        "repo": repo_label,
+                        "reason": unsafe_reason,
+                        "semantic_helper_count": semantic_helper_count,
+                        "semantic_helpers": semantic_helpers,
+                    }
+                )
+                continue
+
             func_node = _function_node(snapshot, candidate, tree_cache)
-            fixture = synthesize_fixture(func_node)
+            fixture = synthesize_fixture(func_node, candidate=candidate)
             if not fixture["ok"]:
                 skipped.append(
                     {
@@ -292,6 +313,7 @@ def _generate_one(
     semantic_helpers: list[str] | None = None,
 ) -> dict[str, Any]:
     semantic_helpers = list(semantic_helpers or [])
+    fixture_rich_params = rich_fixture_audit(fixture["value"])
     record: dict[str, Any] = {
         "env_id": None,
         "repo": repo_label,
@@ -300,6 +322,7 @@ def _generate_one(
         "line_start": candidate.lineno,
         "line_end": candidate.end_lineno,
         "fixture": fixture,
+        "fixture_rich_params": fixture_rich_params,
         "draft_ok": False,
         "build_ok": False,
         "smoke_ok": False,
@@ -329,6 +352,8 @@ def _generate_one(
         record["draft_ok"] = True
         record["golden_status"] = spec.provenance.get("golden_status")
         record["determinism"] = spec.provenance.get("determinism")
+        spec.provenance["fixture_strategy"] = fixture.get("strategy")
+        spec.provenance["fixture_rich_params"] = fixture_rich_params
     except Exception as exc:  # noqa: BLE001 - a failed draft is a recorded outcome, not a crash.
         record["smoke_fail_reason"] = f"draft_error:{type(exc).__name__}:{exc}"
         return record
@@ -384,7 +409,29 @@ def _disqualify(candidate: FunctionCandidate, *, include_side_effects: bool) -> 
     return None
 
 
-def synthesize_fixture(func_node: ast.FunctionDef | ast.AsyncFunctionDef | None) -> dict[str, Any]:
+def _rich_fixture_unsafe_reason(candidate: FunctionCandidate) -> str | None:
+    unsafe_calls = {
+        "login",
+        "logout",
+        "query_trade_dates",
+        "write_calendar_to_qlib",
+        "savetxt",
+        "requests.get",
+        "post",
+    }
+    if any(call in unsafe_calls for call in candidate.calls):
+        return "unsafe_rich_fixture_candidate:network_or_filesystem"
+    if "write" in candidate.qualname.lower() or "collector" in candidate.qualname.lower():
+        if any(call.startswith("write") or call in {"login", "query_trade_dates"} for call in candidate.calls):
+            return "unsafe_rich_fixture_candidate:network_or_filesystem"
+    return None
+
+
+def synthesize_fixture(
+    func_node: ast.FunctionDef | ast.AsyncFunctionDef | None,
+    *,
+    candidate: FunctionCandidate | None = None,
+) -> dict[str, Any]:
     """Synthesise a JSON fixture for ``func_node`` from its signature.
 
     Returns ``{"ok", "strategy", "value": {"args", "kwargs"}, "reason"}``. Functions
@@ -396,6 +443,10 @@ def synthesize_fixture(func_node: ast.FunctionDef | ast.AsyncFunctionDef | None)
 
     if func_node is None:
         return _fixture_skip("function_node_not_found")
+
+    rich_policy = _rich_fixture_policy(func_node, candidate)
+    if rich_policy is not None:
+        return rich_policy
 
     args = func_node.args
     positional = list(args.posonlyargs) + list(args.args)
@@ -472,7 +523,90 @@ def _annotation_value(annotation: ast.expr | None) -> tuple[bool, Any]:
         return True, {}
     if name in _SCALAR_VALUES:
         return True, _SCALAR_VALUES[name]
+    if name == "DataFrame":
+        return True, dataframe_descriptor(
+            [{"value": 1.0}],
+            columns=["value"],
+        )
+    if name == "Series":
+        return True, series_descriptor([1.0], name="value")
+    if name in {"ndarray", "array"}:
+        return True, numpy_array_descriptor([1.0], dtype="float64")
+    if name == "Timestamp":
+        return True, timestamp_descriptor("2020-01-02T00:00:00")
     return False, None
+
+
+def _rich_fixture_policy(
+    func_node: ast.FunctionDef | ast.AsyncFunctionDef,
+    candidate: FunctionCandidate | None,
+) -> dict[str, Any] | None:
+    symbol = candidate.symbol if candidate is not None else ""
+    if symbol == "scripts.data_collector.utils:calc_adjusted_price":
+        return _qlib_calc_adjusted_price_fixture()
+    if symbol in {
+        "qlib.contrib.model.pytorch_tra:transport_daily",
+        "qlib.contrib.model.pytorch_tra:transport_sample",
+    }:
+        if importlib.util.find_spec("torch") is None:
+            return _fixture_skip("missing_optional_dependency:torch")
+    return None
+
+
+def _qlib_calc_adjusted_price_fixture() -> dict[str, Any]:
+    symbol = "SH000001"
+    price_rows = [
+        {
+            "datetime": "2020-01-02 09:30:00",
+            "instrument": symbol,
+            "open": 10.0,
+            "high": 11.0,
+            "low": 9.0,
+            "close": 10.0,
+            "volume": 100.0,
+        },
+        {
+            "datetime": "2020-01-02 09:31:00",
+            "instrument": symbol,
+            "open": 10.5,
+            "high": 11.5,
+            "low": 10.0,
+            "close": 11.0,
+            "volume": 120.0,
+        },
+    ]
+    daily_rows = [
+        {
+            "datetime": "2020-01-02",
+            "instrument": symbol,
+            "$close": 10.0,
+            "$volume": 1000.0,
+        }
+    ]
+    return {
+        "ok": True,
+        "strategy": "rich_signature:qlib_calc_adjusted_price",
+        "value": {
+            "args": [
+                dataframe_descriptor(
+                    price_rows,
+                    columns=["datetime", "instrument", "open", "high", "low", "close", "volume"],
+                    parse_dates=["datetime"],
+                ),
+                dataframe_descriptor(
+                    daily_rows,
+                    columns=["datetime", "instrument", "$close", "$volume"],
+                    index_columns=["datetime", "instrument"],
+                    parse_dates=["datetime"],
+                ),
+                "datetime",
+                "instrument",
+                "1min",
+            ],
+            "kwargs": {"consistent_1d": False, "calc_paused": True},
+        },
+        "reason": None,
+    }
 
 
 def _annotation_name(annotation: ast.expr) -> str | None:

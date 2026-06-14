@@ -37,6 +37,7 @@ def materialize_env_spec(
             disable_network=True,
             disable_subprocess=True,
             python_executable=python,
+            extra_env=spec.runtime.get("environment") or None,
         )
         golden_status = golden_status_for(spec.golden_answer)
         spec.provenance["golden_status"] = golden_status

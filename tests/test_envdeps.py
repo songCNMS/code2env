@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from code2env.batch import generate_batch
 from code2env.builder import build_env_package
@@ -160,6 +161,33 @@ class CreateVenvUvFallbackTest(unittest.TestCase):
             self.assertEqual(len(calls), 2)
             self.assertIn("--seed", calls[1])
             self.assertEqual(calls[1][0], "/usr/bin/uv")
+
+    def test_uv_fallback_removes_partial_stdlib_venv(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            venv_dir = Path(temp_dir) / "v"
+            marker = venv_dir / "partial-marker"
+            calls: list[list[str]] = []
+
+            def runner(cmd, **kwargs):
+                calls.append(list(cmd))
+                is_uv = "--seed" in cmd
+                if not is_uv:
+                    (venv_dir / "bin").mkdir(parents=True)
+                    (venv_dir / "bin" / "python").write_text("", encoding="utf-8")
+                    marker.write_text("partial", encoding="utf-8")
+                    raise subprocess.CalledProcessError(1, cmd, stderr="boom")
+                self.assertFalse(marker.exists())
+                return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+            python = _create_venv(
+                venv_dir,
+                sys.executable,
+                runner=runner,
+                which=lambda name: "/usr/bin/uv" if name == "uv" else None,
+            )
+
+            self.assertTrue(python.endswith("/bin/python"))
+            self.assertEqual(len(calls), 2)
 
     def test_venv_failed_when_stdlib_fails_and_uv_absent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -322,6 +350,48 @@ class GoldenStatusPipelineTest(unittest.TestCase):
             env = Code2Env(package_root / "env_spec.json")
             self.assertIsNone(env._python_executable)
             self.assertTrue(env.scripted_smoke()["ok"])
+
+    def test_runtime_replays_allowlisted_environment_from_spec(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "repo"
+            repo.mkdir()
+            (repo / "m.py").write_text(
+                "import os\n\n"
+                "def versioned_value(x: int):\n"
+                "    return os.environ['SETUPTOOLS_SCM_PRETEND_VERSION'] + ':' + str(x)\n",
+                encoding="utf-8",
+            )
+            with patch.dict(
+                "os.environ",
+                {"SETUPTOOLS_SCM_PRETEND_VERSION": "1.0.0"},
+                clear=False,
+            ):
+                spec = draft_env_spec(
+                    ingest_repo(str(repo)),
+                    symbol="m:versioned_value",
+                    fixture={"args": [7]},
+                )
+            self.assertEqual(
+                spec.runtime["environment"], {"SETUPTOOLS_SCM_PRETEND_VERSION": "1.0.0"}
+            )
+            spec_path = Path(temp_dir) / "spec.json"
+            write_json(spec_path, spec.to_dict())
+            package_root = build_env_package(spec_path, Path(temp_dir) / "gen")
+
+            with patch.dict("os.environ", {}, clear=True):
+                env = Code2Env(package_root / "env_spec.json")
+                env.reset()
+                env.step(
+                    {
+                        "type": "tool_call",
+                        "tool": "call_entrypoint",
+                        "arguments": {},
+                    }
+                )
+                result = env.state["last_tool_result"]
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["value"]["value"], "1.0.0:7")
 
 
 class BatchGoldenStatusTest(unittest.TestCase):

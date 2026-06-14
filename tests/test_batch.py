@@ -108,6 +108,13 @@ class FixtureSynthesisTest(unittest.TestCase):
         self.assertFalse(fixture["ok"])
         self.assertEqual(fixture["reason"], "unsupported_param_type:a:bytes")
 
+    def test_path_param_is_not_generic_synthesisable(self) -> None:
+        fixture = synthesize_fixture(
+            _func("def f(p: Path):\n    return p\n")
+        )
+        self.assertFalse(fixture["ok"])
+        self.assertEqual(fixture["reason"], "unsupported_param_type:p:Path")
+
     def test_missing_function_node(self) -> None:
         fixture = synthesize_fixture(None)
         self.assertFalse(fixture["ok"])
@@ -205,6 +212,7 @@ class BatchPipelineTest(unittest.TestCase):
                 "line_start",
                 "line_end",
                 "fixture",
+                "fixture_rich_params",
                 "draft_ok",
                 "build_ok",
                 "smoke_ok",
@@ -228,6 +236,7 @@ class BatchPipelineTest(unittest.TestCase):
                 self.assertEqual(env["determinism"], "deterministic")
                 self.assertIsInstance(env["semantic_helper_count"], int)
                 self.assertIsInstance(env["semantic_helpers"], list)
+                self.assertIsInstance(env["fixture_rich_params"], list)
                 self.assertEqual(env["deps_status"], "no_deps")
                 self.assertTrue(Path(env["spec_path"]).exists())
                 self.assertTrue((Path(env["package_path"]) / "env_spec.json").exists())
@@ -254,6 +263,36 @@ class BatchPipelineTest(unittest.TestCase):
                 _disqualify(writes, include_side_effects=False), "possible_side_effect"
             )
             self.assertIsNone(_disqualify(writes, include_side_effects=True))
+
+    def test_path_writer_candidate_skipped_without_creating_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "lib"
+            repo.mkdir()
+            (repo / "m.py").write_text(
+                """
+from pathlib import Path
+
+
+def persist(p: Path):
+    target = p / "code2env_created.txt"
+    target.write_text("created")
+    return target.exists()
+""".lstrip(),
+                encoding="utf-8",
+            )
+
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                target_count=10,
+                generated_at="2026-06-14T00:00:00Z",
+            )
+
+            self.assertEqual(manifest["summary"]["build_ok"], 0)
+            self.assertEqual(manifest["summary"]["smoke_ok"], 0)
+            self.assertFalse((repo / "code2env_created.txt").exists())
+            skipped = next(entry for entry in manifest["skipped"] if entry["symbol"] == "m:persist")
+            self.assertEqual(skipped["reason"], "unsupported_param_type:p:Path")
 
 
 class SemanticHelperGateTest(unittest.TestCase):
