@@ -1,6 +1,6 @@
 # task033_report_true_correct_rate - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -17,3 +17,10 @@
 - cli.py 加 --baseline-manifest 透传。新增 5 例单测(true 率/weak 剔除/unknown 降级/前后对比/无 baseline 降级)。`pytest tests/`=91 passed、`unittest`=91 OK；CLI 端到端(含 baseline)验证 flask smoke 0→2、error→real_value=2 正确。
 - 更新 README + docs/mvp_usage.md。设计备注：'前后对比'需两份 manifest，故用可选 --baseline-manifest（契约只给当前 golden_status，无 before 字段）；缺失安全降级。已在 PR 报告中说明供 lead review。
 - 下步：mailbox 回报 lead PR#20 + 自测，等 tester(w3)+lead review。
+
+## Session 2 - 2026-06-13 - lead 确认方案 + 核对 golden_status 契约一致性
+
+- lead 回复：--baseline-manifest 方案保留(pre-install 作 before，w5 重跑传新旧两份)；已派 w3 验证 + lead review；要求核对 golden_status 取值集合与 w1 task030 一致。
+- 核对结果：w1 task030 契约 `manifest.envs[].golden_status ∈ {real_value, weak_oracle:<reason>}`（weak 例 golden_exception:ModuleNotFoundError / uninstallable_deps），与本 PR `_golden_kind` 消费**完全一致**：==real_value→real；startswith("weak_oracle")→weak(覆盖带后缀)；其余/缺失→unknown(留分母安全网)。task030 producer 代码尚未落 code2env/（branch 仅 README+继承的 report.py），但共享契约一致。
+- 结论：无取值不符，无需 mailbox 协调（lead 仅要求不符时同步）。继续 hold 等 w3/lead review 与合并授权。
+- 本 turn 无代码改动，仅核对+记录。

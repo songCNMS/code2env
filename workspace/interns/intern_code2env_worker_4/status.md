@@ -12,8 +12,8 @@
 | PR | https://github.com/songCNMS/code2env/pull/20 |
 | Session | 1 |
 
-## 最近进展（Session 1）
+## 最近进展（Session 2）
 
-- 接受 task033，建分支 + PR#20；更新 report.py：消费 golden_status 算真实 correct 率(剔除 weak_oracle)、新增装依赖前后对比(--baseline-manifest)、保留原指标；+5 单测 +文档。
-- `pytest tests/`=91 passed、CLI 端到端(含 baseline)验证通过。
-- 待 mailbox 回报 lead + tester(w3)/lead review。
+- PR#20 已回报 lead；lead 确认 --baseline-manifest 方案保留，派 w3 验证 + lead review。
+- 核对 golden_status 取值与 w1 task030 契约 {real_value, weak_oracle:<reason>} **完全一致**，无需协调。
+- 继续 hold 等 w3/lead review 与合并授权；merge 时先翻 Completed/Idle 再 self-merge（见 memory）。
