@@ -68,9 +68,11 @@ candidates taken in descending static score). It writes one `manifest.json` unde
 dependencies installed, so golden answers and rollout `call_entrypoint` run with real
 imports. The interpreter is recorded on `spec.runtime.python_executable` and reused by
 the runtime (falling back to the default interpreter if the path is gone). Uninstallable
-packages are skipped with a reason; `--no-install-deps` skips the whole step. Real venv
-creation needs `python3-venv`/`ensurepip` on the host — otherwise `deps_status` is
-`venv_failed` and the base interpreter is used.
+packages are skipped with a reason; `--no-install-deps` skips the whole step. Venv
+creation prefers the stdlib `python -m venv`; when that fails because
+`python3-venv`/`ensurepip` is missing it falls back to `uv venv --seed` if the `uv`
+binary is available (task035). Only when neither backend works is `deps_status` set to
+`venv_failed` and the base interpreter used.
 
 **Golden status (task030).** Each env is classified `real_value` (usable, counted toward
 correctness) or `weak_oracle:<reason>` (golden still an exception, e.g.

@@ -1,6 +1,6 @@
 # task035_envdeps_uv_venv_fallback - fix-forward: envdeps venv 创建加 uv 兜底
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 
