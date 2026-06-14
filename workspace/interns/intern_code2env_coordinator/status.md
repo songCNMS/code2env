@@ -10,9 +10,10 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | N/A |
-| Session | 5 |
+| Session | 6 |
 
 ## 最近进展
+- Session 6：用户令执行下一步。已下发 pressing goal(code2env-fix-oracle-rerun-session6) 给 lead：①装齐运行依赖(werkzeug等)重算 golden 清除 flask error-match 假阳性、weak_oracle 剔除；②修 rollout prompt 让 agent 用环境 provided fixture(根因B);③对可用子集 gpt-5.5 重跑存 outputs/rollouts_v2/；④报告给真实 correct 率。等 lead 回报。
 - Session 5：按用户要求打印 rollout 例子并深查。发现 3 个 correct 全是 flask werkzeug 缺失的 error-match 假阳性(golden 本身=报错)，真实任务正确率≈0；干净例子(requests.create_cookie)展示理想多轮探查→执行→提交+五维reward。诚实结论：管线/多轮数据合格(99%)成立，但任务正确性信号弱，需装依赖+差分oracle。已问用户是否让 lead 修正重跑。
 - Session 4：核验规模化生成+rollout 执行已完成。D1-D4 全 PR 合并 main(HEAD 209c50e)，实跑 100 env / 100 rollout(gpt-5.5,fallback 0) / 99% 合格多轮 / correct 3、mean 0.345；100 份 conversation JSON 在 outputs/rollouts/，报告 outputs/report/。已向用户汇报并提示正确率偏低与 flask smoke=0 两点，待用户决定是否做归因优化。lead status 文件未刷新(实际已 Idle)。
 - Session 3：承接用户"规模化生成100环境+gpt-5.5多轮rollout验证"需求。核实 gpt-5.5 endpoint(simpleCodeQA/endpoints.txt, base https://xyzlapi.boyuerichdata.com/v1/) 可用、runtime 缺 LLM rollout driver。用户拍板范围(5-6库扩面/生成即计、gpt-5.5主+本地兜底/≥2轮tool_call+submit 判合格)。已下发 pressing goal(code2env-corpus100-rollout-session3) 给 lead。等待回报。

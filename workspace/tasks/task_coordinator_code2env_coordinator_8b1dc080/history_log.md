@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Session 0 - Created with coordinator
 
@@ -46,3 +46,12 @@
   - 例②flask.sessions._lazy_sha1(correct,score0.927,4轮)：golden 本身=ModuleNotFoundError(werkzeug 未装)，agent 提交同样报错→exact_match=True。
 - 关键发现：3 个 correct 全是 flask 这种 error-match 假阳性(score 均0.927/4轮)，真实"做对任务"比例≈0；与 report flask build_ok24/smoke_ok0 一致。
 - 诚实结论给用户：管线可用+多轮交互数据合格(99%)成立；但任务正确性信号弱，需①装齐依赖(werkzeug 等)让 golden 非报错 ②差分 oracle+更明确 fixture/任务。已询问是否让 lead 做"装依赖+重跑 flask/弱oracle子集"修正。
+
+## Session 6 - 下发清假阳性+重跑拿真实正确率
+
+- 用户令"执行下一步"。已下发 pressing goal code2env-fix-oracle-rerun-session6 给 intern_code2env_lead，写入两个已定位根因：
+  - 根因A：env 未装运行依赖(werkzeug 等)→flask golden=ModuleNotFoundError→error-match 假阳性。修：装齐依赖重算 golden；仍异常的标 weak_oracle 剔除出分母。
+  - 根因B：agent 自造 fixture(args=['x','x'])与 golden 不一致。修：rollout prompt 明确'call_entrypoint 留空用环境 provided fixture'(runtime 已支持缺省回退)。
+- 交付：重算 golden + 修 prompt + 对可用子集 gpt-5.5 重跑(存 outputs/rollouts_v2/，不覆盖旧)+ 报告给【剔除假阳性后真实 correct 率】与前后对比。走 PR+单测。
+- 范围控制：只做依赖修复+prompt+重跑+报告，差分oracle/QualityGate 仍 backlog。
+- 下步：监工 lead 拆解与 PR；收回报后核验真实正确率并向用户汇报。
