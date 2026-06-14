@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=10 -->
+<!-- METADATA:SESSION=11 -->
 
 ## Session 0 - Created with coordinator
 
@@ -78,3 +78,14 @@
 - 结果：10/10 `qualified=true`，10/10 `correct=true`，10/10 `helper_trace_complete=true`，10/10 `entrypoint_after_helpers=true`，全部使用 primary `gpt-5.5`；2 个 env 记录 skipped side-effect helper（`market_suffix`、`turnover_ratio`），符合 task044 设计。
 - 产物：merged JSONL `../outputs/session10_official_trace_rollouts/official_trace_endpoint_rollouts.jsonl`（10 lines, 113,805 bytes），summary `../outputs/session10_official_trace_rollouts/official_trace_summary.json`，per-env records `../outputs/session10_official_trace_rollouts/rollouts/`，exported records `../outputs/session10_official_trace_rollouts/exported/`。
 - 验证：解析 JSONL 成功，rollout-export 成功导出 10 条记录；已通过本机飞书 daemon 发送 merged JSONL 到 `intern_code2env_coordinator` 飞书会话，file_key `file_v3_0012l_cc3cee78-1b75-4e4b-b777-6765493afa9g`，文件消息 ID `om_x100b6ddf683008a8b321a54cc264066`，确认文本消息 ID `om_x100b6ddf69c60ca0b34052a193aae9d`。
+
+## Session 11 - Real qlib trace-mode coverage evaluation
+
+- 按用户“执行下一步”要求，把正式 `--trace-mode subfunctions` 从 Session 7 synthetic/standalone env 扩展到真实 `microsoft/qlib` 原仓库候选；使用 qlib clone `../debug/qlib_cache/d7cf7c8de0969b81`（commit `d5379c520f66a39953bad76234a7019a72796fd0`）和 `../debug/qlib_min_deps`，通过 `SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0` 避免 qlib 版本推导失败。
+- Fresh batch 命令：`python3 -m code2env batch ... --target 60 --no-install-deps --no-smoke --determinism-runs 2`；结果 `build_ok=60`、`real_value=8`、`usable=6`、`weak_oracle=52`、`nondeterministic=2`、`candidates_scanned=2860`、`skipped_no_fixture=560`。
+- 覆盖率分析：60 个 built env 中 13 个包含 semantic helper tools，但只有 1 个同时满足 usable + semantic tools：`code2env.qlib.utils.fill_placeholder.3a1a6aa1.v1`（symbol `qlib.utils:fill_placeholder`，semantic helper `call_get_item_from_obj`，golden `real_value`，deterministic）。
+- 官方 trace-mode 评估：对 13 个 semantic env 执行 mock trace rollout，13/13 `qualified=true`、13/13 `helper_trace_complete=true`、13/13 `entrypoint_after_helpers=true`，`rollout-export` 成功导出 13 条；其中 1 个 side-effect helper `parse_backtest_config` 被记录为 `skipped_helpers`，符合 task044 设计。
+- Endpoint 评估：对唯一 usable+semantic env `qlib.utils:fill_placeholder` 执行正式 endpoint trace rollout，primary `gpt-5.5` 成功，1/1 `qualified=true`、1/1 `correct=true`、1/1 `helper_trace_complete=true`、1/1 `entrypoint_after_helpers=true`，observed tools 包含 `call_get_item_from_obj -> call_entrypoint -> submit_answer`，`rollout-export` 成功导出 1 条。
+- 产物位于 `../outputs/session11_qlib_trace_eval/`：summary `qlib_trace_eval_summary.json`（17,530 bytes）、endpoint JSONL `qlib_usable_semantic_endpoint_trace_rollouts.jsonl`（16,609 bytes）、mock JSONL `qlib_semantic_mock_trace_rollouts.jsonl`（250,540 bytes）、exported endpoint/mock 目录。
+- 已通过本机飞书 daemon 发送 3 个文件到 `intern_code2env_coordinator` 飞书会话：summary 文件消息 ID `om_x100b6ddfc90b54a4b04e4733a08e8df`，endpoint JSONL 文件消息 ID `om_x100b6ddfc92e44a4b2a02fe811108af`，mock JSONL 文件消息 ID `om_x100b6ddfc6c93cacb3b6b01f5e0b288`，确认文本消息 ID `om_x100b6ddfc6c2eca8b1c23ca45314bfa`。
+- 结论：正式 trace-mode 在真实 qlib 的 usable+semantic env 上可闭环；当前真实 qlib 覆盖瓶颈不是 trace-mode 本身，而是 EnvSpec fixture/golden/dependency viability 和 semantic helper 暴露率，后续应优先推进 test-backed fixture extraction、最小依赖/import slicing、typed fixture 支持和 instance-method env support。
