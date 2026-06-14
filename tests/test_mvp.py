@@ -166,6 +166,126 @@ def tries_network():
             self.assertEqual(result["error_type"], "RuntimeError")
             self.assertIn("network access is disabled", result["error_message"])
 
+    def test_semantic_tools_extracted_with_state_inspector_and_schemas(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._create_sample_repo(Path(temp_dir) / "repo")
+            snapshot = ingest_repo(str(repo))
+            spec = draft_env_spec(
+                snapshot,
+                symbol="sample:normalize_name",
+                fixture={"args": ["  ada  lovelace "], "kwargs": {"shout": True}},
+                compute_golden=False,
+            )
+            names = [tool.name for tool in spec.tools]
+
+            # Tool count stays inside the PRD 7.5 [3, 8] window.
+            self.assertGreaterEqual(len(spec.tools), 3)
+            self.assertLessEqual(len(spec.tools), 8)
+
+            # Backward-compatible closed loop is preserved.
+            self.assertIn("inspect_task", names)
+            self.assertIn("call_entrypoint", names)
+            self.assertIn("submit_answer", names)
+
+            # At least one read-only state/inspection tool exists.
+            state_inspectors = [
+                tool for tool in spec.tools if tool.provenance.get("kind") == "state_inspector"
+            ]
+            self.assertTrue(state_inspectors)
+            self.assertIn("inspect_state", names)
+            self.assertTrue(all(tool.side_effects == "none" for tool in state_inspectors))
+
+            # Direct callees are surfaced as dedicated semantic tools.
+            self.assertIn("call_clean_text", names)
+            helper_tool = next(tool for tool in spec.tools if tool.name == "call_clean_text")
+            self.assertEqual(
+                helper_tool.provenance["backing"]["symbol"], "sample:clean_text"
+            )
+            # The helper tool is provenance-linked to the main-function step that calls it.
+            self.assertTrue(helper_tool.provenance["entrypoint_steps"])
+
+            # Every tool carries complete schema + provenance + side_effects metadata.
+            for tool in spec.tools:
+                self.assertIsInstance(tool.input_schema, dict)
+                self.assertEqual(tool.input_schema.get("type"), "object")
+                self.assertIsInstance(tool.output_schema, dict)
+                self.assertIsInstance(tool.side_effects, str)
+                self.assertTrue(tool.side_effects)
+                self.assertIsInstance(tool.provenance, dict)
+                self.assertIn("kind", tool.provenance)
+
+            # The entrypoint tool records the decomposed main-function steps.
+            entrypoint = next(tool for tool in spec.tools if tool.name == "call_entrypoint")
+            self.assertTrue(entrypoint.provenance["steps"])
+
+    def test_side_effecting_helpers_not_exposed_as_named_tools(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "repo"
+            repo.mkdir()
+            (repo / "pipeline.py").write_text(
+                """
+def prepare(value):
+    return value.strip()
+
+
+def persist(value):
+    open("/tmp/code2env_sink", "w")
+    return value
+
+
+def run(value):
+    \"\"\"Prepare then persist a value.\"\"\"
+    cleaned = prepare(value)
+    saved = persist(cleaned)
+    return saved
+""".lstrip(),
+                encoding="utf-8",
+            )
+            snapshot = ingest_repo(str(repo))
+            spec = draft_env_spec(snapshot, symbol="pipeline:run", compute_golden=False)
+            names = [tool.name for tool in spec.tools]
+
+            self.assertLessEqual(len(spec.tools), 8)
+            self.assertIn("call_prepare", names)
+            # Side-effecting helper is excluded from direct semantic tools...
+            self.assertNotIn("call_persist", names)
+            # ...but recorded for sandbox-adapter follow-up with a side_effects annotation.
+            entrypoint = next(tool for tool in spec.tools if tool.name == "call_entrypoint")
+            self.assertIn("persist", entrypoint.provenance["sandboxed_side_effect_helpers"])
+
+    def test_runtime_dispatches_semantic_helper_tool(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._create_sample_repo(Path(temp_dir) / "repo")
+            snapshot = ingest_repo(str(repo))
+            spec = draft_env_spec(
+                snapshot,
+                symbol="sample:normalize_name",
+                fixture={"args": ["  ada  lovelace "], "kwargs": {"shout": True}},
+            )
+            spec_path = Path(temp_dir) / "env_spec.json"
+            write_json(spec_path, spec.to_dict())
+            package_root = build_env_package(spec_path, Path(temp_dir) / "generated")
+
+            env = Code2Env(package_root / "env_spec.json")
+            env.reset()
+            env.step(
+                {
+                    "type": "tool_call",
+                    "tool": "call_clean_text",
+                    "arguments": {"args": ["  ada  lovelace "], "kwargs": {}},
+                }
+            )
+            self.assertEqual(
+                env.state["last_tool_result"],
+                {"ok": True, "value": {"kind": "json", "value": "ada lovelace"}},
+            )
+            env.step({"type": "tool_call", "tool": "inspect_state", "arguments": {}})
+            inspected = env.state["last_tool_result"]
+            self.assertTrue(inspected["ok"])
+            self.assertIn("inspect_state", inspected["available_tools"])
+            # Closed-loop smoke still works with the expanded tool surface.
+            self.assertTrue(env.scripted_smoke()["ok"])
+
     def _run_cli(self, args: list[str]) -> subprocess.CompletedProcess[str]:
         result = subprocess.run(
             [sys.executable, "-m", "code2env", *args],

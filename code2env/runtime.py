@@ -39,8 +39,11 @@ _SAFETY_ERROR_SIGNATURES: tuple[str, ...] = (
 _SAFETY_ERROR_TYPES: frozenset[str] = frozenset({"TimeoutExpired"})
 
 # Tools that gather information / execute the pinned source. Reaching them is
-# what process_progress measures.
-_EXPLORE_TOOLS: frozenset[str] = frozenset({"inspect_task", "call_entrypoint", "call_helper"})
+# what process_progress measures. Named semantic helper tools (call_<helper>,
+# resolved per-spec into self.semantic_tools) also count as executing source.
+_EXPLORE_TOOLS: frozenset[str] = frozenset(
+    {"inspect_task", "inspect_state", "call_entrypoint", "call_helper"}
+)
 _EXECUTE_TOOLS: frozenset[str] = frozenset({"call_entrypoint", "call_helper"})
 
 
@@ -73,6 +76,15 @@ class Code2Env:
         self.allowed_tools = {tool.name for tool in self.spec.tools}
         self.allowed_helpers = set(self.spec.provenance.get("helper_candidates", []))
         self.weights = self._resolve_weights()
+        # Named semantic helper tools (call_<helper>) map to their backing symbol via
+        # the ToolSpec provenance written by the extractor.
+        self.semantic_tools = {
+            tool.name: tool.provenance["backing"]["symbol"]
+            for tool in self.spec.tools
+            if tool.provenance.get("kind") == "wrapper"
+            and tool.provenance.get("backing", {}).get("kind") == "function"
+            and isinstance(tool.provenance.get("backing", {}).get("symbol"), str)
+        }
         self.trajectory: list[dict[str, Any]] = []
         self.state: dict[str, Any] = {}
         self.done = False
@@ -254,9 +266,10 @@ class Code2Env:
                 rs["call_signatures"].add(signature)
 
         if schema_valid and result.get("ok"):
-            if tool_name in _EXPLORE_TOOLS:
+            is_semantic_helper = tool_name in self.semantic_tools
+            if tool_name in _EXPLORE_TOOLS or is_semantic_helper:
                 rs["explored"] = True
-            if tool_name in _EXECUTE_TOOLS:
+            if tool_name in _EXECUTE_TOOLS or is_semantic_helper:
                 rs["executed_source"] = True
 
     @staticmethod
@@ -387,12 +400,26 @@ class Code2Env:
                 "helpers": sorted(self.allowed_helpers),
                 "golden_answer_available": self.spec.golden_answer is not None,
             }
+        if tool_name == "inspect_state":
+            return {
+                "ok": True,
+                "state": copy.deepcopy(self.state),
+                "available_tools": sorted(self.allowed_tools),
+                "helpers": sorted(self.allowed_helpers),
+                "budget": {"remaining_steps": max(0, self.max_steps - int(self.state.get("step", 0)))},
+            }
         if tool_name == "call_entrypoint":
             payload = {
                 "args": arguments.get("args", self.spec.fixture.get("args", [])),
                 "kwargs": arguments.get("kwargs", self.spec.fixture.get("kwargs", {})),
             }
             return self._call_source(self.spec.source["entrypoint"], payload["args"], payload["kwargs"])
+        if tool_name in self.semantic_tools:
+            return self._call_source(
+                self.semantic_tools[tool_name],
+                list(arguments.get("args", [])),
+                dict(arguments.get("kwargs", {})),
+            )
         if tool_name == "call_helper":
             helper = arguments.get("helper")
             if helper not in self.allowed_helpers:
