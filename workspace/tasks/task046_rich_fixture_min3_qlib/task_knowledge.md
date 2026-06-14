@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Knowledge Entries
 
@@ -10,3 +10,4 @@
 4. Session 15 success requires at least one safe qlib min-3 env with `build_ok=1`, `golden_status=real_value`, `determinism=deterministic`, `usable=1`, plus subfunction trace rollout/export evidence when feasible.
 5. Worker_4 validation scope is code/tests only until PR arrives: confirm rich descriptor hydration, canonical serialization, default behavior preservation, unsafe candidate skipping, focused tests, and full pytest; worker_2 owns pinned qlib batch plus rollout/export validation evidence.
 6. PR#32 head `7635f5289bd577bbb7d297ae129e3164730b3beb` is metadata-only, so task046 acceptance cannot be validated until worker_1 pushes implementation and focused tests.
+7. Session 5 stop-hook correction aligned task046 history/task knowledge metadata with the active worker session; validation result remains unchanged.

@@ -19,6 +19,7 @@
 - Validation scope when worker_1 opens PR: focused rich fixture/hydration/serialization tests, default compatibility, unsafe side-effect skip behavior, synthetic qlib-style min-3 helper rollout evidence, and full `python3 -m pytest -q`.
 - PR#32 opened at head `7635f5289bd577bbb7d297ae129e3164730b3beb`; validation result BLOCKED/FAIL because the diff contains only workspace metadata and no rich fixture implementation or focused tests.
 - Baseline commands on PR#32 head: `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` => 43 passed; `python3 -m pytest -q` => 162 passed.
+- Stop-hook correction added explicit task046 Session 5 history/task knowledge records; validation result remains unchanged.
 - Lead approved task043 / PR#29 merge after code review and w2 PASS validation; preparing self-merge.
 - task043_indexer_side_effect_get_filter completion metadata updated to Completed/Idle before squash merge.
 - task043_indexer_side_effect_get_filter / PR#29 已有实现提交 `a092a9e` 并推送：AST-aware side-effect target detection + focused tests。

@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -19,3 +19,9 @@
 - PR#32 opened from `intern_code2env_worker_1/task046_rich_fixture_min3_qlib`; fetched and validated head `7635f5289bd577bbb7d297ae129e3164730b3beb`.
 - Validation result BLOCKED/FAIL: `git diff origin/main...HEAD` contains only workspace metadata files and no product code or focused tests for rich fixture descriptors, hydration, canonical serialization, qlib-style min-3 helper env generation, or unsafe side-effect skip behavior.
 - Baseline commands on PR#32 head: `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` => 43 passed; `python3 -m pytest -q` => 162 passed.
+
+## Session 5 - 2026-06-14 UTC - Stop-hook session alignment
+
+- Stop-hook audit required task046 history to contain an explicit Session 5 record in the worker_4 validator branch.
+- Current task046 validator state remains BLOCKED/FAIL for PR#32 head `7635f5289bd577bbb7d297ae129e3164730b3beb` because the PR diff is metadata-only and lacks rich fixture implementation/tests.
+- Mailbox report `task046-pr32-validation-blocked-c625fa0` was already stored for lead with exact commands, results, environment, and uncovered risk.
