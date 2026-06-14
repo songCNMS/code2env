@@ -130,7 +130,8 @@ class BatchPipelineTest(unittest.TestCase):
 
             # Manifest top-level contract.
             self.assertEqual(
-                set(manifest.keys()), {"generated_at", "repos", "summary", "envs", "skipped"}
+                set(manifest.keys()),
+                {"generated_at", "repos", "summary", "repo_deps", "envs", "skipped"},
             )
             self.assertEqual(manifest["repos"], [str(repo)])
             self.assertTrue((output_dir / "manifest.json").exists())
@@ -144,6 +145,8 @@ class BatchPipelineTest(unittest.TestCase):
                     "build_ok",
                     "smoke_ok",
                     "skipped_no_fixture",
+                    "real_value",
+                    "weak_oracle",
                     "by_repo",
                 },
             )
@@ -152,7 +155,15 @@ class BatchPipelineTest(unittest.TestCase):
             self.assertEqual(summary["draft_ok"], 3)
             self.assertEqual(summary["smoke_ok"], 3)
             self.assertEqual(summary["skipped_no_fixture"], 3)
-            self.assertEqual(summary["by_repo"][str(repo)], {"build_ok": 3, "smoke_ok": 3})
+            # No third-party deps in the synthetic repo → all golden answers are real.
+            self.assertEqual(summary["real_value"], 3)
+            self.assertEqual(summary["weak_oracle"], 0)
+            self.assertEqual(
+                summary["by_repo"][str(repo)],
+                {"build_ok": 3, "smoke_ok": 3, "real_value": 3, "weak_oracle": 0, "deps_status": "no_deps"},
+            )
+            # repo_deps records per-repo dependency provenance.
+            self.assertEqual(manifest["repo_deps"][str(repo)]["deps_status"], "no_deps")
 
             # Skip reasons.
             reasons = {entry["reason"] for entry in manifest["skipped"]}
@@ -175,6 +186,9 @@ class BatchPipelineTest(unittest.TestCase):
                 "build_ok",
                 "smoke_ok",
                 "smoke_fail_reason",
+                "golden_status",
+                "deps_status",
+                "deps_installed",
                 "spec_path",
                 "package_path",
             }
@@ -184,6 +198,8 @@ class BatchPipelineTest(unittest.TestCase):
                     set(env["fixture"].keys()), {"ok", "strategy", "value", "reason"}
                 )
                 self.assertEqual(set(env["fixture"]["value"].keys()), {"args", "kwargs"})
+                self.assertEqual(env["golden_status"], "real_value")
+                self.assertEqual(env["deps_status"], "no_deps")
                 self.assertTrue(Path(env["spec_path"]).exists())
                 self.assertTrue((Path(env["package_path"]) / "env_spec.json").exists())
 

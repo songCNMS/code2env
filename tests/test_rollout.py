@@ -9,9 +9,13 @@ from code2env.ingest import ingest_repo
 from code2env.jsonio import write_json
 from code2env.llm import assistant_message_from_response
 from code2env.rollout import (
+    CALL_ENTRYPOINT_FIXTURE_GUIDANCE,
     MockChatLLM,
     RolloutActionError,
     ScriptedSolveChat,
+    build_initial_user_message,
+    build_system_prompt,
+    build_tool_descriptions,
     parse_action_from_message,
     run_rollout,
 )
@@ -185,6 +189,53 @@ class RolloutLoopTest(unittest.TestCase):
             self.assertTrue(result["qualified"])
             self.assertTrue(result["final"]["correct"])
             self.assertGreaterEqual(result["retries"], 2)  # primary retried before fallback
+
+
+class PromptFixtureGuidanceTest(unittest.TestCase):
+    def test_system_prompt_contains_fixture_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_env(Path(temp))
+            prompt = build_system_prompt(env, build_tool_descriptions(env))
+            self.assertIn(CALL_ENTRYPOINT_FIXTURE_GUIDANCE, prompt)
+            # Key instruction phrases the agent must see.
+            self.assertIn("do NOT invent", prompt)
+            self.assertIn("empty arguments", prompt)
+
+    def test_user_message_echoes_fixture(self) -> None:
+        observation = {"task": {"title": "t"}, "budget": {"remaining_steps": 8}}
+        fixture = {"args": ["  ada   lovelace "], "kwargs": {"shout": True}}
+        message = build_initial_user_message(observation, fixture)
+        self.assertIn("Provided fixture", message)
+        self.assertIn("ada   lovelace", message)
+        self.assertIn("do NOT pass these values yourself", message)
+        # Without a fixture the block is omitted.
+        self.assertNotIn("Provided fixture", build_initial_user_message(observation))
+
+    def test_empty_args_call_entrypoint_uses_fixture_and_stays_qualified(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_env(Path(temp))
+            # ScriptedSolveChat calls call_entrypoint with empty arguments {}.
+            result = run_rollout(env, ScriptedSolveChat(env), primary_source="mock", max_rounds=8)
+            self.assertEqual(result["steps"][0]["action"]["tool"], "call_entrypoint")
+            self.assertEqual(result["steps"][0]["action"]["arguments"], {})
+            self.assertTrue(result["steps"][0]["tool_result"]["ok"])  # fixture fallback ran
+            self.assertTrue(result["qualified"])
+            self.assertTrue(result["final"]["correct"])
+            # The fed system/user prompts carry the guidance + fixture echo.
+            self.assertIn(CALL_ENTRYPOINT_FIXTURE_GUIDANCE, result["messages"][0]["content"])
+            self.assertIn("Provided fixture", result["messages"][1]["content"])
+
+    def test_fabricated_args_mismatch_is_the_failure_mode_being_prevented(self) -> None:
+        # Documents root cause B: supplying own args runs fine but mismatches golden.
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_env(Path(temp))
+            llm = MockChatLLM([
+                {"tool": "call_entrypoint", "arguments": {"args": ["someone else"], "kwargs": {}}},
+                {"tool": "submit_answer", "arguments": {"answer": {"ok": True, "value": {"kind": "json", "value": "Someone Else"}}}},
+            ])
+            result = run_rollout(env, llm, max_rounds=8)
+            self.assertTrue(result["qualified"])
+            self.assertFalse(result["final"]["correct"])  # mismatched golden -> false negative
 
 
 if __name__ == "__main__":

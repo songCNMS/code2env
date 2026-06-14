@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from code2env.envdeps import golden_status_for
 from code2env.executor import run_symbol_subprocess
 from code2env.jsonio import read_json, write_json
 from code2env.models import EnvSpec
@@ -16,11 +17,16 @@ def materialize_env_spec(
     fixture: dict[str, Any],
     compute_golden: bool = True,
     timeout_seconds: float = 10,
+    python_executable: str | None = None,
 ) -> dict[str, Any]:
     spec_path = Path(spec_path).resolve()
     spec = EnvSpec.from_dict(read_json(spec_path))
     normalized_fixture = normalize_fixture(fixture)
     spec.fixture = normalized_fixture
+    # Default to the venv interpreter recorded on the spec (task030) so the golden
+    # answer is recomputed with the repo's runtime dependencies available.
+    python = python_executable or spec.runtime.get("python_executable")
+    golden_status = spec.provenance.get("golden_status")
     if compute_golden:
         spec.golden_answer = run_symbol_subprocess(
             source_root_for_spec(spec, spec_path.parent),
@@ -30,7 +36,10 @@ def materialize_env_spec(
             timeout_seconds=timeout_seconds,
             disable_network=True,
             disable_subprocess=True,
+            python_executable=python,
         )
+        golden_status = golden_status_for(spec.golden_answer)
+        spec.provenance["golden_status"] = golden_status
     write_json(output_path, spec.to_dict())
     return {
         "input": str(spec_path),
@@ -38,6 +47,7 @@ def materialize_env_spec(
         "entrypoint": spec.source["entrypoint"],
         "fixture": normalized_fixture,
         "golden_answer": spec.golden_answer,
+        "golden_status": golden_status,
     }
 
 

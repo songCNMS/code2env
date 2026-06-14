@@ -1,6 +1,6 @@
 # task024_integration_rollout_runner - QA + 集成放量 runner (1-3 env 验证→放量100+rollout+导出+报告)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_5 -->
 
 ## 背景
 

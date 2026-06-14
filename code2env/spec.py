@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from code2env.envdeps import golden_status_for
 from code2env.executor import run_symbol_subprocess
 from code2env.indexer import find_candidate, index_repo, links_for_candidate
 from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, TestLink, ToolSpec
@@ -18,9 +19,15 @@ def draft_env_spec(
     env_id: str | None = None,
     compute_golden: bool = True,
     candidates: list[FunctionCandidate] | None = None,
+    python_executable: str | None = None,
+    requirements: list[str] | None = None,
+    deps_status: str | None = None,
 ) -> EnvSpec:
     # ``candidates`` lets batch callers reuse a single index_repo() pass across many
     # symbols in the same snapshot instead of re-indexing per draft.
+    # ``python_executable`` is the repo venv interpreter (task030): it computes the
+    # golden answer with the repo's runtime deps installed and is persisted so the
+    # runtime executes call_entrypoint with the same interpreter.
     if candidates is None:
         candidates = index_repo(snapshot)
     candidate = find_candidate(candidates, symbol)
@@ -51,6 +58,9 @@ def draft_env_spec(
                 "subprocess": "disabled",
                 "filesystem": "package_or_snapshot_readonly",
             },
+            "python_executable": python_executable,
+            "requirements": requirements or [],
+            "deps_status": deps_status,
         },
         reward={
             "type": "exact_match",
@@ -75,7 +85,11 @@ def draft_env_spec(
             dict(normalized_fixture["kwargs"]),
             disable_network=True,
             disable_subprocess=True,
+            python_executable=python_executable,
         )
+        spec.provenance["golden_status"] = golden_status_for(spec.golden_answer)
+    else:
+        spec.provenance["golden_status"] = "pending_golden"
     return spec
 
 

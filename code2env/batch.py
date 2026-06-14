@@ -38,6 +38,7 @@ from pathlib import Path
 from typing import Any
 
 from code2env.builder import build_env_package
+from code2env.envdeps import prepare_repo_env
 from code2env.indexer import index_repo
 from code2env.ingest import ingest_repo
 from code2env.jsonio import write_json
@@ -85,12 +86,16 @@ def generate_batch(
     per_repo_limit: int | None = None,
     run_smoke: bool = True,
     include_side_effects: bool = False,
+    install_deps: bool = True,
+    venv_cache_dir: str | Path | None = None,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     """Generate EnvPackages across ``repos`` and return the manifest dict.
 
     Stops once ``target_count`` successful builds are reached (counted globally),
-    iterating repos in order and candidates by descending static score.
+    iterating repos in order and candidates by descending static score. For each
+    repo a venv is prepared once (task030) so golden answers and rollout
+    call_entrypoint run with the repo's runtime dependencies installed.
     """
 
     output_root = Path(output_dir).expanduser().resolve()
@@ -103,6 +108,7 @@ def generate_batch(
     skipped: list[dict[str, Any]] = []
     repo_labels: list[str] = []
     by_repo: dict[str, dict[str, int]] = {}
+    repo_deps: dict[str, dict[str, Any]] = {}
     candidates_scanned = 0
     build_ok_total = 0
 
@@ -110,7 +116,22 @@ def generate_batch(
         snapshot = ingest_repo(repo, cache_dir=cache_dir)
         repo_label = snapshot.source
         repo_labels.append(repo_label)
-        by_repo.setdefault(repo_label, {"build_ok": 0, "smoke_ok": 0})
+        by_repo.setdefault(
+            repo_label, {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0}
+        )
+        # One venv per repo: install runtime deps so golden answers are real values.
+        repo_env = prepare_repo_env(
+            snapshot, cache_dir=venv_cache_dir, install=install_deps
+        )
+        repo_deps[repo_label] = {
+            "deps_status": repo_env["deps_status"],
+            "python": repo_env["python"],
+            "requirements": repo_env["requirements"],
+            "installed": repo_env["installed"],
+            "failed": repo_env["failed"],
+            "reason": repo_env["reason"],
+        }
+        by_repo[repo_label]["deps_status"] = repo_env["deps_status"]
         candidates = index_repo(snapshot)
         candidates_scanned += len(candidates)
         tree_cache: dict[str, ast.Module | None] = {}
@@ -141,6 +162,7 @@ def generate_batch(
                 candidates=candidates,
                 fixture=fixture,
                 repo_label=repo_label,
+                repo_env=repo_env,
                 specs_dir=specs_dir,
                 packages_dir=packages_dir,
                 run_smoke=run_smoke,
@@ -152,22 +174,34 @@ def generate_batch(
                 by_repo[repo_label]["build_ok"] += 1
             if env_record["smoke_ok"]:
                 by_repo[repo_label]["smoke_ok"] += 1
+            if env_record["golden_status"] == "real_value":
+                by_repo[repo_label]["real_value"] += 1
+            elif env_record["golden_status"]:
+                by_repo[repo_label]["weak_oracle"] += 1
 
         if build_ok_total >= target_count:
             break
 
+    real_value = sum(1 for env in envs if env["golden_status"] == "real_value")
     summary = {
         "candidates_scanned": candidates_scanned,
         "draft_ok": sum(1 for env in envs if env["draft_ok"]),
         "build_ok": sum(1 for env in envs if env["build_ok"]),
         "smoke_ok": sum(1 for env in envs if env["smoke_ok"]),
         "skipped_no_fixture": len(skipped),
+        # task030: real_value envs form the qualified/usable set; weak_oracle envs are
+        # excluded from the correctness denominator and reported separately.
+        "real_value": real_value,
+        "weak_oracle": sum(
+            1 for env in envs if env["golden_status"] and env["golden_status"] != "real_value"
+        ),
         "by_repo": by_repo,
     }
     manifest = {
         "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
         "repos": repo_labels,
         "summary": summary,
+        "repo_deps": repo_deps,
         "envs": envs,
         "skipped": skipped,
     }
@@ -182,6 +216,7 @@ def _generate_one(
     candidates: list[FunctionCandidate],
     fixture: dict[str, Any],
     repo_label: str,
+    repo_env: dict[str, Any],
     specs_dir: Path,
     packages_dir: Path,
     run_smoke: bool,
@@ -198,6 +233,9 @@ def _generate_one(
         "build_ok": False,
         "smoke_ok": False,
         "smoke_fail_reason": None,
+        "golden_status": None,
+        "deps_status": repo_env["deps_status"],
+        "deps_installed": repo_env["installed"],
         "spec_path": None,
         "package_path": None,
     }
@@ -208,9 +246,13 @@ def _generate_one(
             symbol=candidate.symbol,
             fixture=fixture["value"],
             candidates=candidates,
+            python_executable=repo_env["python"],
+            requirements=repo_env["requirements"],
+            deps_status=repo_env["deps_status"],
         )
         record["env_id"] = spec.id
         record["draft_ok"] = True
+        record["golden_status"] = spec.provenance.get("golden_status")
     except Exception as exc:  # noqa: BLE001 - a failed draft is a recorded outcome, not a crash.
         record["smoke_fail_reason"] = f"draft_error:{type(exc).__name__}:{exc}"
         return record

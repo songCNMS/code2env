@@ -89,6 +89,31 @@ counts toward `--target` regardless of whether its smoke run passes (smoke failu
 recorded with a reason). Cloned repo source and generated packages stay out of git
 (`.code2env_cache/` and `generated_envs/` are gitignored).
 
+#### Dependency install & golden status
+
+For each repo the pipeline first builds an isolated venv (cached under
+`.code2env_cache/venvs`, gitignored) and installs the declared runtime dependencies
+(`requirements*.txt`, `pyproject` dependencies), so the golden answer and rollout
+`call_entrypoint` execute with real third-party imports instead of producing a
+`ModuleNotFoundError` that an agent could trivially "match". The interpreter is
+persisted on the spec (`runtime.python_executable`) and reused by the runtime; if
+that path is missing at rollout time the runtime falls back to the default
+interpreter. A package that will not install is skipped (recorded with a reason),
+never aborting the repo. Pass `--no-install-deps` to skip this step.
+
+After deps are installed, each env carries a `golden_status`:
+
+- `real_value` — the source function returned a real result; these form the
+  qualified/usable set counted toward correctness.
+- `weak_oracle:<reason>` (e.g. `golden_exception:ModuleNotFoundError`) — the golden
+  answer is still an exception; the env is reported separately and **excluded from
+  the correctness denominator** so it cannot create false positives.
+
+`manifest.summary` reports `real_value` / `weak_oracle` counts and per-repo
+`deps_status`; `manifest.repo_deps` records installed/failed packages per repo.
+Running real venvs requires `python3-venv`/`ensurepip` on the host; without it the
+pipeline records `deps_status: venv_failed` and falls back to the base interpreter.
+
 ### Rollout conversation export (D3)
 
 Persist rollout results (`RolloutResult` records, one JSON object per line) as
@@ -115,13 +140,21 @@ explainable failure clusters:
 ```bash
 python -m code2env report /path/to/manifest.json \
   --rollouts /path/to/rollouts/ \
-  --output-dir /tmp/code2env_report
+  --output-dir /tmp/code2env_report \
+  [--baseline-manifest /path/to/pre_install_manifest.json]
 # writes /tmp/code2env_report/report.md and report.json
 ```
 
 `--rollouts` accepts a directory (per-env `<env_id>.json` files, falling back to a
 merged `rollouts.jsonl`) or a `.jsonl` file directly, and may be omitted to report
 on generation only. A rollout is *qualified* when it has `>= 2` tool-call rounds
-and a `submit_answer`. Failure clusters use a fixed, explainable tag set:
+and a `submit_answer`.
+
+The report computes a **true correct rate** from `manifest.envs[].golden_status`
+(`real_value` / `weak_oracle:<reason>`): rollouts on weak-oracle envs are excluded
+from the denominator (and counted separately), removing error-match false
+positives from the raw correct rate. With `--baseline-manifest` (a pre-dependency
+manifest) it also reports golden `error → real_value` transitions and per-repo
+`smoke_ok` before/after deltas. Failure clusters use a fixed, explainable tag set:
 `dependency_failure`, `fixture_unsynthesizable`, `weak_oracle`, `tool_granularity`,
 `format_error`, `other`.

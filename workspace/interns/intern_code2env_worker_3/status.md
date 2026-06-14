@@ -1,13 +1,13 @@
 # intern_code2env_worker_3 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task032_qa_session3_fixes,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_3 |
-| Status | Idle |
-| Role | worker |
+| Status | Working |
+| Role | worker (本轮 tester) |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A (task022 PR#12 merged) |
-| Session | 3 |
+| Current Task | task032_qa_session3_fixes (三 PR 全验完: PR#17/#20/#18 PASS) |
+| PR | https://github.com/songCNMS/code2env/pull/19 |
+| Session | 4 |

@@ -54,13 +54,29 @@ python -m code2env materialize /tmp/env_spec_draft.json \
 ```bash
 python -m code2env batch <repo-or-git-url> [<repo-or-git-url> ...] \
   --output-dir generated_envs/batch --target 100 \
-  --cache-dir .code2env_cache/repos [--per-repo-limit N] [--no-smoke] [--include-side-effects]
+  --cache-dir .code2env_cache/repos [--per-repo-limit N] [--no-smoke] \
+  [--include-side-effects] [--no-install-deps] [--venv-cache-dir DIR]
 ```
 
-`batch` (`code2env/batch.py`) drives `scan → synth fixture → draft → build [→ smoke]` across
-all given repos, stopping once `--target` successful builds are reached (counted globally,
+`batch` (`code2env/batch.py`) drives `prepare venv → scan → synth fixture → draft → build [→ smoke]`
+across all given repos, stopping once `--target` successful builds are reached (counted globally,
 candidates taken in descending static score). It writes one `manifest.json` under
 `--output-dir`.
+
+**Dependency install (task030).** Before drafting, each repo gets an isolated venv
+(`code2env/envdeps.py`, cached under `.code2env_cache/venvs`) with its declared runtime
+dependencies installed, so golden answers and rollout `call_entrypoint` run with real
+imports. The interpreter is recorded on `spec.runtime.python_executable` and reused by
+the runtime (falling back to the default interpreter if the path is gone). Uninstallable
+packages are skipped with a reason; `--no-install-deps` skips the whole step. Real venv
+creation needs `python3-venv`/`ensurepip` on the host — otherwise `deps_status` is
+`venv_failed` and the base interpreter is used.
+
+**Golden status (task030).** Each env is classified `real_value` (usable, counted toward
+correctness) or `weak_oracle:<reason>` (golden still an exception, e.g.
+`golden_exception:ModuleNotFoundError`); weak-oracle envs are **excluded from the
+correctness denominator** and reported separately, preventing the Session2 false-positive
+where an agent "matched" an import error.
 
 **Fixture auto-synthesis** reads each candidate's AST signature:
 
@@ -84,19 +100,25 @@ Consumed by reporting (w4) and scale-out (w5) — field names are fixed:
   "repos": ["<repo>", "..."],
   "summary": {
     "candidates_scanned": 0, "draft_ok": 0, "build_ok": 0, "smoke_ok": 0,
-    "skipped_no_fixture": 0,
-    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0}}
+    "skipped_no_fixture": 0, "real_value": 0, "weak_oracle": 0,
+    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0, "deps_status": "no_deps"}}
   },
+  "repo_deps": {"<repo>": {"deps_status": "installed", "python": "...", "requirements": [], "installed": [], "failed": [], "reason": null}},
   "envs": [{
     "env_id": "...", "repo": "...", "symbol": "...", "file": "...",
     "line_start": 0, "line_end": 0,
     "fixture": {"ok": true, "strategy": "typed_signature", "value": {"args": [], "kwargs": {}}, "reason": null},
     "draft_ok": true, "build_ok": true, "smoke_ok": true, "smoke_fail_reason": null,
+    "golden_status": "real_value", "deps_status": "installed", "deps_installed": [],
     "spec_path": "...", "package_path": "..."
   }],
   "skipped": [{"symbol": "...", "repo": "...", "reason": "..."}]
 }
 ```
+
+`golden_status` ∈ `{real_value, weak_oracle:<reason>}`; `deps_status` ∈
+`{no_deps, skipped, installed, partial, uninstallable, venv_failed}`. Field names are
+fixed (shared with w4 reporting / w5 scale-out).
 
 Cloned repo source (`--cache-dir`, default `.code2env_cache/repos`) and generated packages
 (`--output-dir`, default `generated_envs/batch`) are gitignored and must not be committed.
@@ -192,6 +214,13 @@ format-correction retries (malformed actions are re-prompted and recorded as
 `OpenAICompatibleLLM.chat(messages)`; tools are described in the system prompt
 (not sent as an OpenAI native `tools` field).
 
+The prompt explicitly tells the model **not to fabricate `call_entrypoint`
+arguments**: it should call the entrypoint with empty `arguments` so the runtime
+falls back to the pinned `spec.fixture`, and the concrete fixture is echoed into
+the task text for reference. This removes the "executed successfully but graded
+wrong" false negative where an agent passes its own args that differ from the
+fixture the golden answer was computed against.
+
 ```bash
 # Offline deterministic solver (no network) — good for CI/demos:
 python -m code2env rollout /tmp/generated_envs/<env_id> --llm-mode mock
@@ -220,22 +249,35 @@ conversation products into a markdown + JSON summary report:
 ```bash
 python -m code2env report /path/to/manifest.json \
   --rollouts /path/to/rollouts/ \
-  --output-dir /tmp/code2env_report
+  --output-dir /tmp/code2env_report \
+  [--baseline-manifest /path/to/pre_install_manifest.json]
 ```
 
 It reads (read-only, shared field contract) the manifest `summary` / `envs` /
-`skipped` and each rollout's `final.{correct,score}`, `num_tool_call_rounds`,
-`qualified`, and `termination_reason`. `--rollouts` accepts a directory (per-env
-`<env_id>.json`, falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be
-omitted to summarize generation only.
+`skipped` (incl. each env's `golden_status`) and each rollout's
+`final.{correct,score}`, `num_tool_call_rounds`, `qualified`, and
+`termination_reason`. `--rollouts` accepts a directory (per-env `<env_id>.json`,
+falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be omitted to
+summarize generation only.
 
 The report contains:
 
 - **Env generation**: `draft_ok` / `build_ok` / `smoke_ok` rates over candidates,
   and a per-repo distribution (`total` / `build_ok` / `smoke_ok` / `skipped`).
 - **Rollouts**: total, qualified count + rate (qualified = `>= 2` tool rounds and a
-  `submit_answer`), correct count + rate, mean `final.score`, low-score count, and a
-  per-model breakdown.
+  `submit_answer`), raw correct count + rate, **true correct rate**, mean
+  `final.score`, low-score count, and a per-model breakdown.
+- **True correct rate** consumes `manifest.envs[].golden_status` (task030 / w1
+  contract: `real_value` or `weak_oracle:<reason>`). Rollouts whose env has a weak
+  oracle are **excluded from the denominator** and counted separately
+  (`weak_oracle_excluded`), so the true rate is `correct / usable` over real-oracle
+  envs only — stripping the error-match false positives. A missing `golden_status`
+  degrades to `unknown` and is kept in the denominator (never silently shrinks it).
+- **Dependency-install before/after** (`--baseline-manifest`, optional): the count
+  of golden `error → real_value` transitions (env was non-`real_value` in the
+  baseline, `real_value` now) and the per-repo `smoke_ok` before/after delta (e.g.
+  flask `0 → N` once deps install). Without a baseline it degrades to the current
+  golden-status distribution with a note.
 - **Failure clusters**: generation-stage and rollout-stage failures bucketed into a
   fixed explainable tag set — `dependency_failure`, `fixture_unsynthesizable`,
   `weak_oracle`, `tool_granularity`, `format_error`, `other` — with per-tag counts
