@@ -211,3 +211,34 @@ loaders): `env_id`, `model`, `endpoint_source` (`gpt-5.5` | `fallback:<model>` |
 `num_tool_call_rounds`, `qualified` (≥2 tool-call rounds **and** a `submit_answer`),
 `termination_reason` (`submitted` | `step_budget_exhausted` | `error`), `retries`,
 and `errors`.
+
+## Summary reports (D4)
+
+`code2env report` aggregates the batch-generation `manifest.json` and the rollout
+conversation products into a markdown + JSON summary report:
+
+```bash
+python -m code2env report /path/to/manifest.json \
+  --rollouts /path/to/rollouts/ \
+  --output-dir /tmp/code2env_report
+```
+
+It reads (read-only, shared field contract) the manifest `summary` / `envs` /
+`skipped` and each rollout's `final.{correct,score}`, `num_tool_call_rounds`,
+`qualified`, and `termination_reason`. `--rollouts` accepts a directory (per-env
+`<env_id>.json`, falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be
+omitted to summarize generation only.
+
+The report contains:
+
+- **Env generation**: `draft_ok` / `build_ok` / `smoke_ok` rates over candidates,
+  and a per-repo distribution (`total` / `build_ok` / `smoke_ok` / `skipped`).
+- **Rollouts**: total, qualified count + rate (qualified = `>= 2` tool rounds and a
+  `submit_answer`), correct count + rate, mean `final.score`, low-score count, and a
+  per-model breakdown.
+- **Failure clusters**: generation-stage and rollout-stage failures bucketed into a
+  fixed explainable tag set — `dependency_failure`, `fixture_unsynthesizable`,
+  `weak_oracle`, `tool_granularity`, `format_error`, `other` — with per-tag counts
+  and example reasons. The `report.json` carries the same numbers as the markdown
+  for programmatic consumption. The classifier matches the canonical D1/D3 reason
+  tokens (`tag:detail`) emitted by `batch` and the rollout driver.
