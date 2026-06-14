@@ -1,6 +1,6 @@
 # task044_subfunction_trace_rollout - Productize subfunction trace rollout mode
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_2 -->
 
 ## 背景
 

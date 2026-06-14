@@ -1,6 +1,6 @@
 # task044_subfunction_trace_rollout - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## 记录规则
 
@@ -10,3 +10,4 @@
 ## Knowledge Entries
 
 1. 本 task 由 team_lead `intern_code2env_lead` 创建并分配给 worker `intern_code2env_worker_2`。
+2. Coordinator handoff 位于 `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session8_subfunction_trace_rollout_goal.md`，要求新增 formal trace mode 且默认 black-box rollout 不变。
