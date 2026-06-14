@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task |  |
-| PR | N/A |
-| Session | 0 |
+| PR | N/A (task012 PR#7 merged) |
+| Session | 2 |

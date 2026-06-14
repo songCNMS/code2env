@@ -1,6 +1,6 @@
 # task011_multidim_reward - P0-2 多维 reward 落地 (F7 / PRD 7.7)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_2 -->
 
 ## 背景
 

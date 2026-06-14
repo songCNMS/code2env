@@ -26,7 +26,17 @@ python -m code2env build /tmp/env_spec.json --output-dir /tmp/generated_envs
 python -m code2env smoke /tmp/generated_envs/<env_id>
 ```
 
-The generated runtime exposes `inspect_task`, `call_entrypoint`, optional `call_helper`, and `submit_answer` tools. The default scorer uses exact match against the pinned source function output.
+The generated runtime exposes a semantic tool set (PRD 7.5): the read-only `inspect_task` and `inspect_state` inspectors, `call_entrypoint`, dedicated `call_<helper>` tools for each safe direct callee (a key step of the main function), an optional sandboxed `call_helper` adapter, and `submit_answer`. Each tool carries an input/output JSON Schema, a `side_effects` declaration, and `provenance` (backing symbol / source span / main-function steps). Side-effecting helpers are not exposed directly; they are recorded in the entrypoint tool's provenance for sandbox-adapter follow-up. Every env stays within 3–8 tools.
+
+Scoring is multi-dimensional (PRD 7.7 / F7): `schema_validity`, `process_progress`, `final_correctness` (exact match against the pinned source output), `efficiency` and `safety`, weighted by `reward.weights`. `step` returns a dense per-step training reward while `evaluate` returns an explainable `score_breakdown`. See [docs/mvp_usage.md](docs/mvp_usage.md#multi-dimensional-reward-prd-77--f7).
+
+### Test linking & provenance
+
+`scan` reports both `Python files` and `Test files`: tests (anything under a `tests/`/`test/` directory, `test_*.py`, `*_test.py`, or `conftest.py`) are indexed separately into `RepoSnapshot.test_files` and never pollute the ranked source corpus.
+
+The indexer builds a **TestLinkIndex** (`code2env.indexer.build_test_link_index`) associating each source candidate with the tests, fixtures, and golden-data files that exercise it, using import references, name similarity, and pytest fixture usage. Each link records its `evidence` and a `confidence` score.
+
+`draft` consumes these links so every spec's `provenance.task_sources` carries **at least two diverse sources** — a `source_span` and a `signature`, plus any `test_link` / `fixture` / `golden` artifacts. When no test artifacts are linked the spec stays valid but is flagged with `test_link_status: "no_test_links_found"` and an explicit `degradation` note (oracle priority drops from test assertions to signature-level evidence).
 
 Export LLM-screened candidates as JSONL:
 

@@ -1,6 +1,6 @@
 # task010_semantic_tool_extractor - P0-1 语义化 ToolExtractor (F5 / PRD 7.5)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 

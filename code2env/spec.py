@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from code2env.executor import run_symbol_subprocess
-from code2env.indexer import find_candidate, index_repo
-from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, ToolSpec
+from code2env.indexer import find_candidate, index_repo, links_for_candidate
+from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, TestLink, ToolSpec
 
 
 def draft_env_spec(
@@ -21,6 +21,8 @@ def draft_env_spec(
     candidates = index_repo(snapshot)
     candidate = find_candidate(candidates, symbol)
     normalized_fixture = _normalize_fixture(fixture)
+    test_links = links_for_candidate(snapshot, candidate)
+    provenance = _build_provenance(candidate, test_links)
     source = {
         "repo": snapshot.source,
         "source_root": snapshot.path,
@@ -36,7 +38,7 @@ def draft_env_spec(
         version=1,
         source=source,
         task=_task_from_candidate(candidate),
-        tools=_tools_from_candidate(candidate),
+        tools=_tools_from_candidate(candidate, candidates),
         runtime={
             "max_steps": 8,
             "timeout_seconds": 3,
@@ -59,20 +61,7 @@ def draft_env_spec(
         },
         fixture=normalized_fixture,
         golden_answer=None,
-        provenance={
-            "task_sources": [
-                {
-                    "kind": "source_span",
-                    "path": candidate.file,
-                    "symbol": candidate.symbol,
-                    "line_start": candidate.lineno,
-                    "line_end": candidate.end_lineno,
-                }
-            ],
-            "metrics": candidate.metrics,
-            "risk_flags": candidate.risk_flags,
-            "helper_candidates": candidate.helper_candidates,
-        },
+        provenance=provenance,
     )
     if compute_golden:
         spec.golden_answer = run_symbol_subprocess(
@@ -84,6 +73,72 @@ def draft_env_spec(
             disable_subprocess=True,
         )
     return spec
+
+
+_TEST_LINK_KINDS = {"test": "test_link", "fixture": "fixture", "golden": "golden"}
+
+
+def _build_provenance(
+    candidate: FunctionCandidate, test_links: list[TestLink]
+) -> dict[str, Any]:
+    """Assemble provenance with >=2 diverse task_sources (PRD 7.2 / 469).
+
+    Always grounds the task in a ``source_span`` plus a ``signature`` source, then
+    appends ``test_link`` / ``fixture`` / ``golden`` sources discovered by the
+    TestLinkIndex. When no test artifacts are found the spec is still valid but
+    flagged as degraded so downstream review knows the oracle priority dropped to
+    signature-level evidence.
+    """
+
+    task_sources: list[dict[str, Any]] = [
+        {
+            "kind": "source_span",
+            "path": candidate.file,
+            "symbol": candidate.symbol,
+            "line_start": candidate.lineno,
+            "line_end": candidate.end_lineno,
+        },
+        {
+            "kind": "signature",
+            "path": candidate.file,
+            "symbol": candidate.symbol,
+            "args": candidate.args,
+            "defaults_count": candidate.defaults_count,
+            "has_docstring": bool(candidate.docstring),
+            "line_start": candidate.lineno,
+            "line_end": candidate.end_lineno,
+        },
+    ]
+    for link in test_links:
+        task_sources.append(
+            {
+                "kind": _TEST_LINK_KINDS.get(link.target_kind, "test_link"),
+                "path": link.path,
+                "target": link.target,
+                "line_start": link.lineno,
+                "line_end": link.end_lineno,
+                "evidence": link.evidence,
+                "confidence": link.confidence,
+            }
+        )
+
+    has_tests = bool(test_links)
+    provenance: dict[str, Any] = {
+        "task_sources": task_sources,
+        "test_link_status": "linked" if has_tests else "no_test_links_found",
+        "test_link_count": len(test_links),
+        "metrics": candidate.metrics,
+        "risk_flags": candidate.risk_flags,
+        "helper_candidates": candidate.helper_candidates,
+    }
+    if not has_tests:
+        provenance["degradation"] = (
+            "No test/fixture/golden artifacts linked to this candidate; task grounding "
+            "falls back to source_span + signature evidence only (oracle priority dropped "
+            "from test assertions to function signature). Consider adding tests for a "
+            "stronger oracle."
+        )
+    return provenance
 
 
 def _normalize_fixture(fixture: dict[str, Any] | None) -> dict[str, Any]:
@@ -130,34 +185,93 @@ def _task_from_candidate(candidate: FunctionCandidate) -> dict[str, Any]:
     }
 
 
-def _tools_from_candidate(candidate: FunctionCandidate) -> list[ToolSpec]:
-    tools = [
+# Total tools per env are kept inside the PRD 7.5 [3, 8] window. Four base tools
+# (inspect_task, inspect_state, call_entrypoint, submit_answer) always exist; with
+# the backward-compatible call_helper that leaves room for this many named,
+# semantic direct-callee tools before hitting the upper bound of 8.
+MAX_SEMANTIC_HELPER_TOOLS = 3
+_TOOL_RESULT_SCHEMA = {
+    "type": "object",
+    "required": ["ok"],
+    "properties": {
+        "ok": {"type": "boolean"},
+        "value": {"type": "object"},
+        "error_type": {"type": "string"},
+        "error_message": {"type": "string"},
+    },
+}
+_ARGS_KWARGS_SCHEMA = {
+    "type": "object",
+    "properties": {"args": {"type": "array"}, "kwargs": {"type": "object"}},
+    "additionalProperties": False,
+}
+
+
+def _tools_from_candidate(
+    candidate: FunctionCandidate, candidates: list[FunctionCandidate] | None = None
+) -> list[ToolSpec]:
+    by_symbol = {item.symbol: item for item in (candidates or [])}
+    source_span = {
+        "path": candidate.file,
+        "symbol": candidate.symbol,
+        "line_start": candidate.lineno,
+        "line_end": candidate.end_lineno,
+    }
+    pure_helpers, side_effect_helpers = _partition_helpers(candidate, by_symbol)
+
+    tools: list[ToolSpec] = [
         ToolSpec(
             name="inspect_task",
             description="Return the task, fixture, source metadata, and available helper names.",
             input_schema={"type": "object", "properties": {}, "additionalProperties": False},
             output_schema={"type": "object"},
+            side_effects="none",
+            provenance={
+                "kind": "state_inspector",
+                "backing": {"kind": "env_metadata"},
+                "reads": ["task", "fixture", "source", "helpers"],
+            },
+        ),
+        # Mandatory read-only state inspector (PRD 7.5: avoid blind tool calls).
+        ToolSpec(
+            name="inspect_state",
+            description="Read-only snapshot of the current episode state (step, phase, last result, submission).",
+            input_schema={"type": "object", "properties": {}, "additionalProperties": False},
+            output_schema={"type": "object"},
+            side_effects="none",
+            provenance={
+                "kind": "state_inspector",
+                "backing": {"kind": "runtime_state"},
+                "reads": ["step", "phase", "last_tool_result", "submitted_answer", "available_tools"],
+            },
         ),
         ToolSpec(
             name="call_entrypoint",
             description="Execute the selected source entrypoint with JSON args and kwargs.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "args": {"type": "array"},
-                    "kwargs": {"type": "object"},
-                },
-                "additionalProperties": False,
-            },
-            output_schema={"type": "object"},
+            input_schema=_ARGS_KWARGS_SCHEMA,
+            output_schema=_TOOL_RESULT_SCHEMA,
+            side_effects="sandboxed" if "possible_side_effect" in candidate.risk_flags else "none",
             timeout_ms=3000,
+            provenance={
+                "kind": "entrypoint",
+                "backing": {"kind": "function", "symbol": candidate.symbol},
+                "source_span": source_span,
+                "steps": _entrypoint_steps(candidate),
+                # Side-effecting helpers are not exposed as direct tools; recorded here
+                # so reviewers can route them through a sandbox adapter later.
+                "sandboxed_side_effect_helpers": side_effect_helpers,
+            },
         ),
     ]
+
+    for helper in pure_helpers[:MAX_SEMANTIC_HELPER_TOOLS]:
+        tools.append(_semantic_helper_tool(candidate, helper, by_symbol))
+
     if candidate.helper_candidates:
         tools.append(
             ToolSpec(
                 name="call_helper",
-                description="Execute an allowed top-level helper from the same module.",
+                description="Execute an allowed top-level helper from the same module (sandboxed adapter).",
                 input_schema={
                     "type": "object",
                     "required": ["helper"],
@@ -168,10 +282,17 @@ def _tools_from_candidate(candidate: FunctionCandidate) -> list[ToolSpec]:
                     },
                     "additionalProperties": False,
                 },
-                output_schema={"type": "object"},
+                output_schema=_TOOL_RESULT_SCHEMA,
+                side_effects="sandboxed",
                 timeout_ms=3000,
+                provenance={
+                    "kind": "wrapper",
+                    "backing": {"kind": "module_helpers", "module": candidate.module},
+                    "helpers": candidate.helper_candidates,
+                },
             )
         )
+
     tools.append(
         ToolSpec(
             name="submit_answer",
@@ -183,9 +304,103 @@ def _tools_from_candidate(candidate: FunctionCandidate) -> list[ToolSpec]:
                 "additionalProperties": False,
             },
             output_schema={"type": "object"},
+            side_effects="state",
+            provenance={
+                "kind": "submit",
+                "backing": {"kind": "scorer", "oracle": "pinned_source_function"},
+                "writes": ["submitted_answer", "score"],
+            },
         )
     )
     return tools
+
+
+def _partition_helpers(
+    candidate: FunctionCandidate, by_symbol: dict[str, FunctionCandidate]
+) -> tuple[list[str], list[str]]:
+    """Split direct callees into pure helpers (safe to expose) and side-effecting ones.
+
+    Pure helpers are ordered by how many main-function steps invoke them so the most
+    structurally relevant callees win the limited semantic-tool slots.
+    """
+
+    pure: list[str] = []
+    side_effecting: list[str] = []
+    for helper in candidate.helper_candidates:
+        helper_candidate = by_symbol.get(f"{candidate.module}:{helper}")
+        if helper_candidate and "possible_side_effect" in helper_candidate.risk_flags:
+            side_effecting.append(helper)
+        else:
+            pure.append(helper)
+    pure.sort(key=lambda name: (-_helper_step_count(candidate, name), name))
+    return pure, side_effecting
+
+
+def _helper_step_count(candidate: FunctionCandidate, helper: str) -> int:
+    return sum(1 for step in candidate.steps if helper in step.get("callees", []))
+
+
+def _entrypoint_steps(candidate: FunctionCandidate) -> list[dict[str, Any]]:
+    return [
+        {
+            "index": step.get("index"),
+            "kind": step.get("kind"),
+            "line_start": step.get("line_start"),
+            "line_end": step.get("line_end"),
+            "summary": step.get("summary"),
+            "callees": step.get("callees", []),
+        }
+        for step in candidate.steps
+    ]
+
+
+def _helper_step_spans(candidate: FunctionCandidate, helper: str) -> list[dict[str, Any]]:
+    return [
+        {
+            "kind": step.get("kind"),
+            "line_start": step.get("line_start"),
+            "line_end": step.get("line_end"),
+            "summary": step.get("summary"),
+        }
+        for step in candidate.steps
+        if helper in step.get("callees", [])
+    ]
+
+
+def _semantic_helper_tool(
+    candidate: FunctionCandidate, helper: str, by_symbol: dict[str, FunctionCandidate]
+) -> ToolSpec:
+    helper_symbol = f"{candidate.module}:{helper}"
+    helper_candidate = by_symbol.get(helper_symbol)
+    if helper_candidate is not None:
+        helper_span: dict[str, Any] = {
+            "path": helper_candidate.file,
+            "symbol": helper_symbol,
+            "line_start": helper_candidate.lineno,
+            "line_end": helper_candidate.end_lineno,
+        }
+        doc = helper_candidate.docstring.splitlines()[0] if helper_candidate.docstring else ""
+    else:
+        helper_span = {"symbol": helper_symbol}
+        doc = ""
+    description = f"Execute the `{helper}` step of `{candidate.qualname}` with JSON args and kwargs."
+    if doc:
+        description += f" {doc}"
+    return ToolSpec(
+        name=f"call_{helper}",
+        description=description,
+        input_schema=_ARGS_KWARGS_SCHEMA,
+        output_schema=_TOOL_RESULT_SCHEMA,
+        side_effects="none",
+        timeout_ms=3000,
+        provenance={
+            "kind": "wrapper",
+            "backing": {"kind": "function", "symbol": helper_symbol},
+            "source_span": helper_span,
+            # Main-function key steps that invoke this direct callee.
+            "entrypoint_steps": _helper_step_spans(candidate, helper),
+        },
+    )
 
 
 def source_root_for_spec(spec: EnvSpec, package_root: str | Path | None = None) -> Path:

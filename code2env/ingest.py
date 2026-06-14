@@ -32,11 +32,16 @@ def ingest_repo(source: str, *, cache_dir: str | Path | None = None, commit: str
             raise FileNotFoundError(f"Repository path does not exist: {path}")
         source_label = normalize_path(path)
 
-    python_files = [
-        str(file.relative_to(path))
-        for file in path.rglob("*.py")
-        if _is_supported_source_file(file, path)
-    ]
+    python_files: list[str] = []
+    test_files: list[str] = []
+    for file in path.rglob("*.py"):
+        if _is_infra_path(file, path):
+            continue
+        relative = str(file.relative_to(path))
+        if _is_test_file(file, path):
+            test_files.append(relative)
+        elif _is_supported_source_file(file, path):
+            python_files.append(relative)
     dependency_files = [
         str(file.relative_to(path))
         for file in path.iterdir()
@@ -54,6 +59,7 @@ def ingest_repo(source: str, *, cache_dir: str | Path | None = None, commit: str
         python_files=sorted(python_files),
         dependency_files=sorted(dependency_files),
         license_file=license_file,
+        test_files=sorted(test_files),
     )
 
 
@@ -100,25 +106,49 @@ def _find_license_file(path: Path) -> str | None:
     return None
 
 
+# Build/tooling directories that hold no first-class source, tests or fixtures.
+INFRA_PARTS = {
+    ".git",
+    ".github",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+    ".tox",
+    ".nox",
+}
+# Topic directories excluded from the ranked source corpus (but tests/ is mined
+# separately into ``RepoSnapshot.test_files`` for the TestLinkIndex).
+NON_SOURCE_PARTS = {
+    "benchmarks",
+    "docs",
+    "docs_src",
+    "examples",
+    "tests",
+}
+TEST_DIR_NAMES = {"tests", "test"}
+
+
+def _is_infra_path(file: Path, root: Path) -> bool:
+    """True for build/tooling paths that should never be indexed at all."""
+
+    return bool(INFRA_PARTS.intersection(file.relative_to(root).parts))
+
+
+def _is_test_file(file: Path, root: Path) -> bool:
+    """Heuristic test-file detector: by directory, by name, or conftest.py."""
+
+    parts = file.relative_to(root).parts
+    if TEST_DIR_NAMES.intersection(parts):
+        return True
+    name = file.name
+    return name == "conftest.py" or name.startswith("test_") or name.endswith("_test.py")
+
+
 def _is_supported_source_file(file: Path, root: Path) -> bool:
-    ignored_parts = {
-        ".git",
-        ".github",
-        ".venv",
-        "venv",
-        "__pycache__",
-        "build",
-        "dist",
-        ".tox",
-        ".nox",
-        "benchmarks",
-        "docs",
-        "docs_src",
-        "examples",
-        "tests",
-    }
     relative_parts = set(file.relative_to(root).parts)
-    return not ignored_parts.intersection(relative_parts)
+    return not (INFRA_PARTS | NON_SOURCE_PARTS).intersection(relative_parts)
 
 
 def copy_source_tree(snapshot: RepoSnapshot, target: str | Path) -> None:
