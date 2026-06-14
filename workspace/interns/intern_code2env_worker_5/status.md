@@ -1,13 +1,13 @@
 # intern_code2env_worker_5 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task014_qa_reward_e2e,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_5 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A |
+| Current Task | task014_qa_reward_e2e |
+| PR | (pending) |
 | Session | 0 |
