@@ -10,9 +10,10 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | N/A |
-| Session | 10 |
+| Session | 11 |
 
 ## 最近进展
+- Session 11：v3 监控首轮超时(60min未出产物)。核查：lead 已建 task037(信封归一)/038(确定性门禁)/039(报告v3)/041(重跑v3)，仅 task035 envdeps uv兜底#22、task034 runner#21 已合，功能 PR 未合、rollouts_v3 无产物——v3 进行中(比 v2 重)。已 peer(next) 向 lead 要 ETA+卡点，重新布置监控 b0zkh9q4w(60min)待 v3 产物核验。
 - Session 10：用户选"契约归一+确定性过滤再重跑"。已下发 pressing goal(code2env-oracle-normalize-rerun-session9) 给 lead：①runtime 信封归一比较(让确定性纯函数判对)②确定性门禁剔除非确定性 golden(内存地址/绝对路径/hash)③对确定性可用集 gpt-5.5 重跑存 outputs/rollouts_v3/+report_v3，给真实非零正确率+v1→v2→v3 对比。已布置监控 bll16k64r 待 v3 产物核验。
 - Session 9：v2 产物就绪并核验。真实 correct=0/75(剔除25 weak_oracle后)，qualified 75/75=100%，mean 0.35。定位 0% 两根因(均 env/oracle 设计非模型)：①提交契约错位——golden 存完整信封{ok,value}，agent 提交里层 value，确定性函数其实算对只差信封；②非确定性 golden(内存地址repr/绝对路径/hash)永不可 match,可用集被高估。已向用户报告并请定修复方向(契约归一+确定性过滤再重跑 / 仅prompt / 接受诊断收尾)。监控 bh69g15xf 已结束。
 - Session 8：lead 回报修正任务进度——task030(装依赖+golden重算)PR#18 已APPROVE待合、task033(真实率报告)PR#20 双签可合、task031(prompt)已合#17；合并序 PR#20→#18→启动 w5 task034 重跑，ETA~30-45min，产物去 outputs/rollouts_v2/ + outputs/report_v2/。修正了上轮写错路径的监控(旧 bb8rgwfg1 停，新 bh69g15xf 监视 rollouts_v2+report_v2)，产物就绪自动核验真实正确率。

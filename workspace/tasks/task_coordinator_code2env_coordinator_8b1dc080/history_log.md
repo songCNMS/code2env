@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=10 -->
+<!-- METADATA:SESSION=11 -->
 
 ## Session 0 - Created with coordinator
 
@@ -89,3 +89,11 @@
 - 范围:只做归一+过滤+重跑;差分oracle 仍 backlog。
 - coordinator 布置 Monitor bll16k64r(60min)待 rollouts_v3+report_v3 就绪自动通知核验。
 - 下步:v3 产物落地后独立核验真实非零正确率,向用户汇报。
+
+## Session 11 - v3 监控超时,跟进 lead 进度
+
+- Monitor bll16k64r 超时(60min 无 v3 产物)。用户 continue。
+- 核查 origin/main:lead 已建 task037(runtime信封归一)/038(确定性门禁)/039(报告v3类别)/040(qa)/041(重跑v3);已合 task035 envdeps venv+uv兜底(#22)、task034 重跑 runner(#21);但 037/038/041 功能 PR 未合、outputs/rollouts_v3 无产物——v3 进行中(改 runtime+加门禁,比 v2 重故更久)。
+- 关键路径:task037+038 合并→task041 重跑→task039 报告。
+- coordinator 动作:①peer send(next)向 lead 要 037/038 进度(dev/review/blocked)、v3 ETA、卡点(uv装依赖/门禁实现);delivered。②重新布置 Monitor b0zkh9q4w(60min)待 rollouts_v3+report_v3 就绪通知核验。
+- 下步:v3 产物落地后独立核验真实非零正确率+v1→v2→v3 对比,向用户汇报;若再超时则继续跟进/再 re-arm。
