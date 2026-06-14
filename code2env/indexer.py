@@ -79,6 +79,7 @@ def index_repo(snapshot: RepoSnapshot) -> list[FunctionCandidate]:
                     metrics=metrics,
                     score=score,
                     risk_flags=risk_flags,
+                    steps=_step_blocks(node),
                 )
             )
     return sorted(candidates, key=lambda item: item.score, reverse=True)
@@ -138,6 +139,90 @@ def _call_names(node: ast.AST) -> set[str]:
         elif isinstance(func, ast.Attribute):
             names.add(func.attr)
     return names
+
+
+_STEP_KIND_BY_NODE = (
+    (ast.Return, "finalize"),
+    (ast.Raise, "raise"),
+    ((ast.If, ast.IfExp), "branch"),
+    ((ast.For, ast.AsyncFor, ast.While), "loop"),
+    ((ast.With, ast.AsyncWith), "context"),
+    (ast.Try, "guard"),
+    (ast.Match, "branch"),
+    ((ast.Assign, ast.AnnAssign, ast.AugAssign), "assign"),
+)
+
+
+def _step_blocks(node: ast.FunctionDef | ast.AsyncFunctionDef) -> list[dict[str, object]]:
+    """Decompose a function body into ordered top-level semantic step blocks.
+
+    Each block records its source span, a coarse phase kind, and the callees it
+    references so downstream tooling can map direct callees back to the main
+    function steps that invoke them.
+    """
+
+    body = list(node.body)
+    start = 0
+    if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), ast.Constant):
+        if isinstance(body[0].value.value, str):
+            start = 1
+    blocks: list[dict[str, object]] = []
+    for index, stmt in enumerate(body[start:]):
+        kind = _stmt_kind(stmt)
+        callees = sorted(_call_names(stmt))
+        blocks.append(
+            {
+                "index": index,
+                "kind": kind,
+                "line_start": stmt.lineno,
+                "line_end": int(getattr(stmt, "end_lineno", stmt.lineno) or stmt.lineno),
+                "callees": callees,
+                "summary": _stmt_summary(stmt, kind, callees),
+            }
+        )
+    return blocks
+
+
+def _stmt_kind(stmt: ast.stmt) -> str:
+    if isinstance(stmt, ast.Expr) and isinstance(getattr(stmt, "value", None), ast.Call):
+        return "call"
+    for node_types, kind in _STEP_KIND_BY_NODE:
+        if isinstance(stmt, node_types):
+            return kind
+    return "statement"
+
+
+def _stmt_summary(stmt: ast.stmt, kind: str, callees: list[str]) -> str:
+    targets = _assignment_targets(stmt)
+    if targets:
+        detail = ", ".join(targets)
+        return f"{kind}: {detail}"
+    if callees:
+        return f"{kind}: {callees[0]}()"
+    return kind
+
+
+def _assignment_targets(stmt: ast.stmt) -> list[str]:
+    names: list[str] = []
+    if isinstance(stmt, ast.Assign):
+        for target in stmt.targets:
+            names.extend(_target_names(target))
+    elif isinstance(stmt, (ast.AnnAssign, ast.AugAssign)):
+        names.extend(_target_names(stmt.target))
+    return names
+
+
+def _target_names(target: ast.AST) -> list[str]:
+    if isinstance(target, ast.Name):
+        return [target.id]
+    if isinstance(target, (ast.Tuple, ast.List)):
+        names: list[str] = []
+        for element in target.elts:
+            names.extend(_target_names(element))
+        return names
+    if isinstance(target, ast.Attribute):
+        return [target.attr]
+    return []
 
 
 def _metrics(node: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, int]:
