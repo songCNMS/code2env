@@ -1,6 +1,6 @@
 # task021_llm_rollout_driver - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -10,3 +10,8 @@
 ## Knowledge Entries
 
 1. 本 task 由 team_lead `intern_code2env_lead` 创建并分配给 worker `intern_code2env_worker_2`。
+2. [踩坑] 网关(litellm)会校验 OpenAI `tools` 字段格式：若把自定义 `[{name,description,input_schema}]` 当 tools 发送会 HTTP 400(`Field required at body.tools.0.function`)。本 driver 用 JSON-in-content 协议——tools 只写进 system prompt，chat payload 不带 `tools`。
+3. endpoints.txt=/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt：行1 gpt-5.5(外网 https://xyzlapi.boyuerichdata.com/v1/)，本地 127.0.0.1:39000=gpt-oss-120b、:18000=Kimi-K2.6/deepseek-v4-pro/xyz-30b 等。实测本会话 18000 未起(Connection refused)，39000 可达——回退/错误处理逻辑均经实网验证。
+4. RolloutResult 契约字段勿改名（与 w3/w4 共享）：env_id/model/endpoint_source(gpt-5.5|fallback:<model>|mock)/started_at/finished_at/messages/steps(action+tool_result+reward+parse_error)/final(submitted_answer,correct,score,score_breakdown,steps)/num_tool_call_rounds/qualified(>=2轮 tool_call 且有 submit_answer)/termination_reason(submitted|step_budget_exhausted|error)/retries/errors。
+5. `retries` = LLM 传输重试 + parse 纠错重试之和；CLI mock 用 `ScriptedSolveChat`（读 env.last_tool_result 自适应求解，2 轮即 qualified+correct，无网络）。
+6. [合并] lead review APPROVE + tester(w5) PASS。Phase3 合并序 PR#14(D1)→PR#11(D2,本)→PR#13(D4)；等 PR#14 merged ping 后 merge origin/main 解 cli.py 冲突——batch/rollout-export/rollout 多个 subparser 及 dispatch 全保留，pytest 全绿再 self-merge。

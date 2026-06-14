@@ -81,17 +81,44 @@ class OpenAICompatibleLLM:
         content = _extract_message_content(response_payload)
         return parse_llm_json(content)
 
-    def _post_payload(self, payload: dict[str, Any]) -> str:
+    def chat(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+        timeout: float | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
+        """Send an OpenAI-compatible chat completion and return the assistant message.
+
+        Returns ``{"role", "content", "tool_calls"}``; ``content`` falls back to
+        the empty string when the model replied with only native tool_calls.
+        """
+        payload: dict[str, Any] = {
+            "model": self.config.model,
+            "messages": list(messages),
+            "temperature": self.temperature if temperature is None else temperature,
+            "max_tokens": self.max_tokens if max_tokens is None else max_tokens,
+        }
+        if tools:
+            payload["tools"] = tools
+        raw_body = self._post_payload(payload, timeout=timeout)
+        response_payload = json.loads(raw_body)
+        return assistant_message_from_response(response_payload)
+
+    def _post_payload(self, payload: dict[str, Any], *, timeout: float | None = None) -> str:
+        effective_timeout = self.timeout_seconds if timeout is None else timeout
         request = self._build_request(payload)
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+            with urllib.request.urlopen(request, timeout=effective_timeout) as response:
                 return response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
             if "response_format" in payload and exc.code in {400, 422}:
                 retry_payload = dict(payload)
                 retry_payload.pop("response_format", None)
-                with urllib.request.urlopen(self._build_request(retry_payload), timeout=self.timeout_seconds) as response:
+                with urllib.request.urlopen(self._build_request(retry_payload), timeout=effective_timeout) as response:
                     return response.read().decode("utf-8")
             raise RuntimeError(f"LLM request failed with HTTP {exc.code}: {body[:500]}") from exc
         except urllib.error.URLError as exc:
@@ -228,6 +255,25 @@ def _extract_message_content(response_payload: dict[str, Any]) -> str:
         if isinstance(value, str) and value.strip():
             return value
     raise ValueError("LLM response message content was empty")
+
+
+def assistant_message_from_response(response_payload: dict[str, Any]) -> dict[str, Any]:
+    """Extract the assistant message from a chat-completions response.
+
+    ``content`` is best-effort text (reusing the reasoning-aware extractor) and is
+    an empty string when the model returned only native ``tool_calls``.
+    """
+    choice = response_payload["choices"][0]
+    message = choice.get("message", {}) or {}
+    try:
+        content = _extract_message_content(response_payload)
+    except (ValueError, KeyError, IndexError):
+        content = ""
+    return {
+        "role": message.get("role", "assistant") or "assistant",
+        "content": content,
+        "tool_calls": message.get("tool_calls"),
+    }
 
 
 def normalize_llm_decision(raw: dict[str, Any]) -> dict[str, Any]:
