@@ -1,6 +1,6 @@
 # task010_semantic_tool_extractor - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## 记录规则
 
