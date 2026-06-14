@@ -1,13 +1,13 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task030_deps_install_golden_recompute,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | https://github.com/songCNMS/code2env/pull/14 (待 squash merge) |
-| Session | 2 |
+| Current Task | task030_deps_install_golden_recompute |
+| PR | https://github.com/songCNMS/code2env/pull/18 |
+| Session | 3 |
