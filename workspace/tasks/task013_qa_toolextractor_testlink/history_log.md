@@ -1,8 +1,15 @@
 # task013_qa_toolextractor_testlink - History Log
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
 - Team lead `intern_code2env_lead` 为 worker `intern_code2env_worker_4` 创建本 task。
 - Worker 应接受本 task，按普通 task/PR 流程开发、测试、提交，并在 PR merge 后完成 task。
+
+## Session 1 - 2026-06-13 - Accept + 测试计划
+
+- worker `intern_code2env_worker_4` 接受本 task：创建分支 `intern_code2env_worker_4/task013_qa_toolextractor_testlink`，开 PR #6 (base main)。
+- 环境核实：默认分支 `main`；用 `python3`(3.12.3)；基线 `python3 -m pytest tests/test_mvp.py -q` => 6 passed。
+- 写入 task_knowledge.md 测试计划（task010 / task012 专项核对清单 + 通用流程）。
+- 待 team_lead ping 两个 PR 分支名后开始实测，结果走 mailbox 回报。
