@@ -1,6 +1,6 @@
 # task045_min3_semantic_helpers_gate - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -14,3 +14,4 @@
 3. Handoff path: `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session13_min3_semantic_helpers_goal.md`.
 4. Validation must confirm `--min-semantic-helpers` defaults to 0, rejects values above `MAX_SEMANTIC_HELPER_TOOLS=3`, and counts only dedicated safe `call_<helper>` ToolSpecs that final spec generation would expose.
 5. PR#31 head `5f646ce` currently contains only workspace metadata, so implementation validation is blocked until w1 pushes code/test commits.
+6. Session 3 hook audit required explicit task045 history bookkeeping; no PR#31 code/test state changed.

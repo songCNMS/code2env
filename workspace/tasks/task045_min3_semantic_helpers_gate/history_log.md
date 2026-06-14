@@ -1,6 +1,6 @@
 # task045_min3_semantic_helpers_gate - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -13,3 +13,9 @@
 - PR#31 (`intern_code2env_worker_1/task045_min3_semantic_helpers_gate`) was already open at head `5f646cebbf50fb1c6003800c75428aef821e1c8e`; validation found a blocker because the PR diff contains only workspace metadata and no code or focused test implementation.
 - Baseline test commands on PR#31 head: `python3 -m pytest -q tests/test_batch.py` => 13 passed; `python3 -m pytest -q` => 156 passed.
 - Cannot validate helper-count semantics, default compatibility, CLI/API behavior, or invalid N rejection until w1 pushes implementation commits.
+
+## Session 3 - 2026-06-14 UTC - Hook-required validator status record
+
+- Stop-hook audit required an explicit Session 3 record in this task history.
+- Current validator state remains blocked on PR#31 head `5f646cebbf50fb1c6003800c75428aef821e1c8e` because the diff contains only workspace metadata and no implementation/test files for `--min-semantic-helpers`.
+- Baseline evidence already reported through mailbox: `python3 -m pytest -q tests/test_batch.py` => 13 passed; `python3 -m pytest -q` => 156 passed.
