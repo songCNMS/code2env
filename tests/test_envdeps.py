@@ -161,6 +161,24 @@ class CreateVenvUvFallbackTest(unittest.TestCase):
             self.assertIn("--seed", calls[1])
             self.assertEqual(calls[1][0], "/usr/bin/uv")
 
+    def test_uv_fallback_clears_partial_dir_from_failed_venv(self) -> None:
+        # `python -m venv` may leave a partial dir before failing; uv refuses a
+        # non-empty venv dir, so _create_venv must clear it before the uv attempt.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            venv_dir = Path(temp_dir) / "v"
+            venv_dir.mkdir()
+            (venv_dir / "pyvenv.cfg").write_text("partial", encoding="utf-8")
+            seen: dict[str, bool] = {}
+
+            def runner(cmd, **kwargs):
+                if "--seed" in cmd:  # uv venv
+                    seen["dir_cleared"] = not (venv_dir / "pyvenv.cfg").exists()
+                    return subprocess.CompletedProcess(cmd, 0)
+                raise subprocess.CalledProcessError(1, cmd, stderr="ensurepip missing")
+
+            _create_venv(venv_dir, sys.executable, runner=runner, which=lambda _: "/usr/bin/uv")
+            self.assertTrue(seen.get("dir_cleared"))
+
     def test_venv_failed_when_stdlib_fails_and_uv_absent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             runner, _ = _venv_runner(fail_venv=True, fail_uv=False)

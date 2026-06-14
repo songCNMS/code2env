@@ -19,6 +19,7 @@ Design notes:
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import subprocess
 import sys
@@ -225,9 +226,16 @@ def _create_venv(
         uv = which("uv")
         if not uv:
             raise
+        # `python -m venv` can leave a partial directory behind before it fails on
+        # ensurepip; uv refuses to populate a non-empty venv dir ("already exists",
+        # exit 2), so clear it before retrying (task042 real-machine fix-forward).
+        shutil.rmtree(venv_dir, ignore_errors=True)
+        # uv resolves a bare interpreter name fine, but pass an absolute path when we
+        # have one so the seeded venv matches the intended interpreter exactly.
+        uv_python = base_python if os.path.isabs(base_python) else (which(base_python) or base_python)
         try:
             runner(
-                [uv, "venv", "--seed", "--python", base_python, str(venv_dir)],
+                [uv, "venv", "--seed", "--python", uv_python, str(venv_dir)],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
