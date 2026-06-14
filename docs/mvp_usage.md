@@ -49,9 +49,15 @@ python -m code2env materialize /tmp/env_spec_draft.json \
 
 ## Runtime Tools
 
-- `inspect_task`: returns task, fixture, source metadata, and allowed helpers.
-- `call_entrypoint`: executes the selected function in an isolated Python subprocess.
-- `call_helper`: optional, executes same-module top-level helper functions discovered from the entrypoint call graph.
+The Tool Extractor (PRD 7.5) emits a semantic tool set per env, kept within the 3–8 tool window:
+
+- `inspect_task`: read-only; returns task, fixture, source metadata, and allowed helpers.
+- `inspect_state`: read-only state inspector; returns the current episode state (step, phase, last tool result, submitted answer, available tools, remaining budget). Guarantees the env always has at least one query/validation tool so the agent never has to call blind.
+- `call_entrypoint`: executes the selected entrypoint in an isolated Python subprocess. Its provenance records the decomposed main-function step blocks.
+- `call_<helper>`: one dedicated tool per safe direct callee (e.g. `call_clean_text`). Each is a key step of the main function, executed by calling the backing symbol in the sandbox. Side-effecting helpers are *not* exposed this way — they are listed under the entrypoint tool's `provenance.sandboxed_side_effect_helpers` for later sandbox-adapter work.
+- `call_helper`: optional backward-compatible sandboxed adapter that runs any same-module helper by name.
 - `submit_answer`: ends the episode and scores the submitted payload by exact match.
+
+Each `ToolSpec` carries `input_schema`, `output_schema`, `side_effects`, and `provenance` (`kind`, `backing` symbol/source span, and the main-function steps a helper tool maps to).
 
 The runtime API is available as `code2env.runtime.Code2Env` with `reset`, `step`, `evaluate`, and `close`.

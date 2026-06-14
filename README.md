@@ -26,7 +26,7 @@ python -m code2env build /tmp/env_spec.json --output-dir /tmp/generated_envs
 python -m code2env smoke /tmp/generated_envs/<env_id>
 ```
 
-The generated runtime exposes `inspect_task`, `call_entrypoint`, optional `call_helper`, and `submit_answer` tools. The default scorer uses exact match against the pinned source function output.
+The generated runtime exposes a semantic tool set (PRD 7.5): the read-only `inspect_task` and `inspect_state` inspectors, `call_entrypoint`, dedicated `call_<helper>` tools for each safe direct callee (a key step of the main function), an optional sandboxed `call_helper` adapter, and `submit_answer`. Each tool carries an input/output JSON Schema, a `side_effects` declaration, and `provenance` (backing symbol / source span / main-function steps). Side-effecting helpers are not exposed directly; they are recorded in the entrypoint tool's provenance for sandbox-adapter follow-up. Every env stays within 3–8 tools. The default scorer uses exact match against the pinned source function output.
 
 Export LLM-screened candidates as JSONL:
 
