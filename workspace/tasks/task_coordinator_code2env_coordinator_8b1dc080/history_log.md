@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - Created with coordinator
 
@@ -22,3 +22,11 @@
 - 已 goal/cancel 撤销 pressing goal。
 - 遗留(非阻塞)：reward 默认权重偏离 PRD 7.7 示例表(机制正确,和=1.0,保持现状)；TestLink 名称子串匹配偏宽。
 - 剩余 backlog(P1/P2 未下发)：差分/变形 oracle、QualityGate 6 项、Phase4 RL 接入、CorpusManager、人工审阅。
+
+## Session 3 - 规模化生成100环境 + gpt-5.5 rollout 验证下发
+
+- 用户需求：GitHub 拉典型 Python repo → 生成100 env(各带任务+评估函数) → gpt-5.5 多轮 rollout 验证 env 可运行/产合格多轮交互 → 存 conversation JSON 供查看。(明确不做 RL 训练接入)
+- 核实事实：①gpt-5.5 endpoint 在 /home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt 与 endpoints.vpn.txt，base=https://xyzlapi.boyuerichdata.com/v1/；llm.py 默认找的 /work-agents/endpoints.txt 不存在，需显式 --endpoint-file。②runtime 仅 scripted_smoke，缺 LLM 驱动多轮 rollout driver(本任务核心新代码)。
+- 用户拍板范围：(A)repo=requests/flask/rich/click/jinja2(+poetry)；(B)'100'按成功 draft+build 计、失败标注入报告；(C)gpt-5.5 主+本地兜底；(D)合格=每条≥2轮 tool_call+submit_answer+记录 reward/score_breakdown。
+- 已下发 pressing goal code2env-corpus100-rollout-session3 给 intern_code2env_lead，交付物=批量生成pipeline/LLM rollout driver/conversation JSON导出(outputs/rollouts/)/汇总报告。
+- 下步：监工 lead 拆解与 PR；先验证 rollout driver+conversation 格式跑通再放量；收回报后汇总合格率。
