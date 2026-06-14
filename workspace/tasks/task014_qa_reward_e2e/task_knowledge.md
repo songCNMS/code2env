@@ -1,6 +1,6 @@
 # task014_qa_reward_e2e - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -14,6 +14,9 @@
 3. 基线（task011 合入前，main HEAD）`python3 -m pytest tests/ -q` = **13 passed**（test_mvp.py + test_llm_selection.py），作为回归对照。
 4. 基线 e2e 全链路已在临时 repo 验证可绿：`scan → select --llm-mode mock → draft-from-jsonl → materialize → build → smoke`，smoke `ok=true`、`evaluation.score=1.0`。
 5. 基线 `score_breakdown` 仅有 `final_correctness` 与 `exact_match` 两字段（`runtime.py:_dispatch` submit_answer 分支）；task011 五维 reward 应替换/扩展此处与 `step()` 的累加逻辑。
+7. [A轮] task011(PR#8, HEAD fcb5e2c) `pytest tests/` = **23 passed**（test_reward.py +10）；五维 reward 验收 7 项全 PASS（详见 history Session 2）。
+8. [A轮·风险] task011 spec.reward.weights 缺省 = 0.05/0.20/0.65/0.05/0.05，**偏离 PRD 7.7 默认表 0.05/0.25/0.50/0.10/0.10**（机制正确、和=1.0；属默认值问题，已回报 lead 待确认意图）。
+9. [A轮·机制] step 返回 PBRS 增量(Δtotal)，Σ step reward = final − 初始势(0.15)；evaluate 返回绝对加权 total。初始势=0.15 因 schema/efficiency/safety 无动作时乐观取 raw=1.0。
 6. PRD 7.7 五维默认权重：schema_validity 0.05 / process_progress 0.25 / final_correctness 0.50 / efficiency 0.10 / safety 0.10（合计 1.00）。
 
 ---
