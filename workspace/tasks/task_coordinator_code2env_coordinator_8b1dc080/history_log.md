@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=13 -->
+<!-- METADATA:SESSION=14 -->
 
 ## Session 0 - Created with coordinator
 
@@ -112,3 +112,10 @@
 - 结果:w2 task037 信封归一已合#23、w1 task038 确定性门禁已合#24、w4 task039 report_v3 已合#26、w3 QA(task040/032)22min前三PR全验完——037/038/039 全进 main,task041 已解锁。⚠️w5(task041=真正 v3 重跑,当前唯一关键路径)最近提交在~3h前(仅对齐Session编号),PR#25 仍"计划"未执行重跑,outputs/rollouts_v3 无产物→w5 疑似中断/卡住。
 - 动作:peer send(default)告警 lead:①确认 w5 session 存活;②037/038/039 已合,立刻 kick w5 执行 v3 重跑(uv装依赖+确定性可用集 rollout→rollouts_v3/+report_v3);③w5 无响应则改派 task041 给空闲 w1-w4,勿让关键路径空等。delivered。
 - 下步:等 lead 处理 w5/重派后 v3 产物落地,独立核验真实非零正确率;监控 b0zkh9q4w 就位,超时则 re-arm。
+
+## Session 14 - lead 处置 w5 中断(改派 w1)
+
+- lead 回报:①确认 w5 卡住(上轮已 ping 启动 v3,但 w5 status 仍待 ping/无 rerun 进程/rollouts_v3 无产物→session 未消费);②③按 coordinator 授权把 v3 执行改派给空闲 w1(task042,w1 谙 envdeps/determinism/golden,uv 兜底已折进 envdeps),令 w5 stand down 避免双跑。
+- w1 即刻执行:batch 产 v3 manifest(golden_status+determinism)→确定性可用集 gpt-5.5 重跑→outputs/rollouts_v3/+report_v3(真实非零 correct率+四类别+v1→v2→v3 对比)。ETA~25-35min。
+- coordinator:确认 lead 处置正确(改派而非空等),不干预;监控 b0zkh9q4w 就位待产物。
+- 下步:v3 产物落地后独立核验真实非零正确率+确定性可用集大小+四类别占比,向用户汇报;监控超时则 re-arm。
