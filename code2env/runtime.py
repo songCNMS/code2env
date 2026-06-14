@@ -51,6 +51,38 @@ def _clamp_unit(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
+def _normalize_answer_envelope(value: Any) -> Any:
+    """Peel runtime wrapper layers so a value submitted at any envelope depth compares equal.
+
+    Strips, repeatedly from the outside in, two wrapper layers:
+    - the tool *success* envelope ``{"ok": True, "value": V}`` (only when ``ok`` is True), and
+    - the JSON serialization shell ``{"kind": "json", "value": V}``.
+
+    Error envelopes (``{"ok": False, ...}``) and non-JSON-serializable
+    ``{"kind": "repr", ...}`` payloads are left intact, so a correct deterministic
+    result that the agent submitted as the inner value, as the ``{kind: json}``
+    shell, or as the full tool envelope all normalize to the same thing — while
+    genuinely different results (and errors) stay distinguishable.
+    """
+    current = value
+    for _ in range(32):  # guard against pathological / deeply nested structures
+        if not isinstance(current, dict):
+            break
+        if current.get("ok") is True and "value" in current:
+            current = current["value"]
+            continue
+        if current.get("kind") == "json" and "value" in current:
+            current = current["value"]
+            continue
+        break
+    return current
+
+
+def _answers_equal(submitted: Any, golden: Any) -> bool:
+    """Compare a submitted answer to the golden answer modulo runtime envelope wrapping."""
+    return _normalize_answer_envelope(submitted) == _normalize_answer_envelope(golden)
+
+
 class Code2Env:
     """Tool-call runtime for generated Code2Env packages.
 
@@ -187,7 +219,7 @@ class Code2Env:
 
     def evaluate(self) -> dict[str, Any]:
         submitted = self.state.get("submitted_answer")
-        correct = submitted == self.spec.golden_answer
+        correct = _answers_equal(submitted, self.spec.golden_answer)
         breakdown = self._compute_breakdown()
         return {
             "score": breakdown["total"],
@@ -433,7 +465,7 @@ class Code2Env:
         if tool_name == "submit_answer":
             answer = arguments.get("answer")
             self.state["submitted_answer"] = copy.deepcopy(answer)
-            correct = answer == self.spec.golden_answer
+            correct = _answers_equal(answer, self.spec.golden_answer)
             return {
                 "ok": True,
                 "done": True,
