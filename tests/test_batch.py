@@ -4,10 +4,13 @@ import ast
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+from code2env import cli
 from code2env.batch import _disqualify, generate_batch, synthesize_fixture
 from code2env.indexer import find_candidate, index_repo
 from code2env.ingest import ingest_repo
+from code2env.spec import MAX_SEMANTIC_HELPER_TOOLS
 
 
 def _func(source: str) -> ast.FunctionDef:
@@ -149,6 +152,9 @@ class BatchPipelineTest(unittest.TestCase):
                     "weak_oracle",
                     "usable",
                     "nondeterministic",
+                    "min_semantic_helpers",
+                    "semantic_gate_passed",
+                    "skipped_insufficient_semantic_helpers",
                     "by_repo",
                 },
             )
@@ -162,6 +168,9 @@ class BatchPipelineTest(unittest.TestCase):
             self.assertEqual(summary["weak_oracle"], 0)
             self.assertEqual(summary["usable"], 3)
             self.assertEqual(summary["nondeterministic"], 0)
+            self.assertEqual(summary["min_semantic_helpers"], 0)
+            self.assertEqual(summary["semantic_gate_passed"], 4)
+            self.assertEqual(summary["skipped_insufficient_semantic_helpers"], 0)
             self.assertEqual(
                 summary["by_repo"][str(repo)],
                 {
@@ -171,6 +180,8 @@ class BatchPipelineTest(unittest.TestCase):
                     "weak_oracle": 0,
                     "usable": 3,
                     "nondeterministic": 0,
+                    "semantic_gate_passed": 4,
+                    "skipped_insufficient_semantic_helpers": 0,
                     "deps_status": "no_deps",
                 },
             )
@@ -183,7 +194,7 @@ class BatchPipelineTest(unittest.TestCase):
                 reasons, {"possible_side_effect", "untyped_required_param:x", "not_module_level"}
             )
             for entry in manifest["skipped"]:
-                self.assertEqual(set(entry.keys()), {"symbol", "repo", "reason"})
+                self.assertGreaterEqual(set(entry.keys()), {"symbol", "repo", "reason"})
 
             # Env record contract + on-disk artifacts.
             required_env_keys = {
@@ -200,6 +211,8 @@ class BatchPipelineTest(unittest.TestCase):
                 "smoke_fail_reason",
                 "golden_status",
                 "determinism",
+                "semantic_helper_count",
+                "semantic_helpers",
                 "deps_status",
                 "deps_installed",
                 "spec_path",
@@ -213,6 +226,8 @@ class BatchPipelineTest(unittest.TestCase):
                 self.assertEqual(set(env["fixture"]["value"].keys()), {"args", "kwargs"})
                 self.assertEqual(env["golden_status"], "real_value")
                 self.assertEqual(env["determinism"], "deterministic")
+                self.assertIsInstance(env["semantic_helper_count"], int)
+                self.assertIsInstance(env["semantic_helpers"], list)
                 self.assertEqual(env["deps_status"], "no_deps")
                 self.assertTrue(Path(env["spec_path"]).exists())
                 self.assertTrue((Path(env["package_path"]) / "env_spec.json").exists())
@@ -239,6 +254,196 @@ class BatchPipelineTest(unittest.TestCase):
                 _disqualify(writes, include_side_effects=False), "possible_side_effect"
             )
             self.assertIsNone(_disqualify(writes, include_side_effects=True))
+
+
+class SemanticHelperGateTest(unittest.TestCase):
+    def test_candidate_with_three_safe_direct_helpers_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._write_repo(
+                Path(temp_dir) / "lib",
+                """
+def clean(value: int) -> int:
+    return value + 1
+
+
+def scale(value: int) -> int:
+    return value * 2
+
+
+def render(value: int) -> str:
+    return str(value)
+
+
+def entry_three(value: int) -> str:
+    first = clean(value)
+    second = scale(first)
+    return render(second)
+""",
+            )
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                min_semantic_helpers=3,
+                run_smoke=False,
+                generated_at="2026-06-13T00:00:00Z",
+            )
+
+            env = next(env for env in manifest["envs"] if env["symbol"] == "m:entry_three")
+            self.assertTrue(env["build_ok"])
+            self.assertEqual(env["semantic_helper_count"], 3)
+            self.assertEqual(env["semantic_helpers"], ["clean", "render", "scale"])
+            self.assertEqual(manifest["summary"]["semantic_gate_passed"], 1)
+            self.assertEqual(manifest["summary"]["skipped_insufficient_semantic_helpers"], 3)
+
+    def test_candidate_with_two_safe_helpers_is_skipped_for_min_three(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._write_repo(
+                Path(temp_dir) / "lib",
+                """
+def clean(value: int) -> int:
+    return value + 1
+
+
+def scale(value: int) -> int:
+    return value * 2
+
+
+def entry_two(value: int) -> int:
+    first = clean(value)
+    return scale(first)
+""",
+            )
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                min_semantic_helpers=3,
+                run_smoke=False,
+                generated_at="2026-06-13T00:00:00Z",
+            )
+
+            self.assertNotIn("m:entry_two", {env["symbol"] for env in manifest["envs"]})
+            skipped = next(
+                entry for entry in manifest["skipped"] if entry["symbol"] == "m:entry_two"
+            )
+            self.assertEqual(skipped["reason"], "insufficient_semantic_helpers:2/3")
+            self.assertEqual(skipped["semantic_helper_count"], 2)
+            self.assertEqual(skipped["semantic_helpers"], ["clean", "scale"])
+
+    def test_side_effect_helper_does_not_count_toward_minimum(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._write_repo(
+                Path(temp_dir) / "lib",
+                """
+def clean(value: int) -> int:
+    return value + 1
+
+
+def scale(value: int) -> int:
+    return value * 2
+
+
+def persist(value: int) -> int:
+    open("/tmp/code2env_gate_sink", "w").write(str(value))
+    return value
+
+
+def entry_three_raw(value: int) -> int:
+    first = clean(value)
+    second = scale(first)
+    return persist(second)
+""",
+            )
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                include_side_effects=True,
+                min_semantic_helpers=3,
+                run_smoke=False,
+                generated_at="2026-06-13T00:00:00Z",
+            )
+
+            skipped = next(
+                entry
+                for entry in manifest["skipped"]
+                if entry["symbol"] == "m:entry_three_raw"
+            )
+            self.assertEqual(skipped["reason"], "insufficient_semantic_helpers:2/3")
+            self.assertEqual(skipped["semantic_helpers"], ["clean", "scale"])
+
+    def test_default_omitted_gate_preserves_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._write_repo(
+                Path(temp_dir) / "lib",
+                """
+def clean(value: int) -> int:
+    return value + 1
+
+
+def scale(value: int) -> int:
+    return value * 2
+
+
+def entry_two(value: int) -> int:
+    first = clean(value)
+    return scale(first)
+""",
+            )
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                run_smoke=False,
+                generated_at="2026-06-13T00:00:00Z",
+            )
+
+            self.assertIn("m:entry_two", {env["symbol"] for env in manifest["envs"]})
+            self.assertEqual(manifest["summary"]["min_semantic_helpers"], 0)
+            self.assertFalse(
+                any(
+                    entry["reason"].startswith("insufficient_semantic_helpers:")
+                    for entry in manifest["skipped"]
+                )
+            )
+
+    def test_cli_wires_min_semantic_helpers_into_generate_batch(self) -> None:
+        with patch("code2env.cli.generate_batch", return_value={"summary": {}}) as mocked:
+            with patch("code2env.cli._print_json"):
+                exit_code = cli.main(
+                    [
+                        "batch",
+                        "repo",
+                        "--output-dir",
+                        "out",
+                        "--min-semantic-helpers",
+                        "2",
+                    ]
+                )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(mocked.call_args.kwargs["min_semantic_helpers"], 2)
+
+    def test_invalid_min_semantic_helpers_above_max_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaises(ValueError):
+                generate_batch(
+                    ["unused"],
+                    output_dir=Path(temp_dir) / "out",
+                    min_semantic_helpers=MAX_SEMANTIC_HELPER_TOOLS + 1,
+                )
+
+        with self.assertRaises(SystemExit):
+            cli.main(
+                [
+                    "batch",
+                    "repo",
+                    "--min-semantic-helpers",
+                    str(MAX_SEMANTIC_HELPER_TOOLS + 1),
+                ]
+            )
+
+    def _write_repo(self, root: Path, source: str) -> Path:
+        root.mkdir(parents=True)
+        (root / "m.py").write_text(source.lstrip(), encoding="utf-8")
+        return root
 
 
 if __name__ == "__main__":

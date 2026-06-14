@@ -348,6 +348,16 @@ def _tools_from_candidate(
     return tools
 
 
+def semantic_helpers_for_candidate(
+    candidate: FunctionCandidate, candidates: list[FunctionCandidate] | None = None
+) -> list[str]:
+    """Return helper names that final ToolSpec generation exposes as call_<helper>."""
+
+    by_symbol = {item.symbol: item for item in (candidates or [])}
+    pure_helpers, _ = _partition_helpers(candidate, by_symbol)
+    return pure_helpers[:MAX_SEMANTIC_HELPER_TOOLS]
+
+
 def _partition_helpers(
     candidate: FunctionCandidate, by_symbol: dict[str, FunctionCandidate]
 ) -> tuple[list[str], list[str]]:
