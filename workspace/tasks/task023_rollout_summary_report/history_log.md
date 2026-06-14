@@ -1,6 +1,6 @@
 # task023_rollout_summary_report - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -22,3 +22,10 @@
 - 按 lead canonical reason→tag 映射重写 `classify_reason`（子串/前缀匹配）：dependency_failure←modulenotfound/importerror/no module named 或 `draft_error`含import；weak_oracle←golden_error*/answer_mismatch；format_error←parse_error/schema；fixture_unsynthesizable←untyped_required_param/unsupported_param_type/requires_instance/possible_side_effect/not_module_level/function_node_not_found/no_fixture；其余 other；rollout 不合格无信号→tool_granularity（保留在 rollout 聚类层）。
 - 测试：合成 manifest 改用 D1 真实词汇；新增 `test_canonical_d1_vocabulary` 等 3 例覆盖全部 canonical token；更新生成聚类断言(fixture=3/dependency=1/weak_oracle=2/tool_granularity=0)。`pytest tests/`=45 passed、`unittest`=45 OK。
 - 按 lead 指示**暂不 self-merge**；合并顺序 PR#14→PR#13；等 lead 确认 PR#14 merged 后再 merge origin/main 解 cli.py(report subparser)冲突+重测+self-merge。已 mailbox 回报修复完成。
+
+## Session 3 - 2026-06-13 - lead APPROVE，hold 等合并序
+
+- lead 核验聚类修复(b526432) APPROVE：classify_reason 子串/前缀匹配覆盖全部 canonical token，fixture_unsynthesizable 不再恒 0，测试用 D1 真实词汇 45 passed。
+- 合并序更新：我排在 **PR#11(D2)** 之后（避免与 D2 在 cli.py 并发冲突）。当前 **hold**，等 lead 确认 PR#11 merged 后 ping。
+- 届时动作：`git fetch && git merge origin/main` 解 cli.py(report subparser) 冲突 → `pytest tests/` 全绿 → `gh pr merge 13 --squash` → 标 task Completed/Idle → mailbox 回报。
+- 本 turn 无代码改动，仅记录 hold 状态。

@@ -1,6 +1,6 @@
 # task023_rollout_summary_report - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
