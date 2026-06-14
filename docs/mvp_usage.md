@@ -68,9 +68,11 @@ candidates taken in descending static score). It writes one `manifest.json` unde
 dependencies installed, so golden answers and rollout `call_entrypoint` run with real
 imports. The interpreter is recorded on `spec.runtime.python_executable` and reused by
 the runtime (falling back to the default interpreter if the path is gone). Uninstallable
-packages are skipped with a reason; `--no-install-deps` skips the whole step. Real venv
-creation needs `python3-venv`/`ensurepip` on the host — otherwise `deps_status` is
-`venv_failed` and the base interpreter is used.
+packages are skipped with a reason; `--no-install-deps` skips the whole step. Venv
+creation prefers the stdlib `python -m venv`; when that fails because
+`python3-venv`/`ensurepip` is missing it falls back to `uv venv --seed` if the `uv`
+binary is available (task035). Only when neither backend works is `deps_status` set to
+`venv_failed` and the base interpreter used.
 
 **Golden status (task030).** Each env is classified `real_value` (usable, counted toward
 correctness) or `weak_oracle:<reason>` (golden still an exception, e.g.
@@ -179,9 +181,24 @@ omits them):
 |---|---:|---|
 | `schema_validity` | 0.05 | fraction of actions that are well-formed (valid `tool_call`, known tool, object arguments, parseable result) |
 | `process_progress` | 0.20 | staged milestones reached: explore → execute source → submit after progress |
-| `final_correctness` | 0.65 | exact-match against the pinned golden answer (1.0 / 0.0) |
+| `final_correctness` | 0.65 | envelope-normalized exact-match against the pinned golden answer (1.0 / 0.0) |
 | `efficiency` | 0.05 | `1 − (error + duplicate calls)/max_steps`, minus a penalty for exhausting the step budget without submitting |
 | `safety` | 0.05 | `1.0`, dropped to `0.0` when a sandbox enforcement fires (blocked network/subprocess, timeout) |
+
+**Answer envelope matching.** Both `evaluate()` and the `submit_answer`
+correctness check accept the submitted answer in any of the natural envelope
+depths (`code2env.runtime._accepted_answer_forms`). The golden answer for a
+deterministic success is the executor's two-layer envelope
+`{"ok": true, "value": {"kind": "json", "value": X}}`; peeling *exactly those two
+known layers* recovers the canonical inner value `X`, and a submission counts as
+correct iff it exactly equals one of three fixed shapes: the bare inner value
+`X`, the serialization shell `{"kind": "json", "value": X}`, or the full envelope.
+Comparison is exact equality against this set — the submitted value is **not**
+greedily unwrapped — so when the target function itself returns a wrapper-shaped
+dict (e.g. `{"ok": true, "value": 5}`), `X` keeps that shape and an agent that
+submits a bare inner value is correctly judged incorrect rather than colliding.
+Error envelopes (`{"ok": false, ...}`) and non-JSON `{"kind": "repr", ...}`
+payloads require an exact match against golden.
 
 **Training reward vs. evaluation score are separate:**
 
