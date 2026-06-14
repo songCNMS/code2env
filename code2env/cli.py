@@ -19,7 +19,7 @@ from code2env.rollout import ScriptedSolveChat, ScriptedTraceSolveChat, run_roll
 from code2env.rollout_export import iter_jsonl, write_conversation
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
-from code2env.spec import draft_env_spec
+from code2env.spec import MAX_SEMANTIC_HELPER_TOOLS, draft_env_spec
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -158,6 +158,15 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=3,
         help="Repeat-execute each golden N times for the determinism gate (>=2 to detect instability)",
+    )
+    batch_parser.add_argument(
+        "--min-semantic-helpers",
+        type=_min_semantic_helpers_value,
+        default=0,
+        help=(
+            "Require at least N dedicated safe call_<helper> semantic tools before "
+            f"batch generation work (0-{MAX_SEMANTIC_HELPER_TOOLS}, default: 0)"
+        ),
     )
 
     rollout_export_parser = subcommands.add_parser(
@@ -414,6 +423,7 @@ def _batch(args: argparse.Namespace) -> int:
         install_deps=not args.no_install_deps,
         venv_cache_dir=args.venv_cache_dir,
         determinism_runs=args.determinism_runs,
+        min_semantic_helpers=args.min_semantic_helpers,
     )
     _print_json({"output_dir": str(Path(args.output_dir).resolve()), "summary": manifest["summary"]})
     return 0
@@ -431,3 +441,15 @@ def _rollout_export(args: argparse.Namespace) -> int:
 def _print_json(data: Any) -> None:
     json.dump(data, sys.stdout, indent=2, sort_keys=True)
     sys.stdout.write("\n")
+
+
+def _min_semantic_helpers_value(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be an integer") from exc
+    if parsed < 0 or parsed > MAX_SEMANTIC_HELPER_TOOLS:
+        raise argparse.ArgumentTypeError(
+            f"must be between 0 and {MAX_SEMANTIC_HELPER_TOOLS}"
+        )
+    return parsed

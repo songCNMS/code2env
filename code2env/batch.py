@@ -15,6 +15,9 @@ The ``manifest.json`` contract is fixed (do not rename fields)::
         "draft_ok": int,
         "build_ok": int,
         "smoke_ok": int,
+        "min_semantic_helpers": int,
+        "semantic_gate_passed": int,
+        "skipped_insufficient_semantic_helpers": int,
         "skipped_no_fixture": int,
         "by_repo": {repo: {"build_ok": int, "smoke_ok": int}}
       },
@@ -23,7 +26,7 @@ The ``manifest.json`` contract is fixed (do not rename fields)::
           "env_id", "repo", "symbol", "file", "line_start", "line_end",
           "fixture": {"ok", "strategy", "value": {"args", "kwargs"}, "reason"},
           "draft_ok", "build_ok", "smoke_ok", "smoke_fail_reason",
-          "spec_path", "package_path"
+          "semantic_helper_count", "semantic_helpers", "spec_path", "package_path"
         }, ...
       ],
       "skipped": [{"symbol", "repo", "reason"}, ...]
@@ -45,7 +48,11 @@ from code2env.ingest import ingest_repo
 from code2env.jsonio import write_json
 from code2env.models import FunctionCandidate, RepoSnapshot
 from code2env.runtime import Code2Env
-from code2env.spec import draft_env_spec
+from code2env.spec import (
+    MAX_SEMANTIC_HELPER_TOOLS,
+    draft_env_spec,
+    semantic_helpers_for_candidate,
+)
 
 # Annotation name -> synthesised JSON value for scalar parameter types.
 _SCALAR_VALUES: dict[str, Any] = {
@@ -90,6 +97,7 @@ def generate_batch(
     install_deps: bool = True,
     venv_cache_dir: str | Path | None = None,
     determinism_runs: int = 3,
+    min_semantic_helpers: int = 0,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     """Generate EnvPackages across ``repos`` and return the manifest dict.
@@ -99,6 +107,8 @@ def generate_batch(
     repo a venv is prepared once (task030) so golden answers and rollout
     call_entrypoint run with the repo's runtime dependencies installed.
     """
+
+    _validate_min_semantic_helpers(min_semantic_helpers)
 
     output_root = Path(output_dir).expanduser().resolve()
     specs_dir = output_root / "specs"
@@ -113,6 +123,8 @@ def generate_batch(
     repo_deps: dict[str, dict[str, Any]] = {}
     candidates_scanned = 0
     build_ok_total = 0
+    semantic_gate_passed = 0
+    skipped_insufficient_semantic_helpers = 0
 
     for repo in repos:
         snapshot = ingest_repo(repo, cache_dir=cache_dir)
@@ -127,6 +139,8 @@ def generate_batch(
                 "weak_oracle": 0,
                 "usable": 0,
                 "nondeterministic": 0,
+                "semantic_gate_passed": 0,
+                "skipped_insufficient_semantic_helpers": 0,
             },
         )
         # One venv per repo: install runtime deps so golden answers are real values.
@@ -158,11 +172,39 @@ def generate_batch(
                 skipped.append({"symbol": candidate.symbol, "repo": repo_label, "reason": skip_reason})
                 continue
 
+            semantic_helpers = semantic_helpers_for_candidate(candidate, candidates)
+            semantic_helper_count = len(semantic_helpers)
+            if semantic_helper_count < min_semantic_helpers:
+                skipped_insufficient_semantic_helpers += 1
+                by_repo[repo_label]["skipped_insufficient_semantic_helpers"] += 1
+                skipped.append(
+                    {
+                        "symbol": candidate.symbol,
+                        "repo": repo_label,
+                        "reason": (
+                            f"insufficient_semantic_helpers:"
+                            f"{semantic_helper_count}/{min_semantic_helpers}"
+                        ),
+                        "semantic_helper_count": semantic_helper_count,
+                        "semantic_helpers": semantic_helpers,
+                    }
+                )
+                continue
+
+            semantic_gate_passed += 1
+            by_repo[repo_label]["semantic_gate_passed"] += 1
+
             func_node = _function_node(snapshot, candidate, tree_cache)
             fixture = synthesize_fixture(func_node)
             if not fixture["ok"]:
                 skipped.append(
-                    {"symbol": candidate.symbol, "repo": repo_label, "reason": fixture["reason"]}
+                    {
+                        "symbol": candidate.symbol,
+                        "repo": repo_label,
+                        "reason": fixture["reason"],
+                        "semantic_helper_count": semantic_helper_count,
+                        "semantic_helpers": semantic_helpers,
+                    }
                 )
                 continue
 
@@ -177,6 +219,7 @@ def generate_batch(
                 packages_dir=packages_dir,
                 run_smoke=run_smoke,
                 determinism_runs=determinism_runs,
+                semantic_helpers=semantic_helpers,
             )
             envs.append(env_record)
             if env_record["build_ok"]:
@@ -217,6 +260,9 @@ def generate_batch(
             for env in envs
             if env["determinism"] and env["determinism"] != "deterministic"
         ),
+        "min_semantic_helpers": min_semantic_helpers,
+        "semantic_gate_passed": semantic_gate_passed,
+        "skipped_insufficient_semantic_helpers": skipped_insufficient_semantic_helpers,
         "by_repo": by_repo,
     }
     manifest = {
@@ -243,7 +289,9 @@ def _generate_one(
     packages_dir: Path,
     run_smoke: bool,
     determinism_runs: int = 3,
+    semantic_helpers: list[str] | None = None,
 ) -> dict[str, Any]:
+    semantic_helpers = list(semantic_helpers or [])
     record: dict[str, Any] = {
         "env_id": None,
         "repo": repo_label,
@@ -258,6 +306,8 @@ def _generate_one(
         "smoke_fail_reason": None,
         "golden_status": None,
         "determinism": None,
+        "semantic_helper_count": len(semantic_helpers),
+        "semantic_helpers": semantic_helpers,
         "deps_status": repo_env["deps_status"],
         "deps_installed": repo_env["installed"],
         "spec_path": None,
@@ -299,6 +349,15 @@ def _generate_one(
             package_root, spec.golden_answer
         )
     return record
+
+
+def _validate_min_semantic_helpers(value: int) -> None:
+    if not isinstance(value, int):
+        raise ValueError("min_semantic_helpers must be an integer")
+    if value < 0 or value > MAX_SEMANTIC_HELPER_TOOLS:
+        raise ValueError(
+            f"min_semantic_helpers must be between 0 and {MAX_SEMANTIC_HELPER_TOOLS}: {value}"
+        )
 
 
 def _run_smoke(package_root: Path, golden_answer: Any) -> tuple[bool, str | None]:
