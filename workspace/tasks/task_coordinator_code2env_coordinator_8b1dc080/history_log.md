@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=11 -->
+<!-- METADATA:SESSION=12 -->
 
 ## Session 0 - Created with coordinator
 
@@ -89,3 +89,10 @@
 - 产物位于 `../outputs/session11_qlib_trace_eval/`：summary `qlib_trace_eval_summary.json`（17,530 bytes）、endpoint JSONL `qlib_usable_semantic_endpoint_trace_rollouts.jsonl`（16,609 bytes）、mock JSONL `qlib_semantic_mock_trace_rollouts.jsonl`（250,540 bytes）、exported endpoint/mock 目录。
 - 已通过本机飞书 daemon 发送 3 个文件到 `intern_code2env_coordinator` 飞书会话：summary 文件消息 ID `om_x100b6ddfc90b54a4b04e4733a08e8df`，endpoint JSONL 文件消息 ID `om_x100b6ddfc92e44a4b2a02fe811108af`，mock JSONL 文件消息 ID `om_x100b6ddfc6c93cacb3b6b01f5e0b288`，确认文本消息 ID `om_x100b6ddfc6c2eca8b1c23ca45314bfa`。
 - 结论：正式 trace-mode 在真实 qlib 的 usable+semantic env 上可闭环；当前真实 qlib 覆盖瓶颈不是 trace-mode 本身，而是 EnvSpec fixture/golden/dependency viability 和 semantic helper 暴露率，后续应优先推进 test-backed fixture extraction、最小依赖/import slicing、typed fixture 支持和 instance-method env support。
+
+## Session 12 - Semantic helper purpose clarified
+
+- 回应用户问题“semantic helper 的作用是什么”；本次为概念澄清，没有修改产品代码，也没有下发 team_lead 实现任务。
+- 核对本地实现：`code2env/spec.py` 将目标函数的安全直接 callee 拆成最多 3 个 dedicated `call_<helper>` tools，并写入 backing symbol、source span、entrypoint step provenance；side-effecting helper 不直接暴露，而记录到 `call_entrypoint.provenance.sandboxed_side_effect_helpers`。
+- 核对 runtime：`code2env/runtime.py` 通过 ToolSpec provenance 将 `call_<helper>` dispatch 到真实 backing function，并把成功调用的 semantic helper 计入 explored/executed_source。
+- 结论：semantic helper 的核心作用是把主函数实现里的关键子步骤变成可调用、可追溯、可评分的工具，使 subfunction trace rollout 能检查 agent 是否按实现结构调用 helper；它不是动态自动记录的内部 call graph，也不是任意 helper 的无约束执行入口。
