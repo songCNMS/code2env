@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task |  |
-| PR | #24 (task038) 待 squash merge |
-| Session | 4 |
+| PR | https://github.com/songCNMS/code2env/pull/31 (merged) |
+| Session | 3 |
