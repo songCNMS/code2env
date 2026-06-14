@@ -80,3 +80,10 @@
 - baseline（装依赖前）golden_status：real_value=67 / weak_oracle=33（ModuleNotFoundError=24/InvalidExecutorOutput=4/ValueError=2/AssertionError=2/OSError=1）。路径 outputs/phase3_v2/baseline/manifest.json。
 - v2（装依赖后，uv）manifest：outputs/phase3_v2/envs/manifest.json；orchestrator outputs/phase3_v2/run_rollouts_v2.py（仅跑 golden_status==real_value 子集，导出 outputs/rollouts_v2/）。
 - 路径全部在仓外 `../outputs`（不是 repo 内 code2env/outputs，注意别写错）；rollouts_v2 与旧 rollouts 并存不覆盖。
+
+## Step2/3 结果 + 第三根因（C）
+
+- Step2 rollout：75 real_value env，75/75 跑通、qualified 100%、exact correct=0、mean_score 0.35、全 gpt-5.5。导出 coordinator outputs/rollouts_v2/。
+- Step3 报告：coordinator outputs/report_v2/report.{md,json}；真实 correct=0/75；装依赖前后 golden error→real_value=9、flask smoke 0→8。
+- **根因 C（submit-envelope 不符）**：golden=executor 整包 `{ok:true,value:{kind,val}}`，agent 多提交内层 value → exact_match 假阴性。58/75=77% 是"解对 value 仅 envelope 错"，17 真错（含非确定性 repr）。真实解题质量≈77%，被 exact-match 整包比对掩盖。
+- 待 lead 决策修法：prompt 指示提交 call_entrypoint 整包 / oracle 比对 value / submit 自动 wrap。属新一轮 fix（非本 task 范围）。

@@ -35,3 +35,11 @@
 - **绕过（runner 侧，不改合入代码）**：本机有 `uv 0.11.21`。`uv venv --seed` 可建带 pip 的 venv（无需 ensurepip），且 `venv_python -m pip install` 正常（验证装上 flask/werkzeug）。写 wrapper `outputs/phase3_v2/batch_uv.py`：monkeypatch `envdeps._create_venv` 改用 `uv venv --seed`（`_create_venv` 在 call 时按模块全局解析，patch 生效），其余（幂等检查、_pip_install）不变。清 `.code2env_cache/venvs` 重跑。
 - 已 git worktree(/tmp/wt_task034) 更新本 task 文档，避免在跑批期间切换主工作树的 executor.py（golden 子进程从磁盘 import code2env.executor）。
 - 待：uv-wrapped v2 batch 跑完确认 golden 由 error→real_value（尤其 flask 24→?）→ Step2 重跑 → Step3 报告。venv 阻塞+uv 绕过会回报 lead（含建议 envdeps 兜底 uv）。
+
+### Session 3 (续) - Step2 重跑 + Step3 报告 + 第三根因发现
+
+- Step2：75 个 real_value env 用 gpt-5.5(修正 prompt)+gpt-oss-120b 回退重跑 → 75/75 跑通、0 失败、qualified=75(100%)、全 gpt-5.5 无回退。导出 coordinator outputs/rollouts_v2/（旧 rollouts/100 未动）。
+- Step3：`code2env report <v2 manifest> --rollouts rollouts_v2/ --baseline-manifest <baseline> --output-dir report_v2/`。报告：真实 correct(剔 weak_oracle)=**0/75**、mean_score=0.35；装依赖前后：golden error→real_value=9、flask smoke 0→8。
+- ⚠️ **第三根因（C）发现**：exact-match correct=0 不是模型不会做。逐条分析 75：**58/75(77%) 提交了正确 value 但 envelope 不符**——golden=`{ok:true,value:{kind,val}}`(executor 整包)，agent 提交内层 `{kind,val}`(== golden.value) 丢了 `{ok:true}` 外壳 → exact_match=False。仅 17 真错（其中含非确定性 repr，如 `<generator object at 0x..>` 永不可复现，属漏网 weak_oracle）。
+- 即：根因 A(依赖/golden)+B(call_entrypoint 参数) 已修；真实"解对 value"≈77%，但 submit 比对整包 envelope 太严，exact correct=0。w2 prompt 修了 call_entrypoint 参数但未管 submit 格式。
+- 结论：v2 交付完成（manifest/rollouts_v2/report_v2 全产出 + 装依赖前后对比）；新增根因 C 待 lead 决策（prompt 让 agent 提交整包 / oracle 比对 value / submit 自动 wrap）。已 mailbox 回报。
