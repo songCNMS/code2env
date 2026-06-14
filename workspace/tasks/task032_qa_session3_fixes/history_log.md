@@ -1,6 +1,22 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=7 -->
+
+## Session 7 - 2026-06-14 UTC - PR#23 暂停(lead 发现过度剥壳假阳性)
+
+- lead review PR#23(task037)发现**过度剥壳假阳性**: 源函数真实返回 {ok:true,value}/{kind:json,value} 形状 dict 时会被误剥→错误提交也匹配 golden。已让 w2 修订, 我暂停 PR#23 验证等修订版再 ping。
+- 我漏检该对抗用例(只验正向多形状判对), 教训记 ERROR_BOOK E2: 验 strip/normalize 逻辑必须构造"合法数据命中剥离特征→不应被剥"对抗用例。
+- 后续: lead review 完 w1 task038(PR#24)/w4 task039(PR#26)再 ping 分支名; task035 PR#22 我已 PASS, w1 先合。
+- 当前等待中。
+
+## Session 6 - 2026-06-13 UTC - task032(Session3 QA)收尾 + 接受 task040(Session4 QA)
+
+- task032 Session3 QA 全部完成: PR#17/#20/#18 + PR#22(task035) 五项验证均 PASS、030↔033 契约交叉核对一致, 已逐个 mailbox 回报。
+- lead 分配新任务 task040_qa_session4(tester): 验 task037(信封归一)/task038(确定性门禁)/task039(report_v3) + 收尾 task035 PR#22。
+- 已读 task040 + task037/038/039 文档; task040 测试计划写入 workspace/tasks/task040_qa_session4/task_knowledge.md(三 PR 逐条 + 038↔039/037↔039 交叉核对)。
+- 操作说明: 因 Stop hook 绑定 task032 Session 序列, 本轮接受记于此(Session 6); task040 逐 PR 验证将续在此序列(Session 7+)并同步记 task040 dir。
+- 等 lead ping 三 PR 分支名后逐个 checkout 验证, 走 mailbox。
+- [Phase1 同turn] 验 PR#23 task037(信封归一): checkout w2 分支 pytest 121 passed(test_envelope 13); 逐条 6 项全 PASS(归一剥 {ok,value}/{kind:json} 壳、ok:false/{kind:repr} 不剥、三形状同底层值都 correct、scripted_smoke ok score1.0、五维不变、只动 runtime.py); merge main 干净 post-merge 127。建议 APPROVE, mailbox 已回报。详见 task040 task_knowledge。
 
 ## Session 5 - 2026-06-13 UTC - Phase4 验证 PR#22 task035 (envdeps uv venv 兜底)
 

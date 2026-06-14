@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - Task Knowledge
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=7 -->
 
 ## 记录规则
 
@@ -96,4 +96,9 @@
 ### [流程修复] Stop hook 读共享 repo status.md (重要)
 - Stop hook 校验的 Session 号来自**共享 repo** /home/leisong/codes/work-agents/code2env/workspace/interns/intern_code2env_worker_3/status.md(在 main), 不是我 task 分支 worktree 的副本。
 - tester/不 merge 的 task 里, 分支上改 status 到不了 main, 共享副本停在上次合并态→hook 报 Session 不符。
-- 规避: 每 session 直接编辑共享 repo 的 status.md(Session=本轮预期)+ git push origin main(workspace 协调文件直推 main 是被允许的, 同 create-task 流程)。已写入 Claude memory。
+- 规避(部分): 同步共享 repo status.md 无害但**非真因**。
+- 【真因更正】Stop hook 的 Session 校验取自**我回复 checklist 文本**(validation_module `_extract_session_from_checklist`: `re.search(r'Session[：:\s]*(\d+)', IGNORECASE)` 取首个匹配)。task id `qa_session3_fixes` 含子串 "session3" 被首先命中→恒报 回复=3。规避: checklist 把真实 `Session：N` 写在 task id **之前**。expected_session = task history METADATA SESSION+1(UserPromptSubmit 快照); status live task_id 决定 #4 文件检查目标。已更新 Claude memory。
+
+## Session 6: task032 收尾 + 接受 task040_qa_session4(tester)
+- task032(Session3 QA)五项验证全 PASS, 收尾。task040: 验 task037/038/039 + 收尾 task035 PR#22(上轮已 PASS)。
+- task040 测试计划见 workspace/tasks/task040_qa_session4/task_knowledge.md。因 hook 绑定 task032 序列, 接受与后续 task040 验证续记本序列(Session 6+)。
