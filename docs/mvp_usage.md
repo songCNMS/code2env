@@ -185,17 +185,20 @@ omits them):
 | `efficiency` | 0.05 | `1 − (error + duplicate calls)/max_steps`, minus a penalty for exhausting the step budget without submitting |
 | `safety` | 0.05 | `1.0`, dropped to `0.0` when a sandbox enforcement fires (blocked network/subprocess, timeout) |
 
-**Answer envelope normalization.** Both `evaluate()` and the `submit_answer`
-correctness check compare the submitted answer to the golden answer *after*
-normalizing runtime wrapper layers (`code2env.runtime._normalize_answer_envelope`).
-It peels the tool success envelope `{"ok": true, "value": V}` and the JSON
-serialization shell `{"kind": "json", "value": V}` from the outside in, so an
-agent that submits the inner value (`X`), the serialized shell
-(`{"kind": "json", "value": X}`), or the full tool envelope
-(`{"ok": true, "value": {"kind": "json", "value": X}}`) all score correct for a
-deterministic pure function. Error envelopes (`{"ok": false, ...}`) and
-non-JSON `{"kind": "repr", ...}` payloads are left intact so genuinely different
-results and errors stay distinguishable.
+**Answer envelope matching.** Both `evaluate()` and the `submit_answer`
+correctness check accept the submitted answer in any of the natural envelope
+depths (`code2env.runtime._accepted_answer_forms`). The golden answer for a
+deterministic success is the executor's two-layer envelope
+`{"ok": true, "value": {"kind": "json", "value": X}}`; peeling *exactly those two
+known layers* recovers the canonical inner value `X`, and a submission counts as
+correct iff it exactly equals one of three fixed shapes: the bare inner value
+`X`, the serialization shell `{"kind": "json", "value": X}`, or the full envelope.
+Comparison is exact equality against this set — the submitted value is **not**
+greedily unwrapped — so when the target function itself returns a wrapper-shaped
+dict (e.g. `{"ok": true, "value": 5}`), `X` keeps that shape and an agent that
+submits a bare inner value is correctly judged incorrect rather than colliding.
+Error envelopes (`{"ok": false, ...}`) and non-JSON `{"kind": "repr", ...}`
+payloads require an exact match against golden.
 
 **Training reward vs. evaluation score are separate:**
 

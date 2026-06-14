@@ -51,36 +51,38 @@ def _clamp_unit(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
-def _normalize_answer_envelope(value: Any) -> Any:
-    """Peel runtime wrapper layers so a value submitted at any envelope depth compares equal.
+def _accepted_answer_forms(golden: Any) -> list[Any]:
+    """The exact submitted shapes that count as correct for a given golden answer.
 
-    Strips, repeatedly from the outside in, two wrapper layers:
-    - the tool *success* envelope ``{"ok": True, "value": V}`` (only when ``ok`` is True), and
-    - the JSON serialization shell ``{"kind": "json", "value": V}``.
+    The golden answer for a deterministic success is the executor's two-layer
+    envelope ``{"ok": True, "value": {"kind": "json", "value": X}}``. We peel
+    *exactly those two known layers* (and only when both are present) to recover
+    the canonical inner value ``X``, then accept three concrete shapes:
 
-    Error envelopes (``{"ok": False, ...}``) and non-JSON-serializable
-    ``{"kind": "repr", ...}`` payloads are left intact, so a correct deterministic
-    result that the agent submitted as the inner value, as the ``{kind: json}``
-    shell, or as the full tool envelope all normalize to the same thing — while
-    genuinely different results (and errors) stay distinguishable.
+    - ``X`` — the bare inner value,
+    - ``{"kind": "json", "value": X}`` — the serialization shell,
+    - the full envelope (``== golden``).
+
+    Comparison is exact equality against this fixed set — we never greedily peel
+    the *submitted* value. That matters when the target function itself returns a
+    wrapper-shaped dict (e.g. ``{"ok": True, "value": 5}`` or
+    ``{"kind": "json", "value": 7}``): ``X`` keeps that shape, so an agent that
+    submits a bare inner value is correctly judged INCORRECT instead of colliding.
+
+    Any other golden shape — error envelopes (``{"ok": False, ...}``) or non-JSON
+    ``{"kind": "repr", ...}`` payloads — requires an exact match against golden.
     """
-    current = value
-    for _ in range(32):  # guard against pathological / deeply nested structures
-        if not isinstance(current, dict):
-            break
-        if current.get("ok") is True and "value" in current:
-            current = current["value"]
-            continue
-        if current.get("kind") == "json" and "value" in current:
-            current = current["value"]
-            continue
-        break
-    return current
+    if isinstance(golden, dict) and golden.get("ok") is True and "value" in golden:
+        shell = golden["value"]
+        if isinstance(shell, dict) and shell.get("kind") == "json" and "value" in shell:
+            inner = shell["value"]
+            return [inner, {"kind": "json", "value": inner}, golden]
+    return [golden]
 
 
 def _answers_equal(submitted: Any, golden: Any) -> bool:
-    """Compare a submitted answer to the golden answer modulo runtime envelope wrapping."""
-    return _normalize_answer_envelope(submitted) == _normalize_answer_envelope(golden)
+    """True iff the submitted answer exactly matches one accepted shape of golden."""
+    return any(submitted == form for form in _accepted_answer_forms(golden))
 
 
 class Code2Env:

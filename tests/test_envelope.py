@@ -7,7 +7,7 @@ from pathlib import Path
 from code2env.builder import build_env_package
 from code2env.ingest import ingest_repo
 from code2env.jsonio import write_json
-from code2env.runtime import Code2Env, _answers_equal, _normalize_answer_envelope
+from code2env.runtime import Code2Env, _accepted_answer_forms, _answers_equal
 from code2env.spec import draft_env_spec
 
 
@@ -41,43 +41,45 @@ def _build_env(temp_dir: Path) -> Code2Env:
     return Code2Env(package_root / "env_spec.json")
 
 
-GOLDEN = {"ok": True, "value": {"kind": "json", "value": "ADA LOVELACE"}}
+def _envelope(inner: object) -> dict:
+    """Build the executor's two-layer success envelope around a serialized inner value."""
+    return {"ok": True, "value": {"kind": "json", "value": inner}}
 
 
-class NormalizeEnvelopeTest(unittest.TestCase):
-    def test_peels_tool_and_json_layers_to_inner_value(self) -> None:
-        self.assertEqual(_normalize_answer_envelope(GOLDEN), "ADA LOVELACE")
-        self.assertEqual(_normalize_answer_envelope({"kind": "json", "value": "ADA LOVELACE"}), "ADA LOVELACE")
-        self.assertEqual(_normalize_answer_envelope("ADA LOVELACE"), "ADA LOVELACE")
+GOLDEN = _envelope("ADA LOVELACE")
 
-    def test_inner_data_structure_is_preserved(self) -> None:
-        env = {"ok": True, "value": {"kind": "json", "value": {"a": [1, 2], "b": {"c": 3}}}}
-        self.assertEqual(_normalize_answer_envelope(env), {"a": [1, 2], "b": {"c": 3}})
 
-    def test_error_envelope_is_not_peeled(self) -> None:
+class AcceptedFormsTest(unittest.TestCase):
+    def test_standard_golden_yields_three_accepted_shapes(self) -> None:
+        forms = _accepted_answer_forms(GOLDEN)
+        self.assertEqual(
+            forms,
+            ["ADA LOVELACE", {"kind": "json", "value": "ADA LOVELACE"}, GOLDEN],
+        )
+
+    def test_error_envelope_requires_exact_match(self) -> None:
         err = {"ok": False, "error_type": "ValueError", "error_message": "boom"}
-        self.assertEqual(_normalize_answer_envelope(err), err)
+        self.assertEqual(_accepted_answer_forms(err), [err])
 
-    def test_repr_shell_is_kept(self) -> None:
+    def test_repr_payload_requires_exact_match(self) -> None:
         wrapped = {"ok": True, "value": {"kind": "repr", "type": "set", "repr": "{1, 2}"}}
-        self.assertEqual(_normalize_answer_envelope(wrapped), {"kind": "repr", "type": "set", "repr": "{1, 2}"})
-
-    def test_guard_against_pathological_nesting(self) -> None:
-        node: dict = {}
-        node["ok"] = True
-        node["value"] = node  # self-referential
-        # Should not infinite-loop; returns something within the guard budget.
-        _normalize_answer_envelope(node)
+        self.assertEqual(_accepted_answer_forms(wrapped), [wrapped])
 
 
 class AnswersEqualTest(unittest.TestCase):
-    def test_all_envelope_shapes_of_same_value_match_golden(self) -> None:
-        for submitted in (GOLDEN, {"kind": "json", "value": "ADA LOVELACE"}, "ADA LOVELACE"):
+    def test_all_three_shapes_of_same_value_match(self) -> None:
+        for submitted in ("ADA LOVELACE", {"kind": "json", "value": "ADA LOVELACE"}, GOLDEN):
             self.assertTrue(_answers_equal(submitted, GOLDEN), submitted)
 
     def test_different_underlying_value_does_not_match(self) -> None:
         self.assertFalse(_answers_equal("GRACE HOPPER", GOLDEN))
         self.assertFalse(_answers_equal({"kind": "json", "value": "GRACE HOPPER"}, GOLDEN))
+
+    def test_inner_data_structure_shapes(self) -> None:
+        golden = _envelope({"a": [1, 2], "b": {"c": 3}})
+        self.assertTrue(_answers_equal({"a": [1, 2], "b": {"c": 3}}, golden))
+        self.assertTrue(_answers_equal({"kind": "json", "value": {"a": [1, 2], "b": {"c": 3}}}, golden))
+        self.assertFalse(_answers_equal({"a": [1, 2], "b": {"c": 4}}, golden))
 
     def test_error_golden_only_matches_same_error(self) -> None:
         err = {"ok": False, "error_type": "ValueError", "error_message": "boom"}
@@ -88,51 +90,48 @@ class AnswersEqualTest(unittest.TestCase):
     def test_none_submission_never_matches(self) -> None:
         self.assertFalse(_answers_equal(None, GOLDEN))
 
+    # --- regression: the false positive REQUEST_CHANGES was about (root cause: collision) ---
+    def test_function_returning_ok_value_dict_rejects_bare_inner(self) -> None:
+        # Target function legitimately returns {"ok": True, "value": 5}.
+        golden = _envelope({"ok": True, "value": 5})
+        # Correct submissions:
+        self.assertTrue(_answers_equal({"ok": True, "value": 5}, golden))            # bare inner X
+        self.assertTrue(_answers_equal({"kind": "json", "value": {"ok": True, "value": 5}}, golden))  # shell
+        self.assertTrue(_answers_equal(golden, golden))                              # full envelope
+        # The collision that must NOT be accepted: submitting the over-peeled inner value.
+        self.assertFalse(_answers_equal(5, golden))
+
+    def test_function_returning_json_shaped_dict_rejects_bare_inner(self) -> None:
+        # Target function legitimately returns {"kind": "json", "value": 7}.
+        golden = _envelope({"kind": "json", "value": 7})
+        self.assertTrue(_answers_equal({"kind": "json", "value": 7}, golden))  # bare inner X
+        self.assertFalse(_answers_equal(7, golden))                            # over-peeled -> incorrect
+
 
 class RuntimeEnvelopeIntegrationTest(unittest.TestCase):
-    def _golden(self, env: Code2Env) -> object:
+    def _submit(self, env: Code2Env, answer: object) -> bool:
         env.reset()
-        return env.spec.golden_answer
+        env.step({"type": "tool_call", "tool": "submit_answer", "arguments": {"answer": answer}})
+        return env.evaluate()["correct"]
 
-    def test_submitting_inner_value_is_correct(self) -> None:
+    def test_inner_value_json_shell_and_full_envelope_all_correct(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             env = _build_env(Path(temp))
-            env.reset()
-            _, _, done, _ = env.step(
-                {"type": "tool_call", "tool": "submit_answer", "arguments": {"answer": "ADA LOVELACE"}}
-            )
-            self.assertTrue(done)
-            self.assertTrue(env.evaluate()["correct"])
+            self.assertTrue(self._submit(env, "ADA LOVELACE"))
+            self.assertTrue(self._submit(env, {"kind": "json", "value": "ADA LOVELACE"}))
+            self.assertTrue(self._submit(env, {"ok": True, "value": {"kind": "json", "value": "ADA LOVELACE"}}))
 
-    def test_submitting_json_shell_is_correct(self) -> None:
+    def test_wrong_value_is_incorrect(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             env = _build_env(Path(temp))
-            env.reset()
-            env.step(
-                {
-                    "type": "tool_call",
-                    "tool": "submit_answer",
-                    "arguments": {"answer": {"kind": "json", "value": "ADA LOVELACE"}},
-                }
-            )
-            self.assertTrue(env.evaluate()["correct"])
+            self.assertFalse(self._submit(env, "WRONG NAME"))
 
-    def test_submitting_full_envelope_still_correct(self) -> None:
-        # scripted_smoke submits the full last_tool_result; must remain correct.
+    def test_scripted_smoke_still_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             env = _build_env(Path(temp))
             result = env.scripted_smoke()
             self.assertTrue(result["ok"])
             self.assertEqual(result["evaluation"]["score"], 1.0)
-
-    def test_wrong_value_is_incorrect(self) -> None:
-        with tempfile.TemporaryDirectory() as temp:
-            env = _build_env(Path(temp))
-            env.reset()
-            env.step(
-                {"type": "tool_call", "tool": "submit_answer", "arguments": {"answer": "WRONG NAME"}}
-            )
-            self.assertFalse(env.evaluate()["correct"])
 
 
 if __name__ == "__main__":
