@@ -12,8 +12,8 @@
 | PR | https://github.com/songCNMS/code2env/pull/26 |
 | Session | 1 |
 
-## 最近进展（Session 1）
+## 最近进展（Session 2）
 
-- 接受 task039，建分支 + PR#26；report.py 新增：消费 determinism 字段、类别占比、真实非零 correct 率(剔 weak+nondet)、v1→vN 演进 + envelope_flipped(--prev-rollouts)；保留原指标。
-- +4 单测；`pytest tests/`=112 passed、CLI 端到端验证通过；README/docs 已更新。
-- 待 mailbox 回报 lead + tester(w3)/lead review。
+- PR#26 已回报 lead；lead review 中，稍后派 w3 验证(含 038↔039 determinism 交叉核对)。
+- 主动核对 task038 determinism 取值 {deterministic, nondeterministic:<reason>} 与本 PR 解析**完全一致**，无需协调。
+- 合并序在 037/038 之后，继续 hold；merge 时先翻 Completed/Idle 再 self-merge（memory 经验）。

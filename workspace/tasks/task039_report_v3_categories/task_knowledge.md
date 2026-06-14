@@ -1,6 +1,6 @@
 # task039_report_v3_categories - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -15,3 +15,4 @@
 4. 真实非零 correct 率分母=deterministic_usable(剔 weak+nondet)；保留 task033 true_correct(仅剔 weak)作原指标。categories 四类(deterministic_usable/envelope_flipped_to_correct/nondeterministic_excluded/still_wrong)+weak_oracle_excluded+golden_unknown。
 5. envelope_flipped=deterministic_usable 且 current correct 且前一轮(--prev-rollouts 末个)incorrect(prev_correct_by_env[env]==False)。evolution=prev_runs+current 按位标 v1..vN，传 2 个 prev → v1/v2/v3。
 6. 只动 report.py + cli.py(透传 --prev-rollouts/--baseline-manifest)，与 w1/w2 解耦。自测 pytest=112 / unittest=112；CLI 端到端验证类别/真实率/演进。
+7. [契约核对] task038 determinism 取值 {deterministic, nondeterministic:<reason>}(reason: unstable_across_runs/memory_addr/abs_path/object_repr/hash/timestamp)，与本 PR _determinism_kind 完全一致；task038 README 第21条对"确定性可用集=real_value AND deterministic"的定义与 _env_bucket 一致。无需协调。

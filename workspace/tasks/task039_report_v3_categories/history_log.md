@@ -1,6 +1,6 @@
 # task039_report_v3_categories - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -19,3 +19,10 @@
 - cli.py 加 --prev-rollouts(repeatable)。新增 4 例单测(类别分区/true 非零率/determinism 缺失降级/envelope flip+evolution/三轮标签)。`pytest tests/`=112 passed、`unittest`=112 OK；CLI 端到端验证 envelope flip=1、nondet/weak 剔除、v1/v2 演进正确。
 - 更新 README + docs/mvp_usage.md。
 - 下步：mailbox 回报 lead PR#26 + 自测，等 tester(w3)+lead review。
+
+## Session 2 - 2026-06-14 - lead review 中 + 主动核对 038↔039 determinism 契约
+
+- lead 回复：PR#26 收到，review 中，稍后派 w3 验证(含 038↔039 determinism 取值交叉核对)；确认"determinism 缺失不剔"降级正确；合并序在 037/038 之后，先待命。
+- 主动核对(像之前 golden_status 一样早发现)：task038 契约 `manifest.envs[].determinism ∈ {deterministic, nondeterministic:<reason>}`，reason 形如 unstable_across_runs/memory_addr/abs_path/object_repr/hash/timestamp；README 第21条"确定性可用集=real_value AND deterministic；nondeterministic 与 weak_oracle 一样剔分母单列"。
+- 与本 PR 完全一致：_determinism_kind(==deterministic→det；startswith("nondeterministic")→覆盖全部 reason 后缀→nondet；其余/缺失→unknown 不剔)；_env_bucket 确定性可用=real_value+deterministic。无取值不符 → 无需 mailbox 协调。
+- 继续 hold，等 w3 验证 + lead review + 037/038 merge 后的合并授权；merge 时先翻 Completed/Idle 再 self-merge(memory 经验)。本 turn 无代码改动。
