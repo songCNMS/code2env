@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=14 -->
+<!-- METADATA:SESSION=15 -->
 
 ## Session 0 - Created with coordinator
 
@@ -114,3 +114,11 @@
 - 复验 qlib constrained batch：`SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0 python3 -m code2env batch ../debug/qlib_cache/d7cf7c8de0969b81 --target 20 --min-semantic-helpers 3 --no-install-deps --no-smoke --determinism-runs 2`，产物位于 `../outputs/session14_task045_verify/qlib_batch_min3_target20_no_deps/manifest.json`。
 - qlib 复验结果与 lead 回报一致：`candidates_scanned=2860`、`min_semantic_helpers=3`、`semantic_gate_passed=6`、`skipped_insufficient_semantic_helpers=267`、`draft_ok=0`、`build_ok=0`、`real_value=0`、`usable=0`。
 - 结论：PR #31 已正确产品化“至少 3 个 dedicated semantic helpers” gate；在真实 qlib 上该严格门槛会筛出 6 个基础合格候选，但它们全部被现有 fixture synthesis 阻断（DataFrame 参数、untyped `positions`/`all_preds`、`qlib_dir:None` 等），因此本轮无法生成 endpoint rollout JSONL。
+
+## Session 15 - Rich fixture task handed off
+
+- 按用户“执行下一步”要求，继续处理 task045 后暴露的瓶颈：`--min-semantic-helpers 3` 已能筛出 qlib 6 个 gate-pass 候选，但现有签名 fixture synthesis 无法构造 pandas DataFrame、torch-style tensor、Path/temporary directory、untyped domain object 等输入，因此 `draft_ok/build_ok/usable` 仍为 0。
+- 整理 6 个 qlib gate-pass 阻塞样本：`calc_adjusted_price` 卡 `df:DataFrame`；`brinson_pa` 卡 `positions` 且涉及 qlib provider；`transport_daily`/`transport_sample` 卡 untyped tensor-style `all_preds` 并依赖 torch；`future_calendar_collector` 卡 `qlib_dir:None` 且有 network/filesystem side effects；`get_position_data` 卡 `label_data:DataFrame`。
+- 核对 executor 行为：当前 fixture payload 必须是 JSON，subprocess 调用前没有 rich object hydration；非 JSON 返回值只会落到 `repr` envelope。因此下一步不能只是让 batch 接受这些签名，还需要 JSON-safe descriptor、executor hydration 和 canonical serialization。
+- 写出 handoff 文件 `../outputs/session15_rich_fixture_min3_qlib_goal.md`，要求 lead 创建标准 task，优先实现 rich fixture descriptors/hydration/canonical serialization，同时保持默认标量行为兼容、保持 side-effect 安全、为 qlib min3 constrained run 产出至少 1 个 safe usable EnvPackage 和 subfunction-trace rollout（endpoint 可行则执行，至少提供 mock/export artifact）。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task046_rich_fixture_min3_qlib` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status": "delivered"}`。
