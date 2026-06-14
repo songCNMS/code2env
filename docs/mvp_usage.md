@@ -74,11 +74,20 @@ creation prefers the stdlib `python -m venv`; when that fails because
 binary is available (task035). Only when neither backend works is `deps_status` set to
 `venv_failed` and the base interpreter used.
 
-**Golden status (task030).** Each env is classified `real_value` (usable, counted toward
-correctness) or `weak_oracle:<reason>` (golden still an exception, e.g.
+**Golden status (task030).** Each env is classified `real_value` or
+`weak_oracle:<reason>` (golden still an exception, e.g.
 `golden_exception:ModuleNotFoundError`); weak-oracle envs are **excluded from the
 correctness denominator** and reported separately, preventing the Session2 false-positive
 where an agent "matched" an import error.
+
+**Determinism gate (task038).** A `real_value` golden is further classified
+`deterministic` or `nondeterministic:<reason>` (`object_repr` / `memory_addr` /
+`abs_path` / `unstable_across_runs`). Each golden is repeat-executed `--determinism-runs`
+times (default 3); a default object `repr` (`<… at 0x…>`) is flagged on its own, while a
+bare `0x…` hex or `/home//tmp/` path is flagged **only** when a repeat run actually
+disagrees — a function that *stably* returns such a string stays `deterministic` (avoids
+over-pruning). The **qualified/usable set is `real_value` AND `deterministic`**;
+nondeterministic envs are excluded from the correctness denominator and listed separately.
 
 **Fixture auto-synthesis** reads each candidate's AST signature:
 
@@ -102,8 +111,8 @@ Consumed by reporting (w4) and scale-out (w5) — field names are fixed:
   "repos": ["<repo>", "..."],
   "summary": {
     "candidates_scanned": 0, "draft_ok": 0, "build_ok": 0, "smoke_ok": 0,
-    "skipped_no_fixture": 0, "real_value": 0, "weak_oracle": 0,
-    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0, "deps_status": "no_deps"}}
+    "skipped_no_fixture": 0, "real_value": 0, "weak_oracle": 0, "usable": 0, "nondeterministic": 0,
+    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0, "usable": 0, "nondeterministic": 0, "deps_status": "no_deps"}}
   },
   "repo_deps": {"<repo>": {"deps_status": "installed", "python": "...", "requirements": [], "installed": [], "failed": [], "reason": null}},
   "envs": [{
@@ -111,15 +120,18 @@ Consumed by reporting (w4) and scale-out (w5) — field names are fixed:
     "line_start": 0, "line_end": 0,
     "fixture": {"ok": true, "strategy": "typed_signature", "value": {"args": [], "kwargs": {}}, "reason": null},
     "draft_ok": true, "build_ok": true, "smoke_ok": true, "smoke_fail_reason": null,
-    "golden_status": "real_value", "deps_status": "installed", "deps_installed": [],
+    "golden_status": "real_value", "determinism": "deterministic", "deps_status": "installed", "deps_installed": [],
     "spec_path": "...", "package_path": "..."
   }],
   "skipped": [{"symbol": "...", "repo": "...", "reason": "..."}]
 }
 ```
 
-`golden_status` ∈ `{real_value, weak_oracle:<reason>}`; `deps_status` ∈
-`{no_deps, skipped, installed, partial, uninstallable, venv_failed}`. Field names are
+`golden_status` ∈ `{real_value, weak_oracle:<reason>}`; `determinism` ∈
+`{deterministic, nondeterministic:<reason>}` (null for non-`real_value` envs);
+`deps_status` ∈
+`{no_deps, skipped, installed, partial, uninstallable, venv_failed}`. The usable set is
+`real_value` AND `deterministic`. Field names are
 fixed (shared with w4 reporting / w5 scale-out).
 
 Cloned repo source (`--cache-dir`, default `.code2env_cache/repos`) and generated packages

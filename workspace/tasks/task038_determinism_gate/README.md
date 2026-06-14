@@ -1,6 +1,6 @@
 # task038_determinism_gate - 根因②:确定性门禁(剔除非确定性 golden)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 

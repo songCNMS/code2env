@@ -147,6 +147,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip per-repo venv dependency installation (golden may be weak_oracle)",
     )
     batch_parser.add_argument("--venv-cache-dir", default=None)
+    batch_parser.add_argument(
+        "--determinism-runs",
+        type=int,
+        default=3,
+        help="Repeat-execute each golden N times for the determinism gate (>=2 to detect instability)",
+    )
 
     rollout_export_parser = subcommands.add_parser(
         "rollout-export",
@@ -398,6 +404,7 @@ def _batch(args: argparse.Namespace) -> int:
         include_side_effects=args.include_side_effects,
         install_deps=not args.no_install_deps,
         venv_cache_dir=args.venv_cache_dir,
+        determinism_runs=args.determinism_runs,
     )
     _print_json({"output_dir": str(Path(args.output_dir).resolve()), "summary": manifest["summary"]})
     return 0
