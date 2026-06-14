@@ -356,5 +356,119 @@ class DependencyComparisonTest(unittest.TestCase):
             self.assertIn("smoke_ok by repo", md)
 
 
+def _v3_manifest() -> dict:
+    """Manifest with golden_status + determinism (task038 / w1 contract)."""
+    return {
+        "generated_at": "2026-06-14T06:00:00Z",
+        "summary": {"candidates_scanned": 4, "draft_ok": 4, "build_ok": 4, "smoke_ok": 4},
+        "envs": [
+            {"env_id": "a1", "repo": "requests", "smoke_ok": True, "golden_status": "real_value", "determinism": "deterministic"},
+            {"env_id": "a2", "repo": "requests", "smoke_ok": True, "golden_status": "real_value", "determinism": "deterministic"},
+            {"env_id": "n1", "repo": "flask", "smoke_ok": True, "golden_status": "real_value", "determinism": "nondeterministic:uses time.time"},
+            {"env_id": "w1", "repo": "flask", "smoke_ok": True, "golden_status": "weak_oracle:no deps", "determinism": "deterministic"},
+        ],
+        "skipped": [],
+    }
+
+
+class CategoriesAndDeterminismTest(unittest.TestCase):
+    def test_categories_partition_and_true_nonzero_rate(self) -> None:
+        rollouts = [
+            _conv("a1", correct=True),    # deterministic_usable, correct
+            _conv("a2", correct=False),   # deterministic_usable, still_wrong
+            _conv("n1", correct=True),    # nondeterministic -> excluded
+            _conv("w1", correct=True),    # weak_oracle -> excluded
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "m.json"
+            write_json(mpath, _v3_manifest())
+            jsonl = Path(tmp) / "v3.jsonl"
+            write_jsonl(jsonl, rollouts)
+            r = build_report(mpath, jsonl)["rollouts"]
+            cats = r["categories"]
+            self.assertEqual(cats["deterministic_usable"], 2)
+            self.assertEqual(cats["nondeterministic_excluded"], 1)
+            self.assertEqual(cats["weak_oracle_excluded"], 1)
+            self.assertEqual(cats["still_wrong"], 1)
+            self.assertEqual(cats["golden_unknown"], 0)
+            self.assertEqual(cats["envelope_flipped_to_correct"], 0)  # no prev run
+            # partition sums to total
+            self.assertEqual(
+                cats["deterministic_usable"] + cats["nondeterministic_excluded"]
+                + cats["weak_oracle_excluded"] + cats["golden_unknown"],
+                r["total"],
+            )
+            # true non-zero: 1 correct (a1) / 2 deterministic usable
+            self.assertEqual(r["true_nonzero_correct"], 1)
+            self.assertEqual(r["true_nonzero_correct_rate"], 0.5)
+            # task033 weak-only true_correct still present (a1+n1 correct over non-weak {a1,a2,n1})
+            self.assertEqual(r["true_correct"], 2)
+            self.assertEqual(r["usable_total"], 3)
+
+    def test_missing_determinism_degrades_to_usable(self) -> None:
+        manifest = _v3_manifest()
+        for env in manifest["envs"]:
+            if env["env_id"] == "n1":
+                del env["determinism"]  # missing -> not excluded
+        rollouts = [_conv("a1", correct=True), _conv("n1", correct=True)]
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "m.json"
+            write_json(mpath, manifest)
+            jsonl = Path(tmp) / "v3.jsonl"
+            write_jsonl(jsonl, rollouts)
+            cats = build_report(mpath, jsonl)["rollouts"]["categories"]
+            self.assertEqual(cats["nondeterministic_excluded"], 0)
+            self.assertEqual(cats["deterministic_usable"], 2)  # n1 now usable
+
+
+class EvolutionAndEnvelopeFlipTest(unittest.TestCase):
+    def test_envelope_flipped_and_evolution(self) -> None:
+        v2 = [
+            _conv("a1", correct=False),  # was wrong in v2
+            _conv("a2", correct=True),
+            _conv("n1", correct=True),
+            _conv("w1", correct=True),
+        ]
+        v3 = [
+            _conv("a1", correct=True),   # flipped to correct in v3
+            _conv("a2", correct=True),
+            _conv("n1", correct=True),
+            _conv("w1", correct=True),
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "m.json"
+            write_json(mpath, _v3_manifest())
+            v2p = Path(tmp) / "v2.jsonl"
+            v3p = Path(tmp) / "v3.jsonl"
+            write_jsonl(v2p, v2)
+            write_jsonl(v3p, v3)
+            report = build_report(mpath, v3p, prev_rollouts_paths=[v2p])
+            r = report["rollouts"]
+            self.assertEqual(r["categories"]["envelope_flipped_to_correct"], 1)  # a1
+            evo = report["evolution"]
+            self.assertEqual([e["label"] for e in evo], ["v1", "v2"])
+            # v1 == prev run: true_nonzero 1/2 (a2 correct, a1 wrong among det-usable)
+            self.assertEqual((evo[0]["true_nonzero_correct"], evo[0]["deterministic_usable"]), (1, 2))
+            # v2 == current: true_nonzero 2/2
+            self.assertEqual((evo[1]["true_nonzero_correct"], evo[1]["deterministic_usable"]), (2, 2))
+            md = render_markdown(report)
+            self.assertIn("Categories", md)
+            self.assertIn("evolution", md)
+            self.assertIn("True non-zero correct", md)
+
+    def test_three_run_evolution_labels(self) -> None:
+        runs = [[_conv("a1", correct=False)], [_conv("a1", correct=False)], [_conv("a1", correct=True)]]
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "m.json"
+            write_json(mpath, _v3_manifest())
+            paths = []
+            for i, run in enumerate(runs):
+                p = Path(tmp) / f"r{i}.jsonl"
+                write_jsonl(p, run)
+                paths.append(p)
+            report = build_report(mpath, paths[-1], prev_rollouts_paths=paths[:-1])
+            self.assertEqual([e["label"] for e in report["evolution"]], ["v1", "v2", "v3"])
+
+
 if __name__ == "__main__":
     unittest.main()
