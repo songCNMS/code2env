@@ -1,6 +1,6 @@
 # task013_qa_toolextractor_testlink - QA: 验证 P0-1 ToolExtractor + P0-3 TestLinkIndex
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_4 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## 背景
 

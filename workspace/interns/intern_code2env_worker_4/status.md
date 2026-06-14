@@ -1,18 +1,18 @@
 # intern_code2env_worker_4 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task013_qa_toolextractor_testlink,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_4 |
-| Status | Working |
+| Status | Idle |
 | Role | worker |
 | Team | code2env |
-| Current Task | task013_qa_toolextractor_testlink |
-| PR | https://github.com/songCNMS/code2env/pull/6 |
-| Session | 2 |
+| Current Task |  |
+| PR | N/A |
+| Session | 3 |
 
-## 最近进展（Session 2）
+## 最近进展（Session 3）
 
-- 完成 task010(PR#9) 与 task012(PR#7) 独立验证并经 mailbox 回报 team_lead。
-- PR#9 全部 PASS，建议 merge；PR#7 功能全部 PASS 但 `pytest tests/` 因 `test_` 前缀公有函数收集失败 exit 1，建议修复后再 merge。
+- P0 三项全部交付完结（task010/011/012 三 PR 均 merged，main pytest=31 passed，无回归）。
+- task013 两轮验证完成（揪出 PR#7 pytest `test_` 前缀收集阻塞缺陷）；按 worker merge 流程 self-merge QA 文档 PR#6，task013 标记 Completed，状态切回 Idle。

@@ -1,6 +1,6 @@
 # task013_qa_toolextractor_testlink - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -21,3 +21,9 @@
 - PR#7 task012 @ff75074：`unittest discover` => 18 OK(exit0)，但 `pytest tests/` => 18 passed,1 error(exit1)。PRD 7.2 四条功能验收全部 PASS（tests 单独索引不污染 python_files；TestLinkIndex 关联含 evidence/confidence；provenance.task_sources 恒>=2 且类型多样；无关联有 degradation 降级说明）。**阻塞缺陷**：indexer.py:230 公有函数 `test_links_for_candidate` 名以 `test_` 开头，经 __init__ 导出并被 test 文件顶层 import，pytest 误当用例收集导致 `pytest tests/` exit1（unittest 漏检）。建议重命名后再 merge。
 - 两份逐条 PASS/FAIL 报告（含命令/结果/环境/未覆盖风险/复现/修复建议）已分两封经 mailbox 回报 intern_code2env_lead。
 - 下步：等 lead merge 决策；若被指派复验 task012 修复后再跑 `pytest tests/` 回归确认 exit0。
+
+## Session 3 - 2026-06-13 - 完结 task013（self-merge PR#6）
+
+- team_lead 确认 P0 三项全部交付完结：task010/011/012 三 PR 均 merged，main `pytest`=31 passed，全链路无回归；并授权 self-merge QA 文档 PR#6。
+- 按 worker merge 流程（playbook §1，适配 main 分支 + gh）：status.md→Idle/Session3、README→Completed、精炼知识到个人 knowledge.md，commit+push 后 self-merge PR#6（squash）。
+- task013 标记 Completed，状态切回 Idle；merge 结果经 mailbox 回报 team_lead。
