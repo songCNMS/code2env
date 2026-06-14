@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task014_qa_reward_e2e |
-| PR | (pending) |
+| PR | https://github.com/songCNMS/code2env/pull/10 |
 | Session | 0 |
