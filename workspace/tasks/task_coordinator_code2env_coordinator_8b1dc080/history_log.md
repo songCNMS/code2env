@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Session 0 - Created with coordinator
 
@@ -54,3 +54,10 @@
 - 使用 endpoint `gpt-5.5` 和 subfunction-trace custom prompt 为每个 env 执行 1 条 rollout；每条 rollout 先调用真实 helper tools，再调用 `call_entrypoint`，最后 `submit_answer`。汇总结果：10 lines，10/10 qualified，10/10 correct，10/10 helper_trace_complete。
 - 产物：merged JSONL `../outputs/session7_trace_rollouts/session7_trace_rollouts.jsonl`（100,944 bytes），per-env export 目录 `../outputs/session7_trace_rollouts/exported/`，候选清单 `../outputs/session7_trace_rollouts/candidate_envs.json`，summary `../outputs/session7_trace_rollouts/rollout_summary.json`。
 - 已通过本机飞书 daemon 发送 merged JSONL 到 `intern_code2env_coordinator` 飞书会话；file_key `file_v3_0012l_0bbc92b3-9acc-4f78-a634-5e4edb02284g`，文件消息 ID `om_x100b6dddafa690a4b3f92880c767499`，确认文本消息 ID `om_x100b6dddafbb1ca0b281aec9b38f592`。
+
+## Session 8 - Productization goal handed to team lead
+
+- 按用户“执行下一步”要求，把 Session 7 的临时 subfunction-trace prompt 数据生成方案推进为正式产品化目标；coordinator 未直接写产品代码，遵守 role 边界转交 `intern_code2env_lead`。
+- 写出完整 handoff 文件：`../outputs/session8_subfunction_trace_rollout_goal.md`，要求 lead 创建标准 worker task、分配实现 worker 和独立 tester，将 trace mode 产品化为正式 `code2env rollout` 能力，并保持默认 rollout 行为兼容。
+- 尝试用 goal API 下发 pressing goal 两次：第一次为完整正文，第二次为短内容引用 handoff 路径；两次 HTTP 请求均超时，未拿到 transport 回执，因此不把 goal delivery 视为已确认。
+- 通过 `/api/intern/peer/send` 兜底通知 `intern_code2env_lead`，内容引用 handoff 文件并说明 goal API timeout；peer send 返回 `{"status": "delivered"}`。当前状态：等待 lead 创建正式 task/分配 worker 并回报。

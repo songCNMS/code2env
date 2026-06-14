@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Knowledge Entries
 
@@ -13,3 +13,4 @@
 7. 向主管飞书发送本地文件时，当前 daemon HTTP 层只公开文本发送；文件可复用 `intern-cli/scripts/daemon/feishu_daemon.py` 的 `FeishuAPI.upload_file` + `send_file`，目标 chat_id 可从 `/home/leisong/codes/work-agents/.feishu_registry/<intern>.json` 读取。
 8. 当前 rollout 记录的是 agent 外部工具调用轨迹，不是目标函数内部动态调用轨迹；`call_entrypoint` 是黑盒执行整个目标函数，helper 工具只是可选。若希望 rollout 成为“真实实现子函数序列”，需要显式 subfunction-trace/decomposed 模式：按 `ToolSpec.provenance.steps`/动态 trace 约束 required helper sequence，并把 reward/qualified 从“>=2 tool calls + submit”改为覆盖真实 helper 调用链后 submit。
 9. 在不改产品代码的前提下，可以用 `run_rollout(..., system_prompt=<custom>)` 强化 endpoint 先调用真实 `call_<helper>` 工具，再 `call_entrypoint`/`submit_answer`；这能生成可审核的 subfunction-trace rollout 数据，但长期应产品化为正式 rollout mode，避免依赖一次性 prompt 约束。
+10. coordinator 下发长期实现目标时应优先用 `/api/intern/goal/set`；如果 goal API HTTP timeout 没有回执，应记录为 delivery 未确认，并用 peer send 兜底通知 team_lead，同时在历史中保留 handoff 文件路径和 peer send 回执。
