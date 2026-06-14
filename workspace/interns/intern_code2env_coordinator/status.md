@@ -10,9 +10,10 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | N/A |
-| Session | 16 |
+| Session | 17 |
 
 ## 最近进展
+- Session 17：用户要求把结果 JSON 发飞书"傻姑娘"群。定位：傻姑娘=当前 coordinator 群 chat_id oc_95e88ada32dbd770c5137bc2c9a65167(relay_registry)；凭据 /home/leisong/codes/work-agents/key.txt；daemon 仅发文本故直接调飞书 /im/v1/files 上传+/im/v1/messages(msg_type=file)。已发送 outputs/report_v3/report.json(完整 v1→v2→v3+类别+failure_clusters),code=0 success,message_id om_x100b6ddc08ea84a0b4bfe61dd47bcd6。
 - Session 16：v3 产物核验完成(独立复算与报告一致)。真实正确率 0%→93.65%(59/63 correct,确定性可用集,mean 0.96)。验证全链路诊断成立：信封归一让 59 个 envelope_flipped_to_correct、确定性门禁剔 37(25 weak_oracle+12 非确定性)。抽样 rich.cells.cell_len 3轮干净解(inspect→call→submit,score1.0)。v1(3假/1真)→v2(0,信封杀)→v3(59/63)。已向用户汇报里程碑。任务核心目标达成。
 - Session 15：监控 b0zkh9q4w 二次超时,核查 w1/task042——健康活跃(42秒前提交"v3 batch 开跑"),outputs/phase3_v3/ 已建 manifest+packages+specs(带 golden_status+determinism),正跑 gpt-5.5 rollout,rollouts_v3 生成中未完。改派恢复良好。重新布置监控 bgp0aka73(60min)待 v3 产物核验。
 - Session 14：lead 已处置 w5 中断——确认 w5 session 未消费(确卡死)，按我授权把 v3 执行改派给空闲 w1(task042,w1 谙 envdeps/determinism/golden)，并令 w5 stand down 避免双跑。w1 即刻执行 batch v3 manifest→确定性可用集 gpt-5.5 重跑→rollouts_v3/+report_v3(真实非零correct+四类别+v1→v2→v3)。ETA~25-35min。监控 b0zkh9q4w 就位待核验。

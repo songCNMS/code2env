@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=16 -->
+<!-- METADATA:SESSION=17 -->
 
 ## Session 0 - Created with coordinator
 
@@ -137,3 +137,11 @@
 - 结论(全链路诊断验证成立):0%/3% 完全是 oracle/契约+非确定性 artifact,非 gpt-5.5 能力;修两根因后真实正确率 93.65%。管线+env+gpt-5.5 rollout 全部成立,确定性可用子集数据可用于训练/评测。
 - 团队:w5 中断由 lead 改派 w1(task042)化解,关键路径未空等,产物按时落地。
 - 已向用户汇报里程碑。任务核心目标(生成env+gpt-5.5多轮rollout+conversation JSON+真实正确率)达成;剩 backlog(差分oracle/QualityGate其余/Phase4 RL接入)按需后续。
+
+## Session 17 - 把结果 JSON 发飞书傻姑娘群
+
+- 用户:将结果 json 文件发到飞书"傻姑娘"。
+- 定位机制:①傻姑娘=当前 coordinator 所在群,relay_registry.json 的 code2env:intern_code2env_coordinator/chat_id=oc_95e88ada32dbd770c5137bc2c9a65167(用户本条消息也来自该群);②凭据 /home/leisong/codes/work-agents/key.txt(2行 app_id/secret,daemon 同款);③daemon FeishuAPI 只有 send_message(文本)无发文件,feishu-messaging skill 未部署→直接调飞书 open API 两步:/im/v1/files(file_type=stream multipart)拿 file_key→/im/v1/messages?receive_id_type=chat_id(msg_type=file)。
+- 已发送 outputs/report_v3/report.json(5KB,完整 dependency_comparison/env_generation/evolution v1→v2→v3/rollouts categories/failure_clusters/sources)。飞书 code=0 success,message_id om_x100b6ddc08ea84a0b4bfe61dd47bcd6。
+- 知识:发飞书文件=key.txt 凭据+open-apis /im/v1/files→/im/v1/messages;群 chat_id 查 relay_registry.json。
+- 下步:如用户还要发 63 份 conversation JSON 或 v1/v2 报告,可打包后同法发送。
