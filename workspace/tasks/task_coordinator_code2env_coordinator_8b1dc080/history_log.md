@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=15 -->
+<!-- METADATA:SESSION=16 -->
 
 ## Session 0 - Created with coordinator
 
@@ -122,3 +122,12 @@
 - 核对 executor 行为：当前 fixture payload 必须是 JSON，subprocess 调用前没有 rich object hydration；非 JSON 返回值只会落到 `repr` envelope。因此下一步不能只是让 batch 接受这些签名，还需要 JSON-safe descriptor、executor hydration 和 canonical serialization。
 - 写出 handoff 文件 `../outputs/session15_rich_fixture_min3_qlib_goal.md`，要求 lead 创建标准 task，优先实现 rich fixture descriptors/hydration/canonical serialization，同时保持默认标量行为兼容、保持 side-effect 安全、为 qlib min3 constrained run 产出至少 1 个 safe usable EnvPackage 和 subfunction-trace rollout（endpoint 可行则执行，至少提供 mock/export artifact）。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task046_rich_fixture_min3_qlib` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status": "delivered"}`。
+
+## Session 16 - Offline samples repo scan
+
+- 按用户新任务扫描 `/home/leisong/data/samples` 中的离线 repo archive，从每个 repo 的最新本地分支识别可转换为环境的文件和函数；本次未修改产品代码、未下发 team_lead 任务。
+- 样本结构确认：目录下为 200 个 `.tgz` archive，每个 archive 内含 bare git repo、profile/issues/PR 元数据；扫描时逐个临时抽取 bare git，按 `refs/heads` 最新 committerdate 选择“最新分支”，用 `git archive` 展开该 commit 后扫描源码，临时目录处理完即删除。
+- 扫描代码使用 `../debug/code2env_main_verify` 的 `origin/main` HEAD `dc695ba9b17cb1d4a000eb1f08fb703517a21497`，复用 PR #31 后的 `semantic_helpers_for_candidate` 语义。筛选口径：Python primaryLanguage repo、module-level 函数、无当前 batch disqualify（instance/side-effect 等）、auto fixture synthesis OK、dedicated safe `call_<helper>` 数量 >= 3、`line_count >= 8`、static `score >= 40`。
+- 扫描结果：200 个 archive 中处理 38 个 Python repo，跳过 162 个非 Python/缺 profile archive；repo scan errors 0；9 个 repo 含 selected candidates；共选出 26 个当前可转环境候选，并记录 93 个 top near-miss 候选及阻塞原因。
+- 主要输出文件：`../outputs/session16_samples_scan/candidate_results.json`（完整结构化结果，含 repo/branch/commit/filter/selected/near_misses/errors），`../outputs/session16_samples_scan/candidate_results.md`（可读表格），`../outputs/session16_samples_scan/scan.log`（逐 repo 扫描日志）。
+- Top selected 示例：`FOLIO-FSE/folio_migration_tools:folio_migration_tools.__main__:main`、`0-8-4/miui-auto-tasks:utils.utils:get_token`、`jasonacox/tinytuya:tinytuya.scanner:snapshot`、`niklas-heer/speed-comparison:analyze:main`、`kreshuklab/panseg:panseg.run_panseg:main`。

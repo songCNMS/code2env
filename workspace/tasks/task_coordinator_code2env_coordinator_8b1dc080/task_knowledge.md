@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=15 -->
+<!-- METADATA:SESSION=16 -->
 
 ## Knowledge Entries
 
@@ -21,3 +21,4 @@
 15. “至少三个子函数”限制必须按最终可暴露的 dedicated semantic helper tools 计算：只统计安全 direct callee 生成的 `call_<helper>`，不统计 generic `call_helper` 或 side-effect helper；qlib 预扫描显示该门槛很强，2,860 个候选里基础过滤后只有 6 个满足 pure semantic helpers >=3。
 16. `task045_min3_semantic_helpers_gate` 已在 PR #31 合入 `main`：`code2env batch --min-semantic-helpers N` 可以强制 batch 只处理至少 N 个 dedicated safe semantic helper 的候选。真实 qlib `N=3` 复验说明 gate 能正确筛出 6 个候选，但 rollout 数据量仍为 0，下一瓶颈是 fixture synthesis/test-backed typed fixtures，而不是 semantic helper gate。
 17. qlib min3 候选的下一瓶颈需要同时解决输入和输出两侧：EnvSpec fixture 仍应 JSON-safe，但 executor 必须能 hydrate pandas/numpy/Path/torch 等 descriptor 为真实对象；返回值也需要 canonical serialization，避免复杂对象退化为不可审计的 `repr`。对 network/filesystem side-effect 候选应继续跳过或 sandbox，而不是为了数量强行转 env。
+18. `/home/leisong/data/samples` 的离线样本不是已展开 worktree，而是含 bare git repo 与 profile/issue/PR 元数据的 `.tgz` archive；扫描“最新分支”时应抽取 bare git、按本地 heads 最新 committerdate 选 branch，再 `git archive` 展开 commit。Session 16 的可转换候选结果保存在 `../outputs/session16_samples_scan/candidate_results.json` 和 `.md`。
