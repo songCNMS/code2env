@@ -64,7 +64,18 @@
 - 真实非零率 = true_nonzero_correct/deterministic_usable(剔 weak+nondet); 手验 1/2=0.5。
 - --prev-rollouts(可重复, oldest first)驱动 v1→vN evolution + envelope_flipped(A v2 wrong→v3 correct=1)。
 - determinism/golden 缺失安全降级(D 无 determinism→usable 不崩; E 无 golden→unknown 单列)。保留原指标。
-- 待办: **038↔039 determinism 交叉核对**等 w1 task038(PR#24)到货——确认 w1 写 deterministic|nondeterministic:<reason> 与 w4 读(==deterministic/startswith nondeterministic)一致。
+- 待办: **038↔039 determinism 交叉核对**等 w1 task038(PR#24)到货——确认 w1 写 deterministic|nondeterministic:<reason> 与 w4 读(==deterministic/startswith nondeterministic)一致。【已完成: 见下 Phase2, CONSISTENT】
+
+### [Phase2] task038 (PR#24, determinism.py) — APPROVE 建议(lead 已 APPROVE)
+- pytest 131、determinism+batch 30、post-merge 144; 改 determinism.py(新)/batch/spec/cli; merge CLEAN。
+- N>=2(batch determinism_runs=3)重复不一致→nondeterministic:unstable_across_runs; object-repr `<..(at|@)0x..>` 单运行即 object_repr。
+- **over-flag 防护(重点)**: 稳定 hex '0xdeadbeef'/abs_path '/home/..' 跨 3 次相同运行→deterministic(不误判); 弱信号仅在重复执行已证不一致时细化 reason。专测 test_legit_hex/path_return_not_flagged 过。
+- determinism 契约 deterministic|nondeterministic:<reason>; is_usable=real_value AND deterministic。
+- **038↔039 交叉核对 CONSISTENT**: 复刻 report._determinism_kind 跑 w1 四类产值, 全对无漂移。
+
+## Session4 三 PR 验证汇总
+- task037 修订版(PR#23)/task038(PR#24)/task039(PR#26) 全 PASS, 均 APPROVE。
+- 交叉核对: 037↔039(envelope_flipped 口径)、038↔039(determinism 取值) 均一致无漂移; task035 PR#22 已 PASS。
 
 > 以下为 task037 初版(a108f32)记录(已作废, 仅留存):
 - pytest tests/=121 passed; test_envelope.py 13 passed; merge main 干净 post-merge 127。

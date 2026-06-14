@@ -8,6 +8,6 @@
 | Status | Working |
 | Role | worker (本轮 tester) |
 | Team | code2env |
-| Current Task | task040 QA: PR#23修订版 PASS + PR#26 PASS; 等 task038(PR#24) ping |
+| Current Task | task040 QA 三 PR 全验完(037修订/038/039 PASS, 038↔039 一致); 等收尾 |
 | PR | https://github.com/songCNMS/code2env/pull/19 |
-| Session | 8 |
+| Session | 9 |

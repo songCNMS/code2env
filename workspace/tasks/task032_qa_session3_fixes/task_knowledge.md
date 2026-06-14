@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - Task Knowledge
 
-<!-- METADATA:SESSION=8 -->
+<!-- METADATA:SESSION=9 -->
 
 ## 记录规则
 

@@ -1,6 +1,13 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=8 -->
+<!-- METADATA:SESSION=9 -->
+
+## Session 9 - 2026-06-14 UTC - 验 PR#24 task038 确定性门禁 (Session4 三 PR 全验完)
+
+- [PR#24 task038] PASS: determinism.py 分类 deterministic|nondeterministic:<reason>。pytest 131、determinism+batch 30、post-merge 144。
+- 逐条 5 项全 PASS: N>=2(batch determinism_runs=3)重复不一致→unstable_across_runs; object-repr `<..at 0x..>` 单运行即标 object_repr; **over-flag 防护(重点)**: 稳定 hex/abs_path 跨 3 次相同运行→deterministic 不误判(弱信号仅在已证不一致时细化 reason); determinism 字段契约 deterministic|nondeterministic:<reason>; is_usable=real_value AND deterministic。
+- **038↔039 交叉核对 CONSISTENT**: 脚本复刻 report._determinism_kind 跑 w1 classify_determinism 四类产值, ==deterministic/startswith nondeterministic 全对, 无漂移。
+- Session4 三 PR(task037 修订版/038/039)全验完均 PASS; 037↔039、038↔039 交叉核对均一致; task035 PR#22 已 PASS。mailbox 已回报。
 
 ## Session 8 - 2026-06-14 UTC - 验 PR#23 修订版 + PR#26 task039
 
