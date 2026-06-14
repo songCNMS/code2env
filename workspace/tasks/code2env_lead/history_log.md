@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - Created with team lead
 
@@ -40,7 +40,7 @@
 - backlog：reward 默认权重 vs PRD 7.7 表对齐(裁定本轮保持现状)、TestLink 子串匹配改词边界。
 - team_lead 管理任务按生命周期规则保持 InProgress。
 
-## Session 2 - 规模化100 env + gpt-5.5 多轮 rollout 验证（拆解下发）
+## Archive P0-2 - 规模化100 env + gpt-5.5 多轮 rollout 验证（拆解下发）
 - 新目标:GitHub 拉 requests/flask/rich/click/jinja2→生成≥100 env→gpt-5.5 多轮 rollout 验证→conversation JSON+报告。非 RL 训练,只做 rollout 验证 driver。
 - 侦察关键事实:
   - OpenAICompatibleLLM 只有 evaluate_candidate,无通用 chat→driver 须新增 chat()。
@@ -98,3 +98,14 @@
 - Tester w2 验证 PASS：`python3 -m pytest -q tests/test_indexer_side_effects.py` 为 2 passed，`python3 -m pytest -q` 为 150 passed，qlib pinned scan old basename get-only=93 降为 patched get-only=6。
 - PR#29 已由 w4 self-merge 到 main，merge commit d3b1e9e6；GitHub formal approve 因同一 GitHub identity 被拒，team lead merge decision 仍为 APPROVE 并通过 peer send 通知 worker self-merge。
 - 已记录 broader future work：基于测试的 fixture extraction for `pd.Timestamp`/`np`/class instance，以及 instance-method env support。
+
+## Session 2 - subfunction trace rollout productization
+
+- 收到 user `/goal` 与 coordinator fallback handoff，目标是将 Session7 临时验证过的 subfunction/decomposed trace rollout prompt 产品化；handoff 文件为 `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session8_subfunction_trace_rollout_goal.md`。
+- 评估 active workers：w1/w2/w4 idle，w3/w5 working；本项集中修改 rollout schema/CLI/test，分配 w2 实现、w4 独立 tester，未用满 w1 是为了避免单一 rollout schema 上的并行冲突。
+- 在共享 repo 创建并推送 task044_subfunction_trace_rollout；w2 实现 PR#30，w4 验证。
+- Lead review 结论：PR#30 为 `code2env rollout` 增加 `--trace-mode subfunctions`，默认 `--trace-mode default` 不变；trace mode 从 EnvSpec/ToolSpec provenance 抽 direct semantic helper sequence，生成 helper-first prompt，并在结果中写入 `subfunction_trace` metadata。
+- Tester w4 验证 PASS：focused `tests/test_rollout.py tests/test_rollout_export.py` 为 38 passed，full `python3 -m pytest -q` 为 156 passed；默认 mock rollout 仍为 `[call_entrypoint, submit_answer]` 且无 `subfunction_trace`。
+- 三个 Session7 package mock trace rollout 验证 PASS：compress_feature_window、summarize_trading_window、normalize_symbol_bundle 均 qualified/correct/helper_trace_complete/entrypoint_after_helpers=true；rollout-export 对 default+trace JSONL 和 trace-only JSONL 均 validation-on export 成功。
+- PR#30 已由 w2 self-merge 到 main，merge commit e3fba11d；task044 Completed，w2 Idle。
+- 剩余风险：trace extraction 依赖 EnvSpec provenance 质量；mock helper 调用用空参数，live endpoint/helper 无默认参数场景仍需模型推理；generic-wrapper-only helpers 会记录 skipped 而不强行走 `call_helper`。

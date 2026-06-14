@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Knowledge Entries
 
@@ -24,3 +24,5 @@
 15. 诊断纪律:报告关键数字(正确率)前,team_lead 应抽样核对底层语义(submit vs golden 逐条),而非直接转述 worker 报的数字——本轮正是抽查一条 requests env 发现 0% 是信封假阴性,避免了把"真实正确率0%"误报成模型结论。
 16. qlib 调试教训: indexer 的 side-effect risk 不能只看 call basename；`payload.get()`/普通 object `.get()` 与 `requests.get()` 需要用 AST call target/receiver 区分，否则大型仓库会产生大量 get-only false positives。
 17. qlib 后续改进方向:复杂函数入选后要补测试夹具抽取能力(`pd.Timestamp`、`np`、class instance)与 instance-method env support，才能覆盖 `FullHistoryStateInterpreter.interpret` 一类有测试但依赖实例/fixture 的目标。
+18. rollout 数据质量教训:默认 black-box rollout 的 `call_entrypoint -> submit_answer` 能验正确性但不能代表目标函数内部 helper 轨迹；需要显式 trace mode 和机读 `subfunction_trace` metadata 才能生产 helper/sub-function 轨迹数据。
+19. trace mode 范围边界:helper sequence 应优先用 direct semantic `call_<helper>` 工具并记录 skipped/unavailable helpers；不要默认强迫所有 rollout 变长，也不要把 generic `call_helper` 当作 direct helper trace 的无损替代。
