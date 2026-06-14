@@ -26,6 +26,12 @@ def build_env_package(spec_path: str | Path, output_dir: str | Path) -> Path:
             "version": packaged_spec.version,
             "entrypoint": packaged_spec.source["entrypoint"],
             "source_root": "source",
+            # Dependency/venv provenance (task030) so a package records how its golden
+            # answer was produced and which interpreter the runtime should reuse.
+            "python_executable": packaged_spec.runtime.get("python_executable"),
+            "requirements": packaged_spec.runtime.get("requirements", []),
+            "deps_status": packaged_spec.runtime.get("deps_status"),
+            "golden_status": packaged_spec.provenance.get("golden_status"),
         },
     )
     return package_root
