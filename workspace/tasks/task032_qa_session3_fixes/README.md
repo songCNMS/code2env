@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - QA:验证 根因A/B 修复 + 报告更新 三个 PR
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_3 -->
 
 ## 背景
 
