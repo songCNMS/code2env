@@ -21,6 +21,14 @@ from typing import Any, Protocol
 from code2env.llm import parse_llm_json
 from code2env.runtime import Code2Env
 
+TRACE_MODE_DEFAULT = "default"
+TRACE_MODE_SUBFUNCTIONS = "subfunctions"
+TRACE_MODES = {TRACE_MODE_DEFAULT, TRACE_MODE_SUBFUNCTIONS}
+CALL_ENTRYPOINT_TOOL = "call_entrypoint"
+CALL_HELPER_TOOL = "call_helper"
+SUBMIT_ANSWER_TOOL = "submit_answer"
+HELPER_TOOL_PREFIX = "call_"
+
 
 class ChatLLM(Protocol):
     model_name: str
@@ -93,6 +101,35 @@ class ScriptedSolveChat:
         return {"role": "assistant", "content": json.dumps(action), "tool_calls": None}
 
 
+class ScriptedTraceSolveChat:
+    """Offline solver mock for subfunction trace mode.
+
+    It calls required semantic helper tools in the extracted order, then runs the
+    entrypoint with fixture fallback, then submits the entrypoint result. This is
+    intentionally deterministic so CLI mock runs can produce trace-mode evidence
+    without using an endpoint.
+    """
+
+    model_name = "mock-trace-solver"
+
+    def __init__(self, env: Code2Env):
+        self.env = env
+        self.calls = 0
+        self._required_helpers = list(build_subfunction_trace_plan(env)["required_helper_tools"])
+
+    def chat(self, messages: list[dict[str, Any]], *, tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        self.calls += 1
+        helper_index = self.calls - 1
+        if helper_index < len(self._required_helpers):
+            action = {"tool": self._required_helpers[helper_index], "arguments": {}}
+        elif helper_index == len(self._required_helpers):
+            action = {"tool": CALL_ENTRYPOINT_TOOL, "arguments": {}}
+        else:
+            answer = self.env.state.get("last_tool_result")
+            action = {"tool": SUBMIT_ANSWER_TOOL, "arguments": {"answer": answer}}
+        return {"role": "assistant", "content": json.dumps(action), "tool_calls": None}
+
+
 # Guidance that prevents the "executed but mismatched golden" false negative
 # (root cause B): the agent must NOT fabricate call_entrypoint arguments — the
 # runtime falls back to the pinned spec.fixture when args/kwargs are omitted, and
@@ -124,6 +161,226 @@ def build_tool_descriptions(env: Code2Env) -> list[dict[str, Any]]:
             }
         )
     return descriptions
+
+
+def build_subfunction_trace_plan(env: Code2Env) -> dict[str, Any]:
+    """Extract the helper sequence for trace mode from EnvSpec tool provenance.
+
+    The plan prefers dedicated semantic tools (``call_<helper>`` backed by a
+    concrete function) and orders them by the entrypoint's decomposed step
+    callees. Helpers that are known by provenance but not available as direct
+    semantic tools are recorded as skipped with reasons instead of being routed
+    through the generic ``call_helper`` wrapper.
+    """
+
+    semantic_tools = _semantic_helper_tools(env)
+    helper_candidates = _helper_candidates(env)
+    side_effect_helpers = _side_effect_helpers(env)
+
+    required: list[str] = []
+    seen_helpers: set[str] = set()
+    skipped: list[dict[str, str]] = []
+    skipped_helpers: set[str] = set()
+
+    def add_required(helper: str) -> None:
+        if helper in seen_helpers:
+            return
+        tool_name = semantic_tools.get(helper)
+        if tool_name is None:
+            return
+        required.append(tool_name)
+        seen_helpers.add(helper)
+
+    def add_skipped(helper: str, reason: str) -> None:
+        if helper in seen_helpers or helper in skipped_helpers:
+            return
+        skipped.append({"helper": helper, "tool": f"{HELPER_TOOL_PREFIX}{helper}", "reason": reason})
+        skipped_helpers.add(helper)
+
+    for callee in _entrypoint_step_callees(env):
+        if callee in semantic_tools:
+            add_required(callee)
+        elif callee in side_effect_helpers:
+            add_skipped(callee, "side_effect_helper_not_exposed")
+        elif callee in helper_candidates:
+            add_skipped(callee, "direct_semantic_tool_unavailable")
+
+    # Legacy or hand-authored specs may expose semantic helper tools without the
+    # entrypoint step decomposition. Keep those useful tools in spec order.
+    for helper in semantic_tools:
+        add_required(helper)
+
+    for helper in helper_candidates:
+        if helper not in semantic_tools:
+            reason = "side_effect_helper_not_exposed" if helper in side_effect_helpers else "direct_semantic_tool_unavailable"
+            add_skipped(helper, reason)
+    for helper in side_effect_helpers:
+        if helper not in semantic_tools:
+            add_skipped(helper, "side_effect_helper_not_exposed")
+
+    return {
+        "trace_mode": TRACE_MODE_SUBFUNCTIONS,
+        "required_helper_tools": required,
+        "skipped_helpers": skipped,
+    }
+
+
+def build_subfunction_trace_system_prompt(
+    env: Code2Env,
+    tools: list[dict[str, Any]],
+    trace_plan: dict[str, Any] | None = None,
+) -> str:
+    """Build the trace-mode prompt while preserving the default tool protocol."""
+
+    plan = trace_plan or build_subfunction_trace_plan(env)
+    required = list(plan.get("required_helper_tools", []))
+    if required:
+        order = "\n".join(f"{index}. {tool}" for index, tool in enumerate(required, start=1))
+        helper_instruction = (
+            "Required helper tool order:\n"
+            f"{order}\n"
+            "Do not call call_entrypoint first. Call the required helper tools in exactly this order before "
+            "calling call_entrypoint."
+        )
+    else:
+        helper_instruction = (
+            "No direct semantic helper tools are required for this environment. In trace mode, proceed to "
+            "call_entrypoint, then submit_answer."
+        )
+
+    skipped = plan.get("skipped_helpers") or []
+    skipped_block = ""
+    if skipped:
+        skipped_block = (
+            "\nSkipped or unavailable helpers, with reasons:\n"
+            f"{json.dumps(skipped, ensure_ascii=False, indent=2)}"
+        )
+
+    return (
+        f"{build_system_prompt(env, tools)}\n\n"
+        "SUBFUNCTION TRACE MODE:\n"
+        "This rollout is collecting a decomposed helper trajectory, not only a black-box answer.\n"
+        f"{helper_instruction}\n"
+        "Call each helper with empty arguments unless the task explicitly requires different arguments; the "
+        "runtime will use helper defaults where available. After the helper sequence, call call_entrypoint with "
+        "empty arguments so it uses the provided fixture. Then call submit_answer with the exact result from "
+        "call_entrypoint. Do not submit a helper result as the final answer."
+        f"{skipped_block}"
+    )
+
+
+def build_subfunction_trace_metadata(trace_plan: dict[str, Any], steps: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compute machine-checkable trace metadata from completed rollout steps."""
+
+    required = list(trace_plan.get("required_helper_tools", []))
+    observed = [
+        step.get("action", {}).get("tool")
+        for step in steps
+        if isinstance(step.get("action"), dict) and isinstance(step.get("action", {}).get("tool"), str)
+    ]
+    entrypoint_index = _first_index(observed, CALL_ENTRYPOINT_TOOL)
+    helper_search_limit = entrypoint_index if entrypoint_index is not None else len(observed)
+
+    positions: list[int] = []
+    missing: list[str] = []
+    cursor = 0
+    for helper_tool in required:
+        found = _find_from(observed, helper_tool, cursor, helper_search_limit)
+        if found is None:
+            missing.append(helper_tool)
+            continue
+        positions.append(found)
+        cursor = found + 1
+
+    helper_trace_complete = not missing
+    if required:
+        entrypoint_after_helpers = entrypoint_index is not None and helper_trace_complete and all(
+            position < entrypoint_index for position in positions
+        )
+    else:
+        entrypoint_after_helpers = entrypoint_index is not None
+
+    return {
+        "trace_mode": trace_plan.get("trace_mode", TRACE_MODE_SUBFUNCTIONS),
+        "required_helper_tools": required,
+        "observed_tools": observed,
+        "helper_trace_complete": helper_trace_complete,
+        "entrypoint_after_helpers": entrypoint_after_helpers,
+        "skipped_helpers": list(trace_plan.get("skipped_helpers", [])),
+        "missing_helper_tools": missing,
+    }
+
+
+def _semantic_helper_tools(env: Code2Env) -> dict[str, str]:
+    helpers: dict[str, str] = {}
+    for tool in env.spec.tools:
+        if tool.name in {CALL_ENTRYPOINT_TOOL, CALL_HELPER_TOOL, SUBMIT_ANSWER_TOOL}:
+            continue
+        if not tool.name.startswith(HELPER_TOOL_PREFIX):
+            continue
+        provenance = tool.provenance or {}
+        backing = provenance.get("backing", {}) if isinstance(provenance.get("backing"), dict) else {}
+        if provenance.get("kind") != "wrapper" or backing.get("kind") != "function":
+            continue
+        symbol = backing.get("symbol")
+        helper = _helper_name_from_symbol(symbol) if isinstance(symbol, str) else tool.name.removeprefix(HELPER_TOOL_PREFIX)
+        helpers[helper] = tool.name
+    return helpers
+
+
+def _entrypoint_step_callees(env: Code2Env) -> list[str]:
+    entrypoint = _tool_by_name(env, CALL_ENTRYPOINT_TOOL)
+    if entrypoint is None:
+        return []
+    steps = entrypoint.provenance.get("steps", [])
+    if not isinstance(steps, list):
+        return []
+    callees: list[str] = []
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        for callee in step.get("callees", []) or []:
+            if isinstance(callee, str):
+                callees.append(callee)
+    return callees
+
+
+def _tool_by_name(env: Code2Env, name: str):
+    for tool in env.spec.tools:
+        if tool.name == name:
+            return tool
+    return None
+
+
+def _helper_candidates(env: Code2Env) -> list[str]:
+    raw = env.spec.provenance.get("helper_candidates", [])
+    return [item for item in raw if isinstance(item, str)] if isinstance(raw, list) else []
+
+
+def _side_effect_helpers(env: Code2Env) -> list[str]:
+    entrypoint = _tool_by_name(env, CALL_ENTRYPOINT_TOOL)
+    if entrypoint is None:
+        return []
+    raw = entrypoint.provenance.get("sandboxed_side_effect_helpers", [])
+    return [item for item in raw if isinstance(item, str)] if isinstance(raw, list) else []
+
+
+def _helper_name_from_symbol(symbol: str) -> str:
+    return symbol.rsplit(":", 1)[-1].split(".")[-1]
+
+
+def _first_index(items: list[str], needle: str) -> int | None:
+    for index, item in enumerate(items):
+        if item == needle:
+            return index
+    return None
+
+
+def _find_from(items: list[str], needle: str, start: int, stop: int) -> int | None:
+    for index in range(start, stop):
+        if items[index] == needle:
+            return index
+    return None
 
 
 def build_system_prompt(env: Code2Env, tools: list[dict[str, Any]]) -> str:
@@ -268,6 +525,7 @@ def run_rollout(
     max_parse_retries: int = 2,
     max_llm_retries: int = 1,
     system_prompt: str | None = None,
+    trace_mode: str = TRACE_MODE_DEFAULT,
     seed: int | None = 0,
 ) -> dict[str, Any]:
     """Drive a multi-round tool-calling rollout and return a RolloutResult dict.
@@ -281,6 +539,8 @@ def run_rollout(
     - ``qualified`` is True iff there were >=2 tool_call rounds and submit_answer ran.
     - ``termination_reason`` is one of ``submitted | step_budget_exhausted | error``.
     """
+    if trace_mode not in TRACE_MODES:
+        raise ValueError(f"unknown trace_mode: {trace_mode}")
     if primary_source is None:
         primary_source = "mock" if isinstance(llm, MockChatLLM) else getattr(llm, "model_name", "primary")
     if fallback_source is None and fallback_llm is not None:
@@ -297,7 +557,13 @@ def run_rollout(
     started_at = _now_iso()
     observation = env.reset(seed=seed)
     tools = build_tool_descriptions(env)
-    system_content = system_prompt or build_system_prompt(env, tools)
+    trace_plan = build_subfunction_trace_plan(env) if trace_mode == TRACE_MODE_SUBFUNCTIONS else None
+    if system_prompt is not None:
+        system_content = system_prompt
+    elif trace_plan is not None:
+        system_content = build_subfunction_trace_system_prompt(env, tools, trace_plan)
+    else:
+        system_content = build_system_prompt(env, tools)
     user_content = build_initial_user_message(observation, env.spec.fixture)
 
     api_messages: list[dict[str, Any]] = [
@@ -359,7 +625,7 @@ def run_rollout(
     finished_at = _now_iso()
     errors.extend(caller.errors)
 
-    return {
+    result = {
         "env_id": env.spec.id,
         "model": getattr(llm, "model_name", primary_source),
         "endpoint_source": caller.endpoint_source(),
@@ -380,6 +646,9 @@ def run_rollout(
         "retries": caller.retries + parse_retries_total,
         "errors": errors,
     }
+    if trace_plan is not None:
+        result["subfunction_trace"] = build_subfunction_trace_metadata(trace_plan, steps)
+    return result
 
 
 def _obtain_action(
