@@ -192,6 +192,13 @@ format-correction retries (malformed actions are re-prompted and recorded as
 `OpenAICompatibleLLM.chat(messages)`; tools are described in the system prompt
 (not sent as an OpenAI native `tools` field).
 
+The prompt explicitly tells the model **not to fabricate `call_entrypoint`
+arguments**: it should call the entrypoint with empty `arguments` so the runtime
+falls back to the pinned `spec.fixture`, and the concrete fixture is echoed into
+the task text for reference. This removes the "executed successfully but graded
+wrong" false negative where an agent passes its own args that differ from the
+fixture the golden answer was computed against.
+
 ```bash
 # Offline deterministic solver (no network) — good for CI/demos:
 python -m code2env rollout /tmp/generated_envs/<env_id> --llm-mode mock
