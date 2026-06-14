@@ -1,6 +1,13 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
+
+## Session 2 - 2026-06-13 UTC - Phase1 验证 PR#17 task031
+
+- lead ping Phase1: 验 PR#17 task031(根因B rollout prompt)。
+- checkout intern_code2env_worker_2/task031 → pytest 90 passed; 逐条 5 项全 PASS; 交叉校验契约(我 task022 validator)通过; merge main 干净且 post-merge 仍 90。
+- 建议 APPROVE, 无阻塞; mailbox 回报 lead(命令/结果/逐条/未覆盖风险)。
+- 等 w1 task030 / w4 task033 分支 ping。
 
 ## Session 1 - 2026-06-13 UTC - 接受 tester task + 写测试计划
 

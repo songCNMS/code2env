@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -44,3 +44,16 @@
   4. 保留原有指标（生成成功率/by_repo/合格率/平均 score/失败聚类）。
   5. 现有 pytest 全绿；README/mvp_usage 更新。
 - 跨 PR 一致性：task033 读的 golden_status 取值集合须与 task030 写的一致（real_value | weak_oracle:<reason>）——若两 PR 取值/前缀不一致即为阻塞。
+
+## 验证结果
+
+### [Phase1] task031 (PR#17, 分支 ...worker_2/task031_..., 493e1dd) — APPROVE 建议, 无阻塞
+- pytest tests/ = 90 passed(与自测一致); PromptFixtureGuidanceTest 4 passed; dry-run merge main=CLEAN + 临时 merge 后仍 90 passed。
+- 1[PASS] system prompt 含 CALL_ENTRYPOINT_FIXTURE_GUIDANCE("do NOT invent...empty arguments {}")。
+- 2[PASS] user message 回显 spec.fixture(build_initial_user_message 加 fixture 参数; None 时省略)。
+- 3[PASS] 空 args call_entrypoint 走回退: 真跑得 arguments={}/ok/qualified/correct; 回退源 runtime.py:413-414(真 runtime 行为)。
+- 4[PASS] 契约不漂移: 用我 task022 validate_conversation 校验真实 rollout 输出通过。
+- 5[PASS] 代码仅改 rollout.py(+28); tests(+51)/docs(+7)/workspace。
+- 加分: 对抗用例 test_fabricated_args_mismatch 证明自造 args→qualified 但 correct=False(根因B)。
+- 未覆盖(非阻塞): 真实模型遵从率需 w5 放量验证, 本 PR 仅静态验证指示句+回退行为。
+- 教训复用: 跨 worker 契约一致性可用自己模块的 validator 做交叉校验, 高效且权威。
