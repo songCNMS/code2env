@@ -1,6 +1,6 @@
 # task044_subfunction_trace_rollout - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## 记录规则
 
@@ -15,3 +15,4 @@
 4. 本地 trace evidence 未用 endpoint：通过 CLI `main()` + `--llm-mode mock --trace-mode subfunctions` 调用 deterministic `ScriptedTraceSolveChat`，输出在 worker 本地 `outputs/task044_trace_evidence/`。
 5. PR #30 可用 GitHub REST 复核 implementation head：`a79192f27ea4e282cd6d0dc95c6ae9620148a638`，`gh pr diff 30 --name-only` 包含 rollout/cli/test 实现文件。
 6. Lead approval + w4 validation PASS 后，PR merge 前需先把 task metadata 置 Completed、worker status 置 Idle 并随 PR 合入。
+7. PR#30 merged 后，worker_4 validator responsibility for task044 completed and worker_4 moved to task045 validator reservation.

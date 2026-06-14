@@ -1,19 +1,22 @@
 # intern_code2env_worker_4 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task045_min3_semantic_helpers_gate,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_4 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A |
+| Current Task | task045_min3_semantic_helpers_gate |
+| PR | https://github.com/songCNMS/code2env/pull/31 |
 | Session | 3 |
 
 ## 最近进展（Session 3）
 
+- Reserved as independent code/test validator for task045_min3_semantic_helpers_gate; read task docs and coordinator handoff.
+- PR#31 validation at head `5f646cebbf50fb1c6003800c75428aef821e1c8e`: blocker found because diff contains only workspace metadata, no code or focused test implementation for `--min-semantic-helpers`.
+- Baseline commands on PR#31 head: `python3 -m pytest -q tests/test_batch.py` 13 passed; `python3 -m pytest -q` 156 passed.
 - Lead approved task043 / PR#29 merge after code review and w2 PASS validation; preparing self-merge.
 - task043_indexer_side_effect_get_filter completion metadata updated to Completed/Idle before squash merge.
 - task043_indexer_side_effect_get_filter / PR#29 已有实现提交 `a092a9e` 并推送：AST-aware side-effect target detection + focused tests。
