@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=6 -->
+<!-- METADATA:SESSION=7 -->
 
 ## Session 0 - Created with coordinator
 
@@ -55,3 +55,10 @@
 - 交付：重算 golden + 修 prompt + 对可用子集 gpt-5.5 重跑(存 outputs/rollouts_v2/，不覆盖旧)+ 报告给【剔除假阳性后真实 correct 率】与前后对比。走 PR+单测。
 - 范围控制：只做依赖修复+prompt+重跑+报告，差分oracle/QualityGate 仍 backlog。
 - 下步：监工 lead 拆解与 PR；收回报后核验真实正确率并向用户汇报。
+
+## Session 7 - 跟进修正任务进度 + 布置完成监控
+
+- 用户令"执行下一步"。核查 origin/main：lead 已合并 task031 rollout prompt 修正(#17,禁止自造 call_entrypoint 参数)、task024 集成 runner(#15)；新建 task030(装依赖重算golden)/032(QA)/033(真实正确率报告)/034(重跑v2) 但均未完成；outputs/rollouts_v2 尚无产物——修正任务进行中。
+- 关键路径：task030 装依赖→重算 golden→task034 重跑v2→task033 报告。
+- coordinator 动作：①peer send(mode=next,不打断)向 lead 要 ETA、确认依赖安装是否顺利、v2 覆盖范围与产物路径(outputs/rollouts_v2/+report_v2)；delivered。②布置后台 Monitor(task bb8rgwfg1,~50min)：当 rollouts_v2/*.json>0 且 summary_v2/report_v2 就绪即通知 coordinator 去核验真实 correct 率。
+- 下步：收到监控通知或 lead 回报后，独立核验剔除假阳性后的真实正确率，向用户汇报。
