@@ -13,7 +13,11 @@ from code2env.rollout import (
     MockChatLLM,
     RolloutActionError,
     ScriptedSolveChat,
+    ScriptedTraceSolveChat,
     build_initial_user_message,
+    build_subfunction_trace_metadata,
+    build_subfunction_trace_plan,
+    build_subfunction_trace_system_prompt,
     build_system_prompt,
     build_tool_descriptions,
     parse_action_from_message,
@@ -37,6 +41,22 @@ def normalize_name(name, shout=False):
 """
 
 
+TRACE_SAMPLE = """
+def split_words(text=None):
+    return (text or "ada lovelace").split()
+
+
+def join_words(text=None):
+    return "-".join(split_words(text))
+
+
+def format_bundle(text=None):
+    words = split_words(text)
+    slug = join_words(text)
+    return {"words": words, "slug": slug}
+"""
+
+
 def _build_env(temp_dir: Path) -> Code2Env:
     repo = temp_dir / "repo"
     repo.mkdir(parents=True, exist_ok=True)
@@ -50,6 +70,22 @@ def _build_env(temp_dir: Path) -> Code2Env:
     spec_path = temp_dir / "env_spec.json"
     write_json(spec_path, spec.to_dict())
     package_root = build_env_package(spec_path, temp_dir / "generated")
+    return Code2Env(package_root / "env_spec.json")
+
+
+def _build_trace_env(temp_dir: Path) -> Code2Env:
+    repo = temp_dir / "trace_repo"
+    repo.mkdir(parents=True, exist_ok=True)
+    (repo / "trace_sample.py").write_text(TRACE_SAMPLE.lstrip(), encoding="utf-8")
+    snapshot = ingest_repo(str(repo))
+    spec = draft_env_spec(
+        snapshot,
+        symbol="trace_sample:format_bundle",
+        fixture={"args": ["ada lovelace"], "kwargs": {}},
+    )
+    spec_path = temp_dir / "trace_env_spec.json"
+    write_json(spec_path, spec.to_dict())
+    package_root = build_env_package(spec_path, temp_dir / "trace_generated")
     return Code2Env(package_root / "env_spec.json")
 
 
@@ -189,6 +225,87 @@ class RolloutLoopTest(unittest.TestCase):
             self.assertTrue(result["qualified"])
             self.assertTrue(result["final"]["correct"])
             self.assertGreaterEqual(result["retries"], 2)  # primary retried before fallback
+
+
+class SubfunctionTraceModeTest(unittest.TestCase):
+    def test_extracts_helper_sequence_from_entrypoint_steps(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_env(Path(temp))
+            plan = build_subfunction_trace_plan(env)
+            # Tool declaration order is alphabetical for equal helper step counts;
+            # trace mode must recover the entrypoint's actual callee order.
+            self.assertEqual(plan["required_helper_tools"], ["call_split_words", "call_join_words"])
+            self.assertEqual(plan["skipped_helpers"], [])
+
+    def test_trace_prompt_requires_helpers_before_entrypoint(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_env(Path(temp))
+            plan = build_subfunction_trace_plan(env)
+            prompt = build_subfunction_trace_system_prompt(env, build_tool_descriptions(env), plan)
+
+            self.assertIn("SUBFUNCTION TRACE MODE", prompt)
+            self.assertIn("Do not call call_entrypoint first", prompt)
+            self.assertLess(prompt.index("1. call_split_words"), prompt.index("2. call_join_words"))
+            self.assertIn("Then call submit_answer", prompt)
+
+    def test_trace_metadata_detects_complete_and_incomplete_sequences(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_env(Path(temp))
+            plan = build_subfunction_trace_plan(env)
+            complete = build_subfunction_trace_metadata(
+                plan,
+                [
+                    {"action": {"tool": "call_split_words"}},
+                    {"action": {"tool": "call_join_words"}},
+                    {"action": {"tool": "call_entrypoint"}},
+                    {"action": {"tool": "submit_answer"}},
+                ],
+            )
+            self.assertTrue(complete["helper_trace_complete"])
+            self.assertTrue(complete["entrypoint_after_helpers"])
+            self.assertEqual(complete["observed_tools"], ["call_split_words", "call_join_words", "call_entrypoint", "submit_answer"])
+
+            incomplete = build_subfunction_trace_metadata(
+                plan,
+                [
+                    {"action": {"tool": "call_entrypoint"}},
+                    {"action": {"tool": "call_split_words"}},
+                    {"action": {"tool": "submit_answer"}},
+                ],
+            )
+            self.assertFalse(incomplete["helper_trace_complete"])
+            self.assertFalse(incomplete["entrypoint_after_helpers"])
+            self.assertEqual(incomplete["missing_helper_tools"], ["call_split_words", "call_join_words"])
+
+    def test_trace_mock_rollout_calls_helpers_then_entrypoint_then_submit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_env(Path(temp))
+            result = run_rollout(
+                env,
+                ScriptedTraceSolveChat(env),
+                primary_source="mock",
+                max_rounds=8,
+                trace_mode="subfunctions",
+            )
+
+            trace = result["subfunction_trace"]
+            self.assertEqual(
+                [step["action"]["tool"] for step in result["steps"]],
+                ["call_split_words", "call_join_words", "call_entrypoint", "submit_answer"],
+            )
+            self.assertEqual(trace["required_helper_tools"], ["call_split_words", "call_join_words"])
+            self.assertTrue(trace["helper_trace_complete"])
+            self.assertTrue(trace["entrypoint_after_helpers"])
+            self.assertTrue(result["qualified"])
+            self.assertTrue(result["final"]["correct"])
+
+    def test_default_mode_remains_black_box_without_trace_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_env(Path(temp))
+            result = run_rollout(env, ScriptedSolveChat(env), primary_source="mock", max_rounds=8)
+            self.assertNotIn("subfunction_trace", result)
+            self.assertEqual([step["action"]["tool"] for step in result["steps"]], ["call_entrypoint", "submit_answer"])
+            self.assertNotIn("SUBFUNCTION TRACE MODE", result["messages"][0]["content"])
 
 
 class PromptFixtureGuidanceTest(unittest.TestCase):

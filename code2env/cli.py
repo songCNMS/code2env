@@ -15,7 +15,7 @@ from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
 from code2env.materialize import materialize_env_spec
 from code2env.report import write_report
-from code2env.rollout import ScriptedSolveChat, run_rollout
+from code2env.rollout import ScriptedSolveChat, ScriptedTraceSolveChat, run_rollout
 from code2env.rollout_export import iter_jsonl, write_conversation
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
@@ -129,6 +129,12 @@ def main(argv: list[str] | None = None) -> int:
     rollout_parser.add_argument("--llm-max-tokens", type=int, default=1200)
     rollout_parser.add_argument("--max-parse-retries", type=int, default=2)
     rollout_parser.add_argument("--max-llm-retries", type=int, default=1)
+    rollout_parser.add_argument(
+        "--trace-mode",
+        choices=["default", "subfunctions"],
+        default="default",
+        help="default keeps black-box rollout behavior; subfunctions requires semantic helper calls before entrypoint",
+    )
     rollout_parser.add_argument("--seed", type=int, default=0)
 
     batch_parser = subcommands.add_parser(
@@ -341,13 +347,15 @@ def _rollout(args: argparse.Namespace) -> int:
     env = Code2Env(spec_path)
 
     if args.llm_mode == "mock":
+        mock_llm = ScriptedTraceSolveChat(env) if args.trace_mode == "subfunctions" else ScriptedSolveChat(env)
         result = run_rollout(
             env,
-            ScriptedSolveChat(env),
+            mock_llm,
             primary_source="mock",
             max_rounds=args.max_rounds,
             max_parse_retries=args.max_parse_retries,
             max_llm_retries=args.max_llm_retries,
+            trace_mode=args.trace_mode,
             seed=args.seed,
         )
     else:
@@ -384,6 +392,7 @@ def _rollout(args: argparse.Namespace) -> int:
             max_rounds=args.max_rounds,
             max_parse_retries=args.max_parse_retries,
             max_llm_retries=args.max_llm_retries,
+            trace_mode=args.trace_mode,
             seed=args.seed,
         )
 
