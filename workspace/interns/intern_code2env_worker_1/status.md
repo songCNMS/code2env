@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task020_batch_generation_pipeline |
-| PR | https://github.com/songCNMS/code2env/pull/14 |
+| PR | https://github.com/songCNMS/code2env/pull/14 (实现完成, 待 tester/lead review) |
 | Session | 2 |
