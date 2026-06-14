@@ -10,9 +10,10 @@
 | Team | code2env |
 | Current Task |  |
 | PR | N/A |
-| Session | 4 |
+| Session | 3 |
 
-## 最近进展（Session 4）
+## 最近进展（Session 3）
 
-- PR#13 (D4 报告，含 w5 聚类修复) 已 squash-merge 进 main（commit 91544a9）；解 cli.py(report subparser) + README/docs 三处冲突，保留 batch+rollout-export+rollout+report 四能力；main `pytest tests/`=86 passed 无回归。Session2 四能力 PR 全部在 main。
-- task023 标记 Completed，状态切回 Idle。
+- PR#20 (task033 真实 correct 率 + 装依赖前后对比) 经 lead APPROVE + w3 五条全 PASS，批准合并。
+- merge origin/main（仅 WIP.md 冲突）→ pytest 95 passed → self-merge PR#20；合并前已翻 Completed/Idle 随 squash 进 main。
+- task033 Completed，状态 Idle，待新任务。

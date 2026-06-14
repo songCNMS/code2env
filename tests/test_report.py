@@ -247,5 +247,114 @@ class LoaderAndOutputTest(unittest.TestCase):
             self.assertEqual(report["rollouts"]["total"], 0)
 
 
+def _golden_manifest() -> dict:
+    """Post-dependency-install manifest carrying golden_status per env."""
+    return {
+        "generated_at": "2026-06-14T03:00:00Z",
+        "summary": {"candidates_scanned": 4, "draft_ok": 4, "build_ok": 4, "smoke_ok": 3},
+        "envs": [
+            {"env_id": "a1", "repo": "requests", "draft_ok": True, "build_ok": True, "smoke_ok": True, "golden_status": "real_value"},
+            {"env_id": "a2", "repo": "requests", "draft_ok": True, "build_ok": True, "smoke_ok": True, "golden_status": "real_value"},
+            {"env_id": "f1", "repo": "flask", "draft_ok": True, "build_ok": True, "smoke_ok": True, "golden_status": "weak_oracle:no test assertions"},
+            {"env_id": "f2", "repo": "flask", "draft_ok": True, "build_ok": True, "smoke_ok": False, "golden_status": "real_value"},
+        ],
+        "skipped": [],
+    }
+
+
+class GoldenStatusTrueCorrectTest(unittest.TestCase):
+    def test_true_correct_rate_excludes_weak_oracle(self) -> None:
+        rollouts = [
+            _conv("a1", correct=True, score=0.9),   # real_value, correct
+            _conv("a2", correct=False, score=0.2),  # real_value, incorrect
+            _conv("f1", correct=True, score=0.9),   # weak_oracle -> excluded (false positive)
+            _conv("f2", correct=True, score=0.8),   # real_value, correct
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "m.json"
+            write_json(mpath, _golden_manifest())
+            jsonl = Path(tmp) / "r.jsonl"
+            write_jsonl(jsonl, rollouts)
+            r = build_report(mpath, jsonl)["rollouts"]
+            self.assertEqual(r["total"], 4)
+            self.assertEqual(r["correct"], 3)            # raw includes the f1 false positive
+            self.assertEqual(r["weak_oracle_excluded"], 1)
+            self.assertEqual(r["usable_total"], 3)       # 4 - 1 weak
+            self.assertEqual(r["true_correct"], 2)       # a1 + f2 (f1 excluded)
+            self.assertAlmostEqual(r["true_correct_rate"], round(2 / 3, 4))
+            self.assertEqual(r["golden_unknown"], 0)
+
+    def test_missing_golden_status_degrades_to_unknown_kept_in_denominator(self) -> None:
+        manifest = _golden_manifest()
+        # Drop golden_status from a2 -> rollout should count as unknown, still usable.
+        for env in manifest["envs"]:
+            if env["env_id"] == "a2":
+                del env["golden_status"]
+        rollouts = [_conv("a1", correct=True), _conv("a2", correct=False), _conv("f1", correct=True)]
+        with tempfile.TemporaryDirectory() as tmp:
+            mpath = Path(tmp) / "m.json"
+            write_json(mpath, manifest)
+            jsonl = Path(tmp) / "r.jsonl"
+            write_jsonl(jsonl, rollouts)
+            r = build_report(mpath, jsonl)["rollouts"]
+            self.assertEqual(r["weak_oracle_excluded"], 1)   # f1
+            self.assertEqual(r["golden_unknown"], 1)         # a2
+            self.assertEqual(r["usable_total"], 2)           # a1 + a2
+            self.assertEqual(r["true_correct"], 1)           # a1
+
+
+class DependencyComparisonTest(unittest.TestCase):
+    def _baseline(self) -> dict:
+        # Pre-install: golden was error (no real_value), flask smoke all failing.
+        return {
+            "generated_at": "2026-06-14T01:00:00Z",
+            "summary": {"candidates_scanned": 4, "draft_ok": 4, "build_ok": 4, "smoke_ok": 1},
+            "envs": [
+                {"env_id": "a1", "repo": "requests", "smoke_ok": True, "golden_status": "real_value"},
+                {"env_id": "a2", "repo": "requests", "smoke_ok": False, "golden_status": "weak_oracle:error"},
+                {"env_id": "f1", "repo": "flask", "smoke_ok": False, "golden_status": "weak_oracle:no deps"},
+                {"env_id": "f2", "repo": "flask", "smoke_ok": False, "golden_status": "weak_oracle:no deps"},
+            ],
+            "skipped": [],
+        }
+
+    def test_before_after_with_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cur = Path(tmp) / "cur.json"
+            base = Path(tmp) / "base.json"
+            write_json(cur, _golden_manifest())
+            write_json(base, self._baseline())
+            comp = build_report(cur, None, baseline_manifest_path=base)["dependency_comparison"]
+            self.assertTrue(comp["baseline_provided"])
+            # a2 (weak->real) and f2 (weak->real) became real_value; a1 already real.
+            self.assertEqual(comp["golden_error_to_real_value"], 2)
+            # flask smoke_ok: before 0 -> after 1 (f1 ok in current manifest)
+            self.assertEqual(comp["smoke_ok_by_repo"]["flask"], {"before": 0, "after": 1, "delta": 1})
+            self.assertEqual(comp["smoke_ok_by_repo"]["requests"], {"before": 1, "after": 2, "delta": 1})
+
+    def test_without_baseline_degrades(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cur = Path(tmp) / "cur.json"
+            write_json(cur, _golden_manifest())
+            report = build_report(cur, None)
+            comp = report["dependency_comparison"]
+            self.assertFalse(comp["baseline_provided"])
+            self.assertEqual(comp["current_golden"]["counts"], {"real_value": 3, "weak_oracle": 1, "unknown": 0})
+            md = render_markdown(report)
+            self.assertIn("Dependency-install Before/After", md)
+            self.assertIn("True correct", md)
+
+    def test_markdown_shows_smoke_before_after(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cur = Path(tmp) / "cur.json"
+            base = Path(tmp) / "base.json"
+            write_json(cur, _golden_manifest())
+            write_json(base, self._baseline())
+            report = build_report(cur, None, baseline_manifest_path=base)
+            md = render_markdown(report)
+            self.assertIn("error → real_value", md)
+            self.assertIn("smoke_ok by repo", md)
+
+
 if __name__ == "__main__":
     unittest.main()

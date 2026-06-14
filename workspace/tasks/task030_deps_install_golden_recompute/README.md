@@ -1,6 +1,6 @@
 # task030_deps_install_golden_recompute - 根因A:依赖安装+golden重算+weak_oracle 标注
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 

@@ -1,6 +1,6 @@
 # task030_deps_install_golden_recompute - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -27,3 +27,11 @@
 - 合并序：等 w3 验证通过 + PR#20 先 merged，lead 再 ping 我；**先别合**。
 - 只读 recon(未合并)：确认本分支未改 rollout.py(减行是陈旧分支假象)；origin/main 的 rollout.py 已含 CALL_ENTRYPOINT_FIXTURE_GUIDANCE×2(B/PR#17 b59a067 已并入 main)；PR#20 尚未进 main。
 - 合并待办(收到 ping 后)：`git merge origin/main`(解决 WIP.md 小冲突, 拉进 B rollout.py + PR#20 cli.py)→确认 rollout.py 仍含 CALL_ENTRYPOINT_FIXTURE_GUIDANCE→pytest 全绿→self-merge PR#18→清理→mailbox 回报。
+
+## Session 3 - 2026-06-13 - 三签齐, 合并 (最后一个)
+
+- PR#18 三签齐：lead APPROVE + tester(w3) 99 passed + 030↔033 golden_status 交叉核对一致。批准合并(最后一个)。
+- `git fetch && git merge origin/main`(含 #17 B + 报告 PR)：仅 WIP.md modify/delete 冲突，`git rm WIP.md` 解决；README/cli.py/docs 自动合并。
+- 合并后核验全 PASS：rollout.py 仍含 CALL_ENTRYPOINT_FIXTURE_GUIDANCE×2(B 不丢)；cli.py 同时含 `--baseline-manifest`(report) 与 `--no-install-deps`(本任务)；envdeps.py 在位。
+- `pytest tests/` → 108 passed。
+- 状态文件 →Idle/Completed；self-merge PR#18(squash)；mailbox 回报 squash commit；lead 随即 ping w5 启动重跑。
