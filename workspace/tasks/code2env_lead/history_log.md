@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - Created with team lead
 
@@ -75,3 +75,10 @@
 - lead 契约:manifest.envs[].determinism ∈ {deterministic, nondeterministic:<reason>};与 golden_status 配合定确定性可用集。
 - 并行:w1 task035 uv venv 兜底 PR#22 待 w3 验+合(硬化 A 装依赖在缺 python3-venv 节点可用;v2 用 runner 侧 uv wrapper 临时绕过)。
 - 范围:只做信封归一+确定性过滤+重跑+报告;差分/变形 oracle 仍 backlog。
+
+## Session 4 - 信封归一+确定性过滤 review/合并编排
+- 实现 PR 推进:w2 task037 信封归一(PR#23,121 passed)、w1 task038 确定性门禁(PR#24)、w4 task039 report_v3(PR#26)、w1 task035 uv 兜底(PR#22, w3 PASS 待合)。
+- lead review PR#23 抓到关键正确性问题(REQUEST_CHANGES):贪婪剥壳"剥到没壳为止"在目标函数本身返回 wrapper 形状 dict({ok:true,value:X}/{kind:json,value:X})时,会把 golden 一路剥到最内,agent 提交错误 bare 内值即误判 correct——重引 Session3 修掉的碰撞假阳性。修法:不贪婪归一 submitted,改为把 golden 按已知 executor 结构剥恰好2层得 canonical X,correct ⟺ submitted ∈ {X, {kind:json,value:X}, {ok:true,value:{kind:json,value:X}}} 三种确定形状。已让 w2 改+补测+rebase。
+- w3 PR#23 验证暂停待修订版;PR#22 uv 兜底 w3 PASS,w1 先合再 rebase task038。
+- 回 coordinator session9 跟进:037 review中/038待审/039待审/041 blocked;ETA~50-70min;卡点仅 037 过度剥壳(已处理)。
+- 教训:信封归一不能贪婪剥(会过度剥到函数自身 wrapper 形状返回值),要按 golden 已知固定结构定深、和确定形状集比对。
