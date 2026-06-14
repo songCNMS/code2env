@@ -14,6 +14,7 @@ from code2env.jsonio import loads_object, write_json
 from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
 from code2env.materialize import materialize_env_spec
+from code2env.rollout_export import iter_jsonl, write_conversation
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
 from code2env.spec import draft_env_spec
@@ -99,6 +100,22 @@ def main(argv: list[str] | None = None) -> int:
     batch_parser.add_argument("--no-smoke", action="store_true")
     batch_parser.add_argument("--include-side-effects", action="store_true")
 
+    rollout_export_parser = subcommands.add_parser(
+        "rollout-export",
+        help="Persist RolloutResult records (JSONL) as per-env conversation JSON + merged rollouts.jsonl",
+    )
+    rollout_export_parser.add_argument("results", help="JSONL file with one RolloutResult object per line")
+    rollout_export_parser.add_argument(
+        "--export-dir",
+        default=None,
+        help="Output directory (default: coordinator outputs/rollouts; auto-created)",
+    )
+    rollout_export_parser.add_argument(
+        "--no-validate",
+        action="store_true",
+        help="Skip schema validation (use only for already-trusted records)",
+    )
+
     args = parser.parse_args(argv)
     try:
         if args.command == "scan":
@@ -117,6 +134,8 @@ def main(argv: list[str] | None = None) -> int:
             return _materialize(args)
         if args.command == "batch":
             return _batch(args)
+        if args.command == "rollout-export":
+            return _rollout_export(args)
     except Exception as exc:  # noqa: BLE001 - CLI should return structured failure.
         print(f"code2env: error: {exc}", file=sys.stderr)
         return 1
@@ -256,6 +275,15 @@ def _batch(args: argparse.Namespace) -> int:
         include_side_effects=args.include_side_effects,
     )
     _print_json({"output_dir": str(Path(args.output_dir).resolve()), "summary": manifest["summary"]})
+    return 0
+
+
+def _rollout_export(args: argparse.Namespace) -> int:
+    written: list[str] = []
+    for record in iter_jsonl(args.results):
+        path = write_conversation(record, args.export_dir, validate=not args.no_validate)
+        written.append(str(path))
+    _print_json({"exported": len(written), "paths": written})
     return 0
 
 

@@ -116,6 +116,37 @@ Each `ToolSpec` carries `input_schema`, `output_schema`, `side_effects`, and `pr
 
 The runtime API is available as `code2env.runtime.Code2Env` with `reset`, `step`, `evaluate`, and `close`.
 
+## Rollout conversation export (D3)
+
+`code2env.rollout_export` is the persistence layer for rollout results. It takes a
+`RolloutResult` dict (produced by the rollout driver) and writes it to disk for
+human inspection and downstream reporting. It does not run rollouts.
+
+```bash
+python -m code2env rollout-export /path/to/results.jsonl --export-dir /path/to/out
+```
+
+For each record it writes a readable per-env `<env_id>.json` (atomic temp-file +
+`os.replace`) and appends one line to a merged `rollouts.jsonl`. `--export-dir`
+defaults to the coordinator's `outputs/rollouts/` directory (outside the repo, not
+tracked by git, auto-created); override with `--export-dir` or the
+`CODE2ENV_ROLLOUT_EXPORT_DIR` env var.
+
+Library API:
+
+- `write_conversation(result, out_dir=None, *, validate=True) -> Path` — write per-env JSON + append to `rollouts.jsonl`.
+- `validate_conversation(obj)` — enforce the shared schema; raises `ConversationSchemaError` on missing/typed-wrong fields or a `qualified` flag inconsistent with the contract.
+- `load_conversation(path)` / `iter_jsonl(path)` — load a single conversation or stream the merged log; `write → load` round-trips to an equal object.
+
+The conversation contract (shared verbatim with the rollout producer and the report
+consumer — **do not rename fields**) carries `env_id`, `model`, `endpoint_source`,
+`started_at`/`finished_at`, full `messages` (`system`/`user`/`assistant`/`tool`),
+per-step `steps` (`action` + `tool_result` + `reward` + `parse_error`), a `final`
+block (`submitted_answer`, `correct`, `score`, `score_breakdown`, `steps`),
+`num_tool_call_rounds`, `qualified`, `termination_reason`, `retries`, and `errors`.
+`qualified` is `num_tool_call_rounds >= 2` **and** a `submit_answer` appears in the
+messages or steps.
+
 ## Multi-dimensional reward (PRD 7.7 / F7)
 
 Every episode accumulates raw signals for five dimensions, each weighted by

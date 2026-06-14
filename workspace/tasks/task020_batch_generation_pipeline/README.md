@@ -1,6 +1,6 @@
 # task020_batch_generation_pipeline - D1 批量生成 pipeline + fixture 自动合成 (≥100 EnvPackage)
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 

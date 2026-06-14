@@ -1,6 +1,6 @@
 # task020_batch_generation_pipeline - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
