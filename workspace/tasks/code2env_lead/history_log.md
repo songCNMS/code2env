@@ -20,3 +20,14 @@
 - 全员投入：三项天然独立可并行 + 双 tester 拆分验证并兜底端到端回归。
 - 下步：等 worker mailbox 回报，分支就绪后 ping 对应 tester，再 review + approve + 通知 self-merge。
 - P1/P2（差分 oracle、QualityGate 6 项、Phase4 RL 接入、CorpusManager、人工审阅）列 backlog，本轮不做。
+
+### Session 1 续 - 实现完成 + review + 合并编排
+- 三项实现 PR 全部完成：PR#9(task010 ToolExtractor,16 passed)、PR#7(task012 TestLinkIndex,18 passed)、PR#8(task011 reward,23 passed)。
+- Lead 代码 review（派 3 个 review 子代理对照各自 PRD 节逐条核）：三项均 APPROVE，仅非阻塞 nits。
+  - PR#9 nit：WIP.md 重复行；分支落后 main(diff 幻影删除非合并危险)。
+  - PR#7 nit：名称子串匹配偏宽(`add`→`test_address`)误关联；分支落后 main。
+  - PR#8 nit：默认权重 0.05/0.20/0.65/0.05/0.05 与 PRD 7.7 表(0.05/0.25/0.50/0.10/0.10)不一致——既有 spec.py 声明,非本 PR 回归,记 backlog 文档/取值对齐,不阻塞。
+- Tester：worker_4 [1/2] PR#9 七条验收全 PASS 建议 merge；PR#7[2/2] 与 worker_5 PR#8 验证进行中。
+- 合并编排：PR#9 双签→批准 worker_1 self-merge(首合,对 main 干净)；PR#7/PR#8 待 PR#9 合并后各自 merge main 解冲突(spec/indexer/models/runtime/README/mvp_usage 重叠)+重测+复验再顺序 self-merge。
+- 关键校正：默认分支是 main（非 master）。
+- 监工采用事件驱动后台等待器（mailbox 有未读即唤醒），替代盲轮询 cron。
