@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -8,6 +9,7 @@ from pathlib import Path
 from code2env.batch import generate_batch
 from code2env.builder import build_env_package
 from code2env.envdeps import (
+    _create_venv,
     golden_status_for,
     prepare_repo_env,
     requirements_from_snapshot,
@@ -115,6 +117,116 @@ class PrepareRepoEnvTest(unittest.TestCase):
             result = prepare_repo_env(ingest_repo(str(repo)), install=False)
             self.assertEqual(result["deps_status"], "skipped")
             self.assertEqual(result["python"], sys.executable)
+
+
+def _venv_runner(*, fail_venv: bool, fail_uv: bool):
+    """Fake subprocess runner: routes stdlib-venv vs uv-venv by '--seed' in cmd."""
+
+    calls: list[list[str]] = []
+
+    def runner(cmd, **kwargs):
+        calls.append(list(cmd))
+        is_uv = "--seed" in cmd
+        if (is_uv and fail_uv) or (not is_uv and fail_venv):
+            raise subprocess.CalledProcessError(1, cmd, stderr="boom")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    return runner, calls
+
+
+class CreateVenvUvFallbackTest(unittest.TestCase):
+    def test_stdlib_venv_used_when_available(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runner, calls = _venv_runner(fail_venv=False, fail_uv=False)
+            python = _create_venv(
+                Path(temp_dir) / "v", sys.executable, runner=runner, which=lambda _: None
+            )
+            self.assertTrue(python.endswith("/bin/python"))
+            # Only the stdlib venv command runs; uv is never consulted.
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0][1:3], ["-m", "venv"])
+
+    def test_uv_fallback_when_stdlib_venv_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runner, calls = _venv_runner(fail_venv=True, fail_uv=False)
+            python = _create_venv(
+                Path(temp_dir) / "v",
+                sys.executable,
+                runner=runner,
+                which=lambda name: "/usr/bin/uv" if name == "uv" else None,
+            )
+            self.assertTrue(python.endswith("/bin/python"))
+            # Stdlib venv attempted first, then uv venv --seed.
+            self.assertEqual(len(calls), 2)
+            self.assertIn("--seed", calls[1])
+            self.assertEqual(calls[1][0], "/usr/bin/uv")
+
+    def test_venv_failed_when_stdlib_fails_and_uv_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runner, _ = _venv_runner(fail_venv=True, fail_uv=False)
+            with self.assertRaises(subprocess.CalledProcessError):
+                _create_venv(
+                    Path(temp_dir) / "v", sys.executable, runner=runner, which=lambda _: None
+                )
+
+    def test_venv_failed_when_both_stdlib_and_uv_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runner, calls = _venv_runner(fail_venv=True, fail_uv=True)
+            with self.assertRaises(subprocess.CalledProcessError):
+                _create_venv(
+                    Path(temp_dir) / "v",
+                    sys.executable,
+                    runner=runner,
+                    which=lambda name: "/usr/bin/uv",
+                )
+            self.assertEqual(len(calls), 2)
+
+    def test_prepare_repo_env_succeeds_via_uv_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "repo"
+            repo.mkdir()
+            (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+            (repo / "requirements.txt").write_text("werkzeug\n", encoding="utf-8")
+            runner, _ = _venv_runner(fail_venv=True, fail_uv=False)
+
+            def builder(venv_dir: Path, base_python: str) -> str:
+                return _create_venv(
+                    venv_dir,
+                    base_python,
+                    runner=runner,
+                    which=lambda name: "/usr/bin/uv",
+                )
+
+            result = prepare_repo_env(
+                ingest_repo(str(repo)),
+                cache_dir=Path(temp_dir) / "venvs",
+                venv_builder=builder,
+                installer=lambda py, req: (True, ""),
+            )
+            self.assertEqual(result["deps_status"], "installed")
+            self.assertEqual(result["installed"], ["werkzeug"])
+
+    def test_prepare_repo_env_venv_failed_when_no_backend(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "repo"
+            repo.mkdir()
+            (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+            (repo / "requirements.txt").write_text("werkzeug\n", encoding="utf-8")
+            runner, _ = _venv_runner(fail_venv=True, fail_uv=False)
+
+            def builder(venv_dir: Path, base_python: str) -> str:
+                return _create_venv(
+                    venv_dir, base_python, runner=runner, which=lambda _: None
+                )
+
+            result = prepare_repo_env(
+                ingest_repo(str(repo)),
+                cache_dir=Path(temp_dir) / "venvs",
+                venv_builder=builder,
+            )
+            self.assertEqual(result["deps_status"], "venv_failed")
+            self.assertEqual(result["python"], sys.executable)
+            self.assertIn("venv_create_failed", result["reason"])
 
 
 class GoldenStatusTest(unittest.TestCase):

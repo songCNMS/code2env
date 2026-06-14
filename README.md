@@ -111,8 +111,10 @@ After deps are installed, each env carries a `golden_status`:
 
 `manifest.summary` reports `real_value` / `weak_oracle` counts and per-repo
 `deps_status`; `manifest.repo_deps` records installed/failed packages per repo.
-Running real venvs requires `python3-venv`/`ensurepip` on the host; without it the
-pipeline records `deps_status: venv_failed` and falls back to the base interpreter.
+Venv creation prefers the stdlib `python -m venv`; on hosts where that fails because
+`python3-venv`/`ensurepip` is unavailable it falls back to `uv venv --seed` when the
+`uv` binary is present (task035). Only when neither backend works does the pipeline
+record `deps_status: venv_failed` and fall back to the base interpreter.
 
 ### Rollout conversation export (D3)
 
