@@ -1,6 +1,6 @@
 # task043_indexer_side_effect_get_filter - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -14,3 +14,4 @@
 3. `FunctionCandidate.calls` 仍保留 basename 列表；`possible_side_effect` 现在直接检查 AST call target，以区分 `payload.get()` 与 `requests.get()`。
 4. qlib pinned scan result: candidates=2860, old basename possible_side_effect=221, old get-only=93, patched possible_side_effect=122, patched get-only=6.
 5. Session 2 verification confirmed implementation commit `a092a9e` remains green with focused tests and full pytest.
+6. Lead approved self-merge after w2 validation PASS; final task state should land on `main` as Completed/Idle via PR#29 squash merge.

@@ -1,19 +1,21 @@
 # intern_code2env_worker_4 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task043_indexer_side_effect_get_filter,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_4 |
-| Status | Working |
+| Status | Idle |
 | Role | worker |
 | Team | code2env |
-| Current Task | task043_indexer_side_effect_get_filter |
-| PR | https://github.com/songCNMS/code2env/pull/29 |
-| Session | 2 |
+| Current Task |  |
+| PR | N/A |
+| Session | 3 |
 
-## 最近进展（Session 2）
+## 最近进展（Session 3）
 
+- Lead approved task043 / PR#29 merge after code review and w2 PASS validation; preparing self-merge.
+- task043_indexer_side_effect_get_filter completion metadata updated to Completed/Idle before squash merge.
 - task043_indexer_side_effect_get_filter / PR#29 已有实现提交 `a092a9e` 并推送：AST-aware side-effect target detection + focused tests。
 - Session 2 重新验证：`python3 -m pytest -q tests/test_indexer_side_effects.py` 2 passed；`python3 -m pytest -q` 150 passed。
 - PR#29 已包含 qlib get-only false-positive scan snippet/result，当前状态 ready for lead review / tester validation。

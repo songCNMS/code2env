@@ -1,6 +1,6 @@
 # task043_indexer_side_effect_get_filter - Refine indexer side-effect detection for ordinary get calls
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_4 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## 背景
 
