@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=9 -->
+<!-- METADATA:SESSION=10 -->
 
 ## Session 0 - Created with coordinator
 
@@ -70,3 +70,11 @@
 - 使用 Session 7 的 3 个 EnvPackage 复跑 mock trace-mode rollout：3/3 `qualified=true`、`correct=true`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`；同一 compress env 的 default mock rollout 仍为 `call_entrypoint -> submit_answer` 且不包含 `subfunction_trace`。
 - 复验 rollout-export 兼容性：用 1 条 default + 3 条 trace records 组成 mixed JSONL，`python3 -m code2env rollout-export ...` 成功导出 4 条记录。验证产物位于 `../outputs/session9_task044_verify/`。
 - 记录剩余风险：trace quality 依赖 EnvSpec provenance；mock/helper calls 默认空参数；仅 generic `call_helper` 包装的 helper 会记录 skipped/missing 而不会强制走通。
+
+## Session 10 - Official endpoint trace rollout dataset
+
+- 按用户“执行下一步”要求，使用 PR #30 合入后的正式 CLI 能力 `code2env rollout --trace-mode subfunctions`，在 detached `origin/main` worktree `../debug/code2env_main_verify` 上对 Session 7 的 10 个 EnvPackage 重新执行 endpoint rollout。
+- 运行配置：endpoint file `/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt`，primary `gpt-5.5`，fallback `Kimi-K2.6`，`--trace-mode subfunctions`，`--max-rounds 8`，`--llm-timeout 90`，`--llm-max-tokens 1800`。
+- 结果：10/10 `qualified=true`，10/10 `correct=true`，10/10 `helper_trace_complete=true`，10/10 `entrypoint_after_helpers=true`，全部使用 primary `gpt-5.5`；2 个 env 记录 skipped side-effect helper（`market_suffix`、`turnover_ratio`），符合 task044 设计。
+- 产物：merged JSONL `../outputs/session10_official_trace_rollouts/official_trace_endpoint_rollouts.jsonl`（10 lines, 113,805 bytes），summary `../outputs/session10_official_trace_rollouts/official_trace_summary.json`，per-env records `../outputs/session10_official_trace_rollouts/rollouts/`，exported records `../outputs/session10_official_trace_rollouts/exported/`。
+- 验证：解析 JSONL 成功，rollout-export 成功导出 10 条记录；已通过本机飞书 daemon 发送 merged JSONL 到 `intern_code2env_coordinator` 飞书会话，file_key `file_v3_0012l_cc3cee78-1b75-4e4b-b777-6765493afa9g`，文件消息 ID `om_x100b6ddf683008a8b321a54cc264066`，确认文本消息 ID `om_x100b6ddf69c60ca0b34052a193aae9d`。
