@@ -1,6 +1,6 @@
 # task030_deps_install_golden_recompute - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 

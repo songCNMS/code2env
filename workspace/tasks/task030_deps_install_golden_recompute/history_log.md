@@ -1,6 +1,6 @@
 # task030_deps_install_golden_recompute - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -20,3 +20,10 @@
 - 新增 `tests/test_envdeps.py`(16)；`pytest tests/` → 99 passed；README/docs 更新。
 - mailbox 回报 lead PR# 与自测，待 tester(w3) 验证与 lead review。
 - 真实装依赖重算 100 env 由 w5 执行；真实 venv 需 run host 装 python3-venv/ensurepip。
+
+## Session 2 - 2026-06-13 - lead APPROVE, 待合并序 (先别合)
+
+- lead review PR#18 APPROVE(golden_status 契约与 report 精确匹配, 6 条全 PASS)。
+- 合并序：等 w3 验证通过 + PR#20 先 merged，lead 再 ping 我；**先别合**。
+- 只读 recon(未合并)：确认本分支未改 rollout.py(减行是陈旧分支假象)；origin/main 的 rollout.py 已含 CALL_ENTRYPOINT_FIXTURE_GUIDANCE×2(B/PR#17 b59a067 已并入 main)；PR#20 尚未进 main。
+- 合并待办(收到 ping 后)：`git merge origin/main`(解决 WIP.md 小冲突, 拉进 B rollout.py + PR#20 cli.py)→确认 rollout.py 仍含 CALL_ENTRYPOINT_FIXTURE_GUIDANCE→pytest 全绿→self-merge PR#18→清理→mailbox 回报。
