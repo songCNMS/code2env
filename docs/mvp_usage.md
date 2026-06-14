@@ -227,22 +227,35 @@ conversation products into a markdown + JSON summary report:
 ```bash
 python -m code2env report /path/to/manifest.json \
   --rollouts /path/to/rollouts/ \
-  --output-dir /tmp/code2env_report
+  --output-dir /tmp/code2env_report \
+  [--baseline-manifest /path/to/pre_install_manifest.json]
 ```
 
 It reads (read-only, shared field contract) the manifest `summary` / `envs` /
-`skipped` and each rollout's `final.{correct,score}`, `num_tool_call_rounds`,
-`qualified`, and `termination_reason`. `--rollouts` accepts a directory (per-env
-`<env_id>.json`, falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be
-omitted to summarize generation only.
+`skipped` (incl. each env's `golden_status`) and each rollout's
+`final.{correct,score}`, `num_tool_call_rounds`, `qualified`, and
+`termination_reason`. `--rollouts` accepts a directory (per-env `<env_id>.json`,
+falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be omitted to
+summarize generation only.
 
 The report contains:
 
 - **Env generation**: `draft_ok` / `build_ok` / `smoke_ok` rates over candidates,
   and a per-repo distribution (`total` / `build_ok` / `smoke_ok` / `skipped`).
 - **Rollouts**: total, qualified count + rate (qualified = `>= 2` tool rounds and a
-  `submit_answer`), correct count + rate, mean `final.score`, low-score count, and a
-  per-model breakdown.
+  `submit_answer`), raw correct count + rate, **true correct rate**, mean
+  `final.score`, low-score count, and a per-model breakdown.
+- **True correct rate** consumes `manifest.envs[].golden_status` (task030 / w1
+  contract: `real_value` or `weak_oracle:<reason>`). Rollouts whose env has a weak
+  oracle are **excluded from the denominator** and counted separately
+  (`weak_oracle_excluded`), so the true rate is `correct / usable` over real-oracle
+  envs only — stripping the error-match false positives. A missing `golden_status`
+  degrades to `unknown` and is kept in the denominator (never silently shrinks it).
+- **Dependency-install before/after** (`--baseline-manifest`, optional): the count
+  of golden `error → real_value` transitions (env was non-`real_value` in the
+  baseline, `real_value` now) and the per-repo `smoke_ok` before/after delta (e.g.
+  flask `0 → N` once deps install). Without a baseline it degrades to the current
+  golden-status distribution with a note.
 - **Failure clusters**: generation-stage and rollout-stage failures bucketed into a
   fixed explainable tag set — `dependency_failure`, `fixture_unsynthesizable`,
   `weak_oracle`, `tool_granularity`, `format_error`, `other` — with per-tag counts

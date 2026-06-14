@@ -284,13 +284,68 @@ def _final(conv: dict[str, Any]) -> dict[str, Any]:
     return final if isinstance(final, dict) else {}
 
 
-def _summarize_rollouts(rollouts: list[dict[str, Any]], low_score_threshold: float) -> dict[str, Any]:
+# --------------------------------------------------------------------------- #
+# golden_status (task030 / w1 contract): manifest.envs[].golden_status is
+# "real_value" or "weak_oracle:<reason>". A weak_oracle env cannot give a trusted
+# correctness signal, so its rollouts are excluded from the *true* correct-rate
+# denominator and counted separately. Missing golden_status degrades to "unknown"
+# (kept in the denominator so we never silently shrink it).
+# --------------------------------------------------------------------------- #
+GOLDEN_REAL = "real_value"
+GOLDEN_WEAK_PREFIX = "weak_oracle"
+
+
+def _golden_status_by_env(manifest: dict[str, Any]) -> dict[str, str]:
+    statuses: dict[str, str] = {}
+    for env in manifest.get("envs", []) or []:
+        env_id = env.get("env_id")
+        status = env.get("golden_status")
+        if env_id is not None and isinstance(status, str) and status:
+            statuses[env_id] = status
+    return statuses
+
+
+def _golden_kind(status: str | None) -> str:
+    """Bucket a golden_status string into real_value / weak_oracle / unknown."""
+
+    if not isinstance(status, str) or not status:
+        return "unknown"
+    if status == GOLDEN_REAL:
+        return "real_value"
+    if status.startswith(GOLDEN_WEAK_PREFIX):
+        return "weak_oracle"
+    return "unknown"
+
+
+def _summarize_rollouts(
+    rollouts: list[dict[str, Any]],
+    low_score_threshold: float,
+    golden_status_by_env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    golden_status_by_env = golden_status_by_env or {}
     total = len(rollouts)
     qualified = sum(1 for c in rollouts if _is_qualified(c))
     correct = sum(1 for c in rollouts if _final(c).get("correct") is True)
     scores = [float(_final(c).get("score", 0.0) or 0.0) for c in rollouts]
     mean_score = round(sum(scores) / total, 4) if total else 0.0
     low_score = sum(1 for s in scores if s < low_score_threshold)
+
+    # True correct rate: exclude rollouts whose env has a weak oracle from the
+    # denominator; count them separately. correct among the usable (non-weak) set.
+    weak_oracle_excluded = 0
+    golden_unknown = 0
+    usable = 0
+    true_correct = 0
+    for conv in rollouts:
+        kind = _golden_kind(golden_status_by_env.get(conv.get("env_id")))
+        if kind == "weak_oracle":
+            weak_oracle_excluded += 1
+            continue
+        if kind == "unknown":
+            golden_unknown += 1
+        usable += 1
+        if _final(conv).get("correct") is True:
+            true_correct += 1
 
     by_model: dict[str, dict[str, Any]] = {}
     for conv in rollouts:
@@ -310,8 +365,15 @@ def _summarize_rollouts(rollouts: list[dict[str, Any]], low_score_threshold: flo
         "total": total,
         "qualified": qualified,
         "qualified_rate": _rate(qualified, total),
+        # Raw correct over all rollouts (includes weak-oracle false positives).
         "correct": correct,
         "correct_rate": _rate(correct, total),
+        # True correct: weak-oracle envs removed from the denominator.
+        "usable_total": usable,
+        "weak_oracle_excluded": weak_oracle_excluded,
+        "golden_unknown": golden_unknown,
+        "true_correct": true_correct,
+        "true_correct_rate": _rate(true_correct, usable),
         "mean_score": mean_score,
         "low_score_threshold": low_score_threshold,
         "low_score_count": low_score,
@@ -352,6 +414,89 @@ def _cluster_rollout_failures(rollouts: list[dict[str, Any]], low_score_threshol
 
 
 # --------------------------------------------------------------------------- #
+# Dependency-install before/after comparison
+# --------------------------------------------------------------------------- #
+def _golden_distribution(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Count golden_status kinds overall and per repo for one manifest."""
+
+    counts = {"real_value": 0, "weak_oracle": 0, "unknown": 0}
+    by_repo: dict[str, dict[str, int]] = {}
+    for env in manifest.get("envs", []) or []:
+        kind = _golden_kind(env.get("golden_status"))
+        counts[kind] += 1
+        repo = env.get("repo", "unknown")
+        bucket = by_repo.setdefault(repo, {"real_value": 0, "weak_oracle": 0, "unknown": 0})
+        bucket[kind] += 1
+    return {"counts": counts, "by_repo": dict(sorted(by_repo.items()))}
+
+
+def _smoke_ok_by_repo(manifest: dict[str, Any]) -> dict[str, int]:
+    by_repo: dict[str, int] = {}
+    for env in manifest.get("envs", []) or []:
+        repo = env.get("repo", "unknown")
+        by_repo.setdefault(repo, 0)
+        if env.get("smoke_ok"):
+            by_repo[repo] += 1
+    return by_repo
+
+
+def _dependency_comparison(
+    manifest: dict[str, Any], baseline_manifest: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Before/after dependency-install comparison.
+
+    Without a baseline this reports the current golden_status distribution only
+    (and notes that transitions cannot be computed). With a baseline it adds, per
+    ``env_id``, the count of golden ``error -> real_value`` transitions (baseline
+    not real_value, current real_value) and the per-repo ``smoke_ok`` before/after
+    deltas — surfacing e.g. flask going from 0 to N.
+    """
+
+    current_dist = _golden_distribution(manifest)
+    if baseline_manifest is None:
+        return {
+            "baseline_provided": False,
+            "note": "baseline manifest not provided; showing current golden_status distribution only.",
+            "current_golden": current_dist,
+        }
+
+    baseline_golden = _golden_status_by_env(baseline_manifest)
+    error_to_real = 0
+    transitions: list[str] = []
+    for env in manifest.get("envs", []) or []:
+        env_id = env.get("env_id")
+        if env_id is None:
+            continue
+        if _golden_kind(env.get("golden_status")) != "real_value":
+            continue
+        # real_value now; was it non-real (error/weak/missing) before?
+        if _golden_kind(baseline_golden.get(env_id)) != "real_value":
+            error_to_real += 1
+            if len(transitions) < 5:
+                transitions.append(env_id)
+
+    before_smoke = _smoke_ok_by_repo(baseline_manifest)
+    after_smoke = _smoke_ok_by_repo(manifest)
+    repos = sorted(set(before_smoke) | set(after_smoke))
+    smoke_by_repo = {
+        repo: {
+            "before": before_smoke.get(repo, 0),
+            "after": after_smoke.get(repo, 0),
+            "delta": after_smoke.get(repo, 0) - before_smoke.get(repo, 0),
+        }
+        for repo in repos
+    }
+    return {
+        "baseline_provided": True,
+        "golden_error_to_real_value": error_to_real,
+        "golden_transitions_sample": transitions,
+        "smoke_ok_by_repo": smoke_by_repo,
+        "baseline_golden": _golden_distribution(baseline_manifest),
+        "current_golden": current_dist,
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Top-level report
 # --------------------------------------------------------------------------- #
 def build_report(
@@ -359,20 +504,29 @@ def build_report(
     rollouts_path: str | Path | None = None,
     *,
     low_score_threshold: float = 0.5,
+    baseline_manifest_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Build the structured report dict from a manifest and rollout products."""
+    """Build the structured report dict from a manifest and rollout products.
+
+    ``baseline_manifest_path`` is an optional pre-dependency-install manifest used
+    for the golden ``error -> real_value`` / smoke before-after comparison.
+    """
 
     manifest = read_json(manifest_path)
     rollouts = load_rollouts(rollouts_path)
+    baseline_manifest = read_json(baseline_manifest_path) if baseline_manifest_path else None
+    golden_status_by_env = _golden_status_by_env(manifest)
     return {
         "sources": {
             "manifest": str(manifest_path),
             "rollouts": str(rollouts_path) if rollouts_path is not None else None,
+            "baseline_manifest": str(baseline_manifest_path) if baseline_manifest_path else None,
             "manifest_generated_at": manifest.get("generated_at"),
             "rollout_records": len(rollouts),
         },
         "env_generation": _summarize_generation(manifest),
-        "rollouts": _summarize_rollouts(rollouts, low_score_threshold),
+        "rollouts": _summarize_rollouts(rollouts, low_score_threshold, golden_status_by_env),
+        "dependency_comparison": _dependency_comparison(manifest, baseline_manifest),
         "failure_clusters": {
             "generation": _cluster_generation_failures(manifest),
             "rollout": _cluster_rollout_failures(rollouts, low_score_threshold),
@@ -389,6 +543,47 @@ def _render_tag_table(cluster: dict[str, Any]) -> list[str]:
     for tag in FAILURE_TAGS:
         lines.append(f"| {tag} | {cluster['counts'].get(tag, 0)} |")
     lines.append(f"| **total** | **{cluster.get('total', 0)}** |")
+    return lines
+
+
+def _render_golden_counts(dist: dict[str, Any]) -> list[str]:
+    counts = dist.get("counts", {})
+    return [
+        f"| real_value | {counts.get('real_value', 0)} |",
+        f"| weak_oracle | {counts.get('weak_oracle', 0)} |",
+        f"| unknown | {counts.get('unknown', 0)} |",
+    ]
+
+
+def _render_dependency_comparison(comparison: dict[str, Any]) -> list[str]:
+    if not comparison:
+        return []
+    lines = ["## Dependency-install Before/After", ""]
+    if not comparison.get("baseline_provided"):
+        lines.append(f"_{comparison.get('note', 'baseline not provided')}_")
+        lines.append("")
+        lines.append("Current golden status distribution:")
+        lines.append("")
+        lines.append("| golden_status | Count |")
+        lines.append("|---|---:|")
+        lines.extend(_render_golden_counts(comparison.get("current_golden", {})))
+        lines.append("")
+        return lines
+
+    lines.append(f"- Golden **error → real_value** envs: **{comparison.get('golden_error_to_real_value', 0)}**")
+    sample = comparison.get("golden_transitions_sample") or []
+    if sample:
+        lines.append(f"  - e.g. {', '.join(sample)}")
+    lines.append("")
+    smoke = comparison.get("smoke_ok_by_repo", {})
+    if smoke:
+        lines.append("### smoke_ok by repo (before → after)")
+        lines.append("")
+        lines.append("| Repo | Before | After | Δ |")
+        lines.append("|---|---:|---:|---:|")
+        for repo, vals in smoke.items():
+            lines.append(f"| {repo} | {vals['before']} | {vals['after']} | {vals['delta']:+d} |")
+        lines.append("")
     return lines
 
 
@@ -436,7 +631,13 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append("|---|---:|")
     lines.append(f"| Total rollouts | {rollouts['total']} |")
     lines.append(f"| Qualified (>=2 tool rounds + submit) | {rollouts['qualified']} ({_pct(rollouts['qualified_rate'])}) |")
-    lines.append(f"| Correct | {rollouts['correct']} ({_pct(rollouts['correct_rate'])}) |")
+    lines.append(f"| Correct (raw, incl. weak-oracle false positives) | {rollouts['correct']} ({_pct(rollouts['correct_rate'])}) |")
+    lines.append(
+        f"| **True correct (weak-oracle excluded)** | "
+        f"**{rollouts['true_correct']}/{rollouts['usable_total']} ({_pct(rollouts['true_correct_rate'])})** |"
+    )
+    lines.append(f"| Weak-oracle excluded from denominator | {rollouts['weak_oracle_excluded']} |")
+    lines.append(f"| Golden status unknown (kept in denominator) | {rollouts['golden_unknown']} |")
     lines.append(f"| Mean score | {rollouts['mean_score']} |")
     lines.append(f"| Low score (< {rollouts['low_score_threshold']}) | {rollouts['low_score_count']} |")
     lines.append("")
@@ -452,6 +653,8 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"| {counts['correct']} | {counts['mean_score']} |"
             )
         lines.append("")
+
+    lines.extend(_render_dependency_comparison(report.get("dependency_comparison", {})))
 
     lines.append("## Failure Clusters")
     lines.append("")
@@ -472,10 +675,16 @@ def write_report(
     output_dir: str | Path,
     *,
     low_score_threshold: float = 0.5,
+    baseline_manifest_path: str | Path | None = None,
 ) -> dict[str, str]:
     """Build and write ``report.json`` + ``report.md`` into ``output_dir``."""
 
-    report = build_report(manifest_path, rollouts_path, low_score_threshold=low_score_threshold)
+    report = build_report(
+        manifest_path,
+        rollouts_path,
+        low_score_threshold=low_score_threshold,
+        baseline_manifest_path=baseline_manifest_path,
+    )
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     json_path = out / "report.json"
