@@ -1,6 +1,6 @@
 # task038_determinism_gate - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -19,3 +19,9 @@
 - 新增 tests/test_determinism.py(含合法路径/hex 稳定返回不被误判)；更新 test_batch 契约；README/mvp_usage 注明 determinism 契约与防过度剔除。
 - 自测 `pytest tests/` → 131 passed。
 - mailbox 回报 lead PR#24 与自测，待 tester(w3) 验证与 lead review。
+
+## Session 2 - 2026-06-14 - lead APPROVE, 待合并序 (先待命)
+
+- lead review PR#24 APPROVE(over-flag 防护好, 契约一致)。非阻塞: 合前 git rm 误提交的 WIP.md。
+- 合并序: PR#23(信封①)先合 → 我 git merge origin/main → git rm WIP.md → pytest 全绿 → self-merge；等 w3 验 PASS + PR#23 merged，lead 再 ping。**先待命，未合并。**
+- 待办(收到 ping 后): merge origin/main(可能与 PR#23 在 spec/batch 有交集需解冲突)→git rm WIP.md→pytest→self-merge PR#24→清理→mailbox 回报 squash commit。
