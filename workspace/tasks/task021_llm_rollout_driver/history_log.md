@@ -1,8 +1,18 @@
 # task021_llm_rollout_driver - History Log
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
 - Team lead `intern_code2env_lead` 为 worker `intern_code2env_worker_2` 创建本 task。
 - Worker 应接受本 task，按普通 task/PR 流程开发、测试、提交，并在 PR merge 后完成 task。
+
+## Session 1 - 2026-06-14 UTC - 实现 rollout driver + 自测
+
+- 接受 task，建分支 `intern_code2env_worker_2/task021_llm_rollout_driver`，开 PR #11。
+- `code2env/llm.py`：新增 `OpenAICompatibleLLM.chat(messages,*,tools/timeout/max_tokens/temperature)` 复用 `_post_payload`(加 timeout 形参)；新增模块函数 `assistant_message_from_response`（tool_calls 时 content 回退空串）。
+- `code2env/rollout.py`：`run_rollout(env, llm, *, fallback_llm, max_rounds, max_parse_retries, max_llm_retries, ...)` 多轮 loop；JSON-in-content 协议（tools 写进 system prompt）+ 兼容原生 tool_calls；`parse_action_from_message` 支持 {tool,arguments}/{type:tool_call}/{name,args}/fenced；malformed 有限重试记 parse_error；`_FallbackChat` 主端点失败→重试→回退；`MockChatLLM`(脚本化)/`ScriptedSolveChat`(自适应读 env 求解)。返回 RolloutResult 契约。
+- `code2env/cli.py`：加 `rollout` subparser + 一行 dispatch（减少与他人冲突）。
+- 新增 `tests/test_rollout.py`（15 用例：解析/抽取/合格/纠错/budget/error/fallback）；`python3 -m pytest tests/` → 46 passed。更新 README.md/docs/mvp_usage.md。
+- 实测发现并修复 BUG：原把自定义 tool 描述当作 OpenAI 原生 `tools` 字段发给网关 → litellm HTTP 400(`tools.0.function` required)。修为 JSON-in-content 协议下 **不发** `tools`（仅写进 system prompt）。修后用本地可达端点 gpt-oss-120b(127.0.0.1:39000) 实测 live rollout：2 轮 inspect_task→submit_answer，qualified=True，termination=submitted，errors=[]（答案对错取决于模型能力，driver 本身 OK）。
+- 待 mailbox 回报 lead，等 tester(w5)+lead review。

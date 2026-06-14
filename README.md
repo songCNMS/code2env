@@ -30,6 +30,8 @@ The generated runtime exposes a semantic tool set (PRD 7.5): the read-only `insp
 
 Scoring is multi-dimensional (PRD 7.7 / F7): `schema_validity`, `process_progress`, `final_correctness` (exact match against the pinned source output), `efficiency` and `safety`, weighted by `reward.weights`. `step` returns a dense per-step training reward while `evaluate` returns an explainable `score_breakdown`. See [docs/mvp_usage.md](docs/mvp_usage.md#multi-dimensional-reward-prd-77--f7).
 
+Drive an LLM through a multi-round tool-calling rollout (D2) with `python -m code2env rollout <env_package>` (`--llm-mode mock` for an offline deterministic solve, or `--llm-model gpt-5.5 --fallback-model <local>` for live runs with automatic endpoint fallback). The driver (`code2env.rollout.run_rollout`) returns a `RolloutResult` with the full conversation, per-step actions/rewards, final score, and a `qualified` flag. See [docs/mvp_usage.md](docs/mvp_usage.md#llm-rollout-driver-d2).
+
 ### Test linking & provenance
 
 `scan` reports both `Python files` and `Test files`: tests (anything under a `tests/`/`test/` directory, `test_*.py`, `*_test.py`, or `conftest.py`) are indexed separately into `RepoSnapshot.test_files` and never pollute the ranked source corpus.

@@ -95,3 +95,36 @@ evaluation = env.evaluate()
 evaluation["score"]                       # weighted total in [0, 1]
 evaluation["score_breakdown"]["dimensions"]["safety"]  # {raw, weight, weighted, detail}
 ```
+
+## LLM rollout driver (D2)
+
+`code2env.rollout.run_rollout(env, llm, ...)` drives a multi-round tool-calling
+agent loop: it feeds the env observation and the available tool schemas to an
+OpenAI-compatible chat model, asks for a single JSON `tool_call` action
+(`{"tool": ..., "arguments": {...}}`), parses it (native `tool_calls` or
+JSON-in-content via `parse_llm_json`), runs `Code2Env.step`, and loops until
+`submit_answer` or the step budget is exhausted. It adds bounded LLM retries,
+format-correction retries (malformed actions are re-prompted and recorded as
+`parse_error`), and multi-endpoint fallback. The model is reached via
+`OpenAICompatibleLLM.chat(messages)`; tools are described in the system prompt
+(not sent as an OpenAI native `tools` field).
+
+```bash
+# Offline deterministic solver (no network) — good for CI/demos:
+python -m code2env rollout /tmp/generated_envs/<env_id> --llm-mode mock
+
+# Live: primary gpt-5.5 (external), automatic fallback to a local endpoint:
+python -m code2env rollout /tmp/generated_envs/<env_id> \
+  --endpoint-file /home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt \
+  --llm-model gpt-5.5 --fallback-model Kimi-K2.6 \
+  --max-rounds 8 --output /tmp/rollout.json
+```
+
+`run_rollout` returns a **RolloutResult** dict (field names shared with downstream
+loaders): `env_id`, `model`, `endpoint_source` (`gpt-5.5` | `fallback:<model>` |
+`mock`), `started_at`, `finished_at`, `messages` (system/user/assistant/tool),
+`steps` (`action` + `tool_result` + `reward` + `parse_error`), `final`
+(`submitted_answer`, `correct`, `score`, `score_breakdown`, `steps`),
+`num_tool_call_rounds`, `qualified` (≥2 tool-call rounds **and** a `submit_answer`),
+`termination_reason` (`submitted` | `step_budget_exhausted` | `error`), `retries`,
+and `errors`.
