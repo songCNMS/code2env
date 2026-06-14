@@ -12,5 +12,5 @@
 | PR | N/A |
 | Session | 2 |
 
-最近进展：Session2 新目标——规模化生成100 env + gpt-5.5 多轮 rollout 验证。已拆 5 worker 子任务并全员下发：w1 task020 批量pipeline+fixture合成、w2 task021 rollout driver、w3 task022 conversation导出、w4 task023 报告、w5 task024 QA+集成放量runner。lead 已定义跨worker契约(gen manifest + conversation JSON schema)解耦。依赖:w5 Phase3 放量 blockedBy D1/D2/D3 merge。进入监工等待回报阶段。
+最近进展：Session2 规模化100env+rollout。Phase1 四能力 PR 全部 lead review APPROVE+tester(w5)PASS。合并链已推进:D1 batch(#14,3c247c1)/D2 rollout(#11,1811e1e)/D3 export(#12,f79197d) 均 merged 到 main(72 passed);D4 报告(#13,含 w5 发现的聚类词表 finding 修复)由 w4 合并中。**Phase3 已 ping w5 启动**:格式门(1-3 env)→放量100 env→gpt-5.5 rollout(本地回退)→导出 conversation JSON 到 coordinator outputs/rollouts/→报告。等 w5 Phase3 回报(放量耗时较长)。
 （Session1 已完结：PRD P0 三项均 merged 到 main f2b3b42，已回报 coordinator。）
