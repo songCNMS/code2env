@@ -1,11 +1,16 @@
 # task024_integration_rollout_runner - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
 - 只记录本任务相关的事实、决策、踩坑和验证结果。
 - 每条尽量一句话，避免重复 README 的完整内容。
+
+## Phase1 验证结果
+
+- [PR#12 D3 task022, HEAD 2758a97] **PASS**：pytest=44 passed；write/append/auto-mkdir、validate qualified 自洽、loader 往返、坏数据不落盘、契约字段未改名 全 PASS。
+- 运行注意（D3 给我 runner 用）：`rollout_export.DEFAULT_EXPORT_DIR` 在 **import 期**读 `CODE2ENV_ROLLOUT_EXPORT_DIR`，默认已=coordinator outputs/rollouts/。放量重定向输出须**进程启动前设环境变量**或对 write_conversation 显式传 out_dir，不能运行中改。CLI 有 `rollout-export` 子命令（读 JSONL 批量落盘）。
 
 ## Knowledge Entries
 
