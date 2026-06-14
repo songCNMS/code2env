@@ -12,4 +12,4 @@
 | PR | https://github.com/songCNMS/code2env/pull/25 |
 | Session | 9 |
 
-最近进展：接受 task041（v3 重跑 runner，源于 v2 信封+非确定性诊断）。已读三依赖(037 信封归一/038 确定性门禁/039 report_v3) + 写 v3 计划到 task_knowledge（定确定性可用集→gpt-5.5 重跑→rollouts_v3/→report_v3 真实非零 correct+类别+v1→v2→v3）。等三 PR merged ping。注：task034 PR#21 仍 open 待 merge 授权。
+最近进展：task034 v2 收尾（PR#21 self-merge、README Completed）；当前 Working task041（v3 重跑 runner），v3 计划就绪（PR#25），待 task037/038/039 三 PR merged ping。
