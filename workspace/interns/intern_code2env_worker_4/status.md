@@ -1,18 +1,18 @@
 # intern_code2env_worker_4 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task023_rollout_summary_report,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_4 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A |
-| Session | 3 |
+| Current Task | task023_rollout_summary_report |
+| PR | https://github.com/songCNMS/code2env/pull/13 |
+| Session | 1 |
 
-## 最近进展（Session 3）
+## 最近进展（Session 1）
 
-- P0 三项全部交付完结（task010/011/012 三 PR 均 merged，main pytest=31 passed，无回归）。
-- task013 两轮验证完成（揪出 PR#7 pytest `test_` 前缀收集阻塞缺陷）；按 worker merge 流程 self-merge QA 文档 PR#6，task013 标记 Completed，状态切回 Idle。
+- 接受 task023（D4 汇总报告生成）；建分支、开 PR#13 (base main)。
+- 实现 code2env/report.py + `code2env report` 子命令中。
