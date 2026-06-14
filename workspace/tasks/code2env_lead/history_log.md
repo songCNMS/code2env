@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - Created with team lead
 
@@ -52,3 +52,17 @@
 - lead 定义跨worker契约解耦:gen manifest schema(w1产,w4/w5消费)+conversation JSON schema(w2产,w3落盘,w4消费)。字段勿改名,歧义先问 lead。
 - 依赖:w5 Phase3 放量 blockedBy task020/021/022 merge;Phase1 各 PR 到达即验。先 1-3 env 验格式(mock/本地)再放量100(避 gpt-5.5 限速)。
 - 踩坑提醒已下发:公有函数名勿以 test_ 开头(pytest 收集坑,ERROR_BOOK E1);cli.py 三 worker 都加子命令→各仅加 subparser+一行减冲突,merge 顺序解决。
+
+## Session 3 - 清除假阳性 + 拿真实正确率（拆解下发）
+- Coordinator 抽查 Session2 100 rollout:99% 合格成立、五维 reward 正确,但 exact-match correct 3/100 全是假阳性,真实正确率≈0。
+- 两根因(coordinator 已定位):A 依赖缺失—flask 全 env golden=ModuleNotFoundError(werkzeug 未装),agent 同样报错即 exact_match=True;B agent 自造 fixture—requests.cookies.create_cookie 自传 args=[x,x] 与 golden fixture 不符。
+- 侦察确认:executor.run_symbol_subprocess 用 sys.executable 跑子进程,repo 第三方依赖未装;runtime._call_source 同问题。
+- 拆 5 子任务下发(用满5 worker):
+  - w1 task030 依赖安装(per-repo venv)+golden重算+weak_oracle 标注(executor/envdeps/spec/materialize/builder/runtime/batch)
+  - w2 task031 rollout prompt 修正(禁自造 call_entrypoint 参数,留空走 fixture 缺省回退)
+  - w4 task033 报告真实 correct率(剔 weak_oracle 分母+装依赖前后对比+各repo smoke变化)
+  - w3 task032 tester(验三 PR)
+  - w5 task034 集成重跑(装依赖重算 golden→定 weak_oracle 集→可用子集 gpt-5.5 重跑→rollouts_v2/→报告)
+- lead 定义 golden_status 契约(manifest.envs[].golden_status ∈ {real_value, weak_oracle:<reason>})解耦 w1/w4/w5。
+- 依赖:w5 重跑 blockedBy task030/031/033 merge;rollouts_v2/ 与旧 rollouts/ 并存不覆盖。
+- 范围控制:只做依赖修复+prompt修正+重跑+报告,差分oracle/QualityGate 仍 backlog;装不动的库跳过记 reason 不卡死。

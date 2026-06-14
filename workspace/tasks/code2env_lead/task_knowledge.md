@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -18,3 +18,5 @@
 9. 多 worker 共改 cli.py(batch/rollout/report 子命令):每个仅加 subparser+一行 dispatch、实现放各自模块,冲突面小;参考 Session1 PR#7/#9 不同区域 ort 自动合并经验。
 10. 跨 worker 数据契约由 lead 在 task 文档统一定义(gen manifest / conversation JSON schema),产出方与消费方共享、字段勿改名、歧义先 mailbox 问 lead——避免并行实现 schema 漂移。
 11. 大执行任务(放量100+rollout)由 tester/集成 runner 跑(team_lead 不亲跑);先小样(1-3 env,mock/本地端点)验格式再放量,避免外网模型限速浪费。
+12. 假阳性教训(Session3):exact-match oracle 的两类坑——①依赖缺失:golden 子进程(executor.run_symbol_subprocess 用 sys.executable)与 runtime call_entrypoint 未装 repo 第三方依赖→golden=ModuleNotFoundError,agent 同样报错即 exact_match=True(error-match 假阳性)。修法:per-repo venv 装依赖,golden 与 runtime 都用 venv python;装后仍异常→标 weak_oracle 剔除分母。②agent 自造 call_entrypoint 参数与 golden fixture 不符→假阴性。修法:rollout prompt 明确禁自造参数、留空走 runtime 的 fixture 缺省回退。
+13. 验收要看真实语义而非表面数字:99% 合格率(≥2轮+submit)成立但 correct 3% 全假阳性——合格率衡量交互闭环,正确率才衡量解题;exact-match 正确率必须先保证 golden 是真实值(依赖齐全)且剔除 weak_oracle。
