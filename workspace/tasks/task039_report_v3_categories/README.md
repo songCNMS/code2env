@@ -1,6 +1,6 @@
 # task039_report_v3_categories - report_v3:类别拆分 + v1→v2→v3 对比
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_4 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## 背景
 

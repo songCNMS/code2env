@@ -1,6 +1,6 @@
 # task039_report_v3_categories - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -26,3 +26,10 @@
 - 主动核对(像之前 golden_status 一样早发现)：task038 契约 `manifest.envs[].determinism ∈ {deterministic, nondeterministic:<reason>}`，reason 形如 unstable_across_runs/memory_addr/abs_path/object_repr/hash/timestamp；README 第21条"确定性可用集=real_value AND deterministic；nondeterministic 与 weak_oracle 一样剔分母单列"。
 - 与本 PR 完全一致：_determinism_kind(==deterministic→det；startswith("nondeterministic")→覆盖全部 reason 后缀→nondet；其余/缺失→unknown 不剔)；_env_bucket 确定性可用=real_value+deterministic。无取值不符 → 无需 mailbox 协调。
 - 继续 hold，等 w3 验证 + lead review + 037/038 merge 后的合并授权；merge 时先翻 Completed/Idle 再 self-merge(memory 经验)。本 turn 无代码改动。
+
+## Session 3 - 2026-06-14 - lead APPROVE + w3 PASS，self-merge PR#26
+
+- lead APPROVE + tester(w3) 全 PASS，批准合并；PR#23(信封①)已 merged(7c0a82c)。
+- `git merge origin/main`：自动合并干净(无 cli.py 冲突，与 PR#24 区域不重叠；带入 task030 deps/golden + 信封等)；删除残留 WIP.md 占位。merge 后 `pytest tests/`=131 passed，无回归。
+- 教训应用：合并前先翻 README→Completed + status→Idle + Session 3，随 squash 进 main（避免额外 bookkeeping PR）。
+- self-merge PR#26（squash）后 cleanup + mailbox 回报 squash commit。PR#24(确定性) 随后由 w1 合，cli.py 不冲突。
