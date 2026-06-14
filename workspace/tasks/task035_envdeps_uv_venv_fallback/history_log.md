@@ -1,6 +1,6 @@
 # task035_envdeps_uv_venv_fallback - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -15,3 +15,9 @@
 - README + docs/mvp_usage 注明 uv 兜底与缺 python3-venv 场景。
 - 自测 `pytest tests/` → 114 passed。不改 golden_status 契约与既有行为。
 - mailbox 回报 lead PR# 与自测，待 tester(w3) 验证与 lead review。
+
+## Session 2 - 2026-06-13 - PR#22 待 review；并行接 task038
+
+- PR#22 仍待 tester(w3) 验证 + lead review/merge；本分支无新代码改动。
+- lead 同时分配 task038_determinism_gate，按指示在独立分支并行接受执行(见 task038 文档)。
+- task035 merge 待 lead 批准后按 worker merge 流程收尾。

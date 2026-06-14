@@ -1,6 +1,6 @@
 # task035_envdeps_uv_venv_fallback - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 

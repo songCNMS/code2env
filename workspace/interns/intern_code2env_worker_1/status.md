@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task035_envdeps_uv_venv_fallback |
-| PR | https://github.com/songCNMS/code2env/pull/22 (实现完成, 待 tester(w3)/lead review) |
+| PR | https://github.com/songCNMS/code2env/pull/22 (待 review); 并行接 task038 (另分支) |
 | Session | 4 |
