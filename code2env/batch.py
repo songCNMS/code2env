@@ -51,7 +51,6 @@ from code2env.models import FunctionCandidate, RepoSnapshot
 from code2env.rich_fixtures import (
     dataframe_descriptor,
     numpy_array_descriptor,
-    path_descriptor,
     rich_fixture_audit,
     series_descriptor,
     timestamp_descriptor,
@@ -535,8 +534,6 @@ def _annotation_value(annotation: ast.expr | None) -> tuple[bool, Any]:
         return True, numpy_array_descriptor([1.0], dtype="float64")
     if name == "Timestamp":
         return True, timestamp_descriptor("2020-01-02T00:00:00")
-    if name == "Path":
-        return True, path_descriptor(".", base="source_root")
     return False, None
 
 

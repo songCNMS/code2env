@@ -49,8 +49,47 @@ class RichFixtureHydrationTest(unittest.TestCase):
             )
 
         self.assertIsInstance(path, Path)
+        self.assertEqual(path, (Path(temp_dir).resolve() / "data/input.csv"))
         self.assertEqual(path.name, "input.csv")
         self.assertIn("data", path.parts)
+
+    def test_rejects_source_root_path_traversal(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(ValueError, "escapes source root"):
+                hydrate_value(
+                    path_descriptor("../escape", base="source_root"),
+                    source_root=temp_dir,
+                )
+
+    def test_rejects_absolute_source_root_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(ValueError, "must be relative"):
+                hydrate_value(
+                    path_descriptor(str(Path(temp_dir).parent / "escape"), base="source_root"),
+                    source_root=temp_dir,
+                )
+
+    def test_rejected_source_root_path_mkdir_does_not_create_outside(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source_root = root / "repo"
+            source_root.mkdir()
+            outside = root / "escape"
+
+            with self.assertRaisesRegex(ValueError, "escapes source root"):
+                hydrate_value(
+                    path_descriptor("../escape", base="source_root", mkdir=True),
+                    source_root=source_root,
+                )
+
+            self.assertFalse(outside.exists())
+
+    def test_tmpdir_path_descriptor_still_hydrates(self) -> None:
+        path = hydrate_value(path_descriptor("scratch/output.txt", base="tmpdir"))
+
+        self.assertIsInstance(path, Path)
+        self.assertEqual(path.name, "output.txt")
+        self.assertIn("scratch", path.parts)
 
 
 class RichSerializationTest(unittest.TestCase):

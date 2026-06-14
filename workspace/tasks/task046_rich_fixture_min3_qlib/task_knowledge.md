@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -14,3 +14,6 @@
 8. The successful qlib min-3 env for this task is `scripts.data_collector.utils:calc_adjusted_price`; it uses two pandas DataFrame rich descriptors and returns a canonical pandas DataFrame golden.
 9. Mock subfunction rollout can still record helper TypeErrors for qlib helpers with required args, but qualification and final correctness are driven by the ordered helper trace plus successful entrypoint and exact submitted answer.
 10. Local `gpt-oss-120b` endpoint on port 39000 responded to `/v1/models`, but the endpoint rollout produced no stdout/JSON after multiple minutes; deterministic mock rollout/export is the reliable evidence for implementation validation.
+11. Source-root Path descriptors must be confined at hydration time: reject absolute descriptor paths and reject any resolved path outside source_root before `mkdir`.
+12. Default batch should not synthesize generic `Path` annotations; required Path params are skipped unless a symbol-specific safe rich policy exists. This avoids running Path writer funcs such as `Path.write_text` during smoke/golden.
+13. Worker_4 confirmed default HTTP side effects still skip via indexer `risk_flags`; no need to broaden the rich unsafe hook to generic `get`.

@@ -195,7 +195,13 @@ def _hydrate_path(value: dict[str, Any], *, source_root: str | Path | None) -> P
     raw_path = str(value.get("path", "."))
     if base == "source_root":
         root = Path(source_root).resolve() if source_root is not None else Path.cwd()
+        if Path(raw_path).is_absolute():
+            raise ValueError("source_root path fixture must be relative")
         path = (root / raw_path).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError as exc:
+            raise ValueError("source_root path fixture escapes source root") from exc
     elif base == "tmpdir":
         path = Path(tempfile.mkdtemp(prefix="code2env-fixture-"))
         if raw_path not in {"", "."}:
