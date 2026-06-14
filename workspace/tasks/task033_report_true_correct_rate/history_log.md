@@ -1,6 +1,6 @@
 # task033_report_true_correct_rate - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -24,3 +24,10 @@
 - 核对结果：w1 task030 契约 `manifest.envs[].golden_status ∈ {real_value, weak_oracle:<reason>}`（weak 例 golden_exception:ModuleNotFoundError / uninstallable_deps），与本 PR `_golden_kind` 消费**完全一致**：==real_value→real；startswith("weak_oracle")→weak(覆盖带后缀)；其余/缺失→unknown(留分母安全网)。task030 producer 代码尚未落 code2env/（branch 仅 README+继承的 report.py），但共享契约一致。
 - 结论：无取值不符，无需 mailbox 协调（lead 仅要求不符时同步）。继续 hold 等 w3/lead review 与合并授权。
 - 本 turn 无代码改动，仅核对+记录。
+
+## Session 3 - 2026-06-13 - lead APPROVE + w3 PASS，self-merge PR#20
+
+- lead APPROVE + tester(w3) 五条全 PASS(91 passed, dry-run merge clean)，批准合并；合并序我先合(PR#20)，A(PR#18) 随后 rebase。
+- `git merge origin/main`：仅 WIP.md 冲突(删除占位解决)，docs/mvp_usage.md 自动合并干净，cli.py/report.py 无冲突(A 尚未合)。merge 后 `pytest tests/`=95 passed（含 main 新增），无回归；report doc 段保留。
+- 教训应用：**合并前先翻** README→Completed + status→Idle + Session 3，使其随 squash 进 main（避免 task023 那次的额外 bookkeeping PR）。
+- self-merge PR#20（squash）后 cleanup + mailbox 回报 squash commit。
