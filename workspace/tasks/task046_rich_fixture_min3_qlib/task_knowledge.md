@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - Task Knowledge
 
-<!-- METADATA:SESSION=6 -->
+<!-- METADATA:SESSION=7 -->
 
 ## Knowledge Entries
 
@@ -13,3 +13,5 @@
 7. Session 5 stop-hook correction aligned task046 history/task knowledge metadata with the active worker session; validation result remains unchanged.
 8. PR#32 head `750a714d8fbd8b1b5ad360ba24e7fb990a44a464` has rich fixture implementation and tests, but independent validation found a blocker: `Path` fixture synthesis plus incomplete filesystem side-effect detection can run source-tree writes in default batch mode.
 9. Local dependency environment for Session 6 validation: pandas and numpy installed, torch missing; torch descriptor/serialization test skipped as designed.
+10. PR#32 head `65db7edb17279c85d5969445ca0ad87813c36a87` passes worker_4 code/test revalidation: Path annotations no longer synthesize generic source-root fixtures, source-root path descriptors reject absolute/outside paths before mkdir, focused tests pass, full suite passes.
+11. Local dependency environment for Session 7 remains pandas/numpy available and torch missing; qlib constrained batch plus rollout/export validation is still worker_2 scope.

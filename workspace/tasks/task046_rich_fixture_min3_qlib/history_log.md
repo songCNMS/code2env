@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - History Log
 
-<!-- METADATA:SESSION=6 -->
+<!-- METADATA:SESSION=7 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -33,3 +33,11 @@
 - Default compatibility probe passed for non-rich scalar JSON fixtures: typed `int` fixture remained `{"args":[1],"kwargs":{}}`, `fixture_rich_params=[]`, and default batch built/smoked with `min_semantic_helpers=0`.
 - Validation result FAIL / blocker: automatic `Path` fixture synthesis can broaden default batch into filesystem-writing candidates not caught by current side-effect detection; reproduction built and smoked a `Path`-annotated `persist(p: Path)` function that writes `(p / "code2env_created.txt").write_text(...)` and created the file in the source tree.
 - Additional Path safety concern: `path_descriptor("../escape.txt", base="source_root")` hydrates outside the source root; pandas/numpy paths covered, torch unavailable locally and its focused test skipped cleanly.
+
+## Session 7 - 2026-06-14 UTC - PR#32 Path safety fix revalidation PASS
+
+- Fetched and validated PR#32 requested head `65db7edb17279c85d5969445ca0ad87813c36a87`; reviewed delta from failing head `750a714` and metadata commit `822d9c7`.
+- Code delta confirmed generic `Path` annotation synthesis was removed from `batch.py`, source-root `path_descriptor` hydration now rejects absolute/outside paths before optional mkdir, and regression tests cover Path writer skip plus absolute/traversal rejection.
+- Focused tests: `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_batch.py` => 30 passed, 1 skipped; full suite: `python3 -m pytest -q` => 175 passed, 1 skipped.
+- Independent probes confirmed the previous blocker is fixed: `persist(p: Path)` now produces no env, is skipped as `unsupported_param_type:p:Path`, and does not create `code2env_created.txt`; source-root `../escape`, absolute escape, and `mkdir=True` traversal descriptors raise before creating outside paths.
+- Default scalar JSON fixture compatibility still passes; residual risk is that torch is absent locally, so torch descriptor behavior remains covered only by skip semantics in this environment, and pinned qlib batch/rollout validation remains worker_2 scope.
