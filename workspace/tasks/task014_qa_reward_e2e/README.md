@@ -1,6 +1,6 @@
 # task014_qa_reward_e2e - QA: 验证 P0-2 多维 reward + 全链路回归
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_5 -->
 
 ## 背景
 
