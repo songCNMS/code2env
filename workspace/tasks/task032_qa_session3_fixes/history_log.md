@@ -1,6 +1,16 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
+
+## Session 4 - 2026-06-13 UTC - Phase3 验证 PR#18 task030 (+030↔033 交叉核对)
+
+- lead ping Phase3: 验 PR#18 task030(根因A 依赖安装/golden 重算/weak_oracle)。
+- checkout intern_code2env_worker_1/task030 → pytest 99 passed(test_envdeps+test_batch 26); 逐条 5 项全 PASS。
+- 030↔033 取值交叉核对(脚本复刻 report._golden_kind): real_value→real_value、weak_oracle:*→weak_oracle(剔分母)、pending/缺失→unknown(留分母) CONSISTENT。
+- executor 默认解释器向后兼容(功能验证); envdeps 注入假桩不依赖网络; runtime._call_source 用 venv python 且缺失安全回退。
+- merge main 仅 WIP.md 冲突(w1 占位文件未删, 非代码); 解后 post-merge 103 passed。
+- 非阻塞: (a) WIP.md merge 卫生需 w1 git rm; (b) spec.py 未算 golden 时 pending_golden→report unknown 留分母, 提示 w5 放量确保 golden 已算。
+- 建议 APPROVE(处理 WIP.md 后); 三 PR 全验完均 APPROVE。mailbox 回报。
 
 ## Session 3 - 2026-06-13 UTC - Phase2 验证 PR#20 task033
 

@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - Task Knowledge
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## 记录规则
 
@@ -69,3 +69,18 @@
 
 ### 踩坑(流程)
 - 验别人分支时 worker_3 自己的 status.md 会变成该分支上的旧副本(常是 main/已合并态), Stop hook 读当前分支的 status.md → 可能 Session 号不符。规避: 验证完务必 checkout 回自己 task 分支再结束回复, 并让 status.md Session 号 = checklist = 本轮预期。
+
+### [Phase3] task030 (PR#18, 分支 ...worker_1/task030_..., b59a067) — APPROVE 建议(处理 WIP.md 后), 无代码阻塞
+- pytest tests/=99 passed; test_envdeps+test_batch=26; merge main 仅 WIP.md 冲突, 解后 103。
+- 1[PASS] executor python_executable 默认 sys.executable 向后兼容(功能验证=5)。
+- 2[PASS] envdeps 建 venv+装依赖+装不动跳过记 reason(deps_status no_deps/skipped/venv_failed/installed/partial/uninstallable); 测试注入 venv_builder/installer 假桩无网络。
+- 3[PASS] runtime._call_source 经 _python_executable 用 venv python, 缺失安全回退默认。
+- 4[PASS] golden_status 字面值 real_value | weak_oracle:golden_exception:<type> | weak_oracle:golden_uncomputed。
+- 5[PASS] 装后仍异常→weak_oracle 剔分母(batch real_value=usable 集)。
+- **030↔033 交叉核对 CONSISTENT**: 脚本复刻 report._golden_kind(==real_value/startswith weak_oracle) 对 golden_status_for 三种产值分桶 → real→real_value(留)/weak→weak_oracle(剔)/pending&缺失→unknown(留,安全降级)。两侧契约取值集合一致, 无漂移。
+- 非阻塞: (a) WIP.md w1 未删→merge main 冲突, 需 git rm; (b) spec pending_golden→report unknown 留分母, 提示 w5 放量确保 golden 已算。
+
+## 三 PR 验证汇总
+- task031(PR#17) PASS / task033(PR#20) PASS / task030(PR#18) PASS — 均建议 APPROVE。
+- 跨 PR golden_status 契约: w1(030 写) ↔ w4(033 读) 已核对一致, 无漂移。
+- 合并卫生: w1 需 git rm WIP.md; task030 实测 merge origin/main 冲突仅 WIP.md(代码文件干净)。
