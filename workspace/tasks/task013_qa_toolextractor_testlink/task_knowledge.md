@@ -1,6 +1,6 @@
 # task013_qa_toolextractor_testlink - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -11,6 +11,11 @@
 
 1. 本 task 由 team_lead `intern_code2env_lead` 创建并分配给 worker `intern_code2env_worker_4`。
 2. 角色为 tester：独立验证 task010(语义化 ToolExtractor, PRD 7.5) 与 task012(TestLinkIndex+放开 tests 扫描, PRD 7.2) 两个 PR 分支；不替 worker 改代码，发现问题清晰描述复现步骤。
+6. [验证结论] PR#9 task010 @9fc8887：`pytest tests/`=16 passed，PRD 7.5 七条全 PASS（建议 merge）。
+7. [验证结论] PR#7 task012 @ff75074：PRD 7.2 四条功能全 PASS，但 `pytest tests/`=18 passed+1 error(exit1)；`unittest discover`=18 OK。
+8. [踩坑/缺陷] pytest 会收集测试模块顶层任何 `test_*` 可调用对象（含 import 进来的）；indexer.py 公有 API `test_links_for_candidate` 因 test_ 前缀被误收集为用例 → snapshot 当 fixture 找不到 → `pytest tests/` exit1。unittest discover 不收集裸函数故漏检。教训：非测试函数勿用 test_ 前缀；QA 同时用 pytest 与 unittest 两种 runner 跑。
+9. [验证手法] tester 自建合成 repo（含 helper/side-effect helper/无 helper 函数 + tests/conftest/golden）跑 draft_env_spec/runtime，可独立复核 tool 数区间、state tool、provenance>=2、TestLinkIndex 关联，不只看 worker 单测。运行需 `PYTHONPATH=.`。
+10. mailbox 单封 content 过长会 `content_too_long`；按 PR 拆成多封发送。
 3. 环境事实：仓库默认分支为 `main`（非 playbook 写的 master）；无 `python`，须用 `python3`（3.12.3）；运行测试 `python3 -m pytest tests/test_mvp.py -q`。
 4. 基线：在 `main` 上 `python3 -m pytest tests/test_mvp.py -q` => 6 passed（实测 2.37s）。这是回归对照。
 5. 共享 repo 在 `/home/leisong/codes/work-agents/code2env`(始终 master/main)；个人 worktree 在 `/home/leisong/codes/work-agents/intern_code2env_worker_4/code2env`。
