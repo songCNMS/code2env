@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Knowledge Entries
 
@@ -11,3 +11,4 @@
 5. `task043_indexer_side_effect_get_filter` 已在 PR #29 合入 `main`：普通 `.get()` 误报已显著收敛（qlib get-only 93 -> 6），后续类似筛选应优先基于 merged `main` 重新扫描。
 6. 当前代码能力可以通过 repo 外 standalone harness 先闭环 qlib-derived task：把非 JSON fixture 的 qlib 测试语义改写成 JSON-friendly entrypoint，可立即生成 EnvPackage 和 endpoint rollout JSONL；真正从 qlib 原测试直接抽取 `pd.Timestamp`/实例对象仍需要后续 harness/fixture extractor 能力。
 7. 向主管飞书发送本地文件时，当前 daemon HTTP 层只公开文本发送；文件可复用 `intern-cli/scripts/daemon/feishu_daemon.py` 的 `FeishuAPI.upload_file` + `send_file`，目标 chat_id 可从 `/home/leisong/codes/work-agents/.feishu_registry/<intern>.json` 读取。
+8. 当前 rollout 记录的是 agent 外部工具调用轨迹，不是目标函数内部动态调用轨迹；`call_entrypoint` 是黑盒执行整个目标函数，helper 工具只是可选。若希望 rollout 成为“真实实现子函数序列”，需要显式 subfunction-trace/decomposed 模式：按 `ToolSpec.provenance.steps`/动态 trace 约束 required helper sequence，并把 reward/qualified 从“>=2 tool calls + submit”改为覆盖真实 helper 调用链后 submit。

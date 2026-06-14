@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Session 0 - Created with coordinator
 
@@ -40,3 +40,9 @@
 - 按用户要求确认 rollout JSONL 已落盘：`../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`，大小 9,459 bytes，内容为 1 条多轮 endpoint 交互记录。
 - 通过本机飞书 daemon 复用 `FeishuAPI.upload_file` / `send_file` 将该 JSONL 作为文件发送到 `intern_code2env_coordinator` 飞书会话（chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`）。
 - 飞书返回：file_key `file_v3_0012l_9b21b507-ed88-4bc7-9ba0-6892b242d45g`，文件消息 ID `om_x100b6dddcf5934a4b3ce025b39ac988`，确认文本消息 ID `om_x100b6dddcf53eca4b21f6b9a3a00c2a`。
+
+## Session 6 - Rollout trajectory semantics reviewed
+
+- 回答用户关于“为什么所有 rollout 都走同样 tool trajectory，是否应该是真实子函数轨迹”的问题；复查 `../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`，有效动作确认为 `call_entrypoint {}` 后直接 `submit_answer`，其中首次 endpoint 输出多个 JSON 对象触发 parse retry。
+- 代码复查结论：`code2env/rollout.py` 的系统提示明确要求先运行 entrypoint 或 helper，再 submit，并特别要求 `call_entrypoint` 空参数自动套 fixture；`code2env/runtime.py` 的 process_progress 只要求 explore/execute/submit 里程碑，`call_entrypoint` 已满足执行源码；`code2env/spec.py` 虽记录 entrypoint steps 和生成部分 `call_<helper>` 工具，但没有强制按源码调用顺序调用 helper。
+- 对 qlib-derived harness 的具体判断：目标函数实际调用 `parse_timestamp -> floor_to_sample -> session_label`，但当前 rollout 数据是 black-box target execution，不是动态 call graph trace；若数据目标是训练/评估子函数级工具使用，应新增显式 decomposed/subfunction-trace 模式并改变 prompt/reward/qualification。
