@@ -26,8 +26,27 @@
     "lifecycle": "exists_while_coordinator_exists",
     "completion_policy": "never_complete_while_coordinator_exists"
   },
-  "managed_workspaces": [],
-  "team_leads": [],
+  "managed_workspaces": [
+    {
+      "project": "code2env",
+      "workspace_root": "/home/leisong/codes/work-agents/code2env",
+      "team_id": "code2env",
+      "team_metadata_path": "workspace/teams/code2env/team.json",
+      "status": "active",
+      "bound_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    }
+  ],
+  "team_leads": [
+    {
+      "intern_name": "intern_code2env_lead",
+      "project": "code2env",
+      "team_id": "code2env",
+      "status": "active",
+      "bound_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    }
+  ],
   "created_at": "2026-06-14T03:26:18Z",
-  "updated_at": "2026-06-14T03:26:18Z"
+  "updated_at": "2026-06-14T03:26:53Z"
 }

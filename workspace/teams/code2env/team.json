@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "team_name": "code2env",
+  "team_id": "code2env",
+  "project": "code2env",
+  "workspace_root": "/home/leisong/codes/work-agents/code2env",
+  "team_lead": {
+    "intern_name": "intern_code2env_lead",
+    "project": "code2env",
+    "workspace_root": "/home/leisong/codes/work-agents/intern_code2env_lead/code2env",
+    "status": "active",
+    "created_at": "2026-06-14T03:26:53Z",
+    "updated_at": "2026-06-14T03:26:53Z",
+    "management_task": {
+      "task_id": "code2env_lead",
+      "status": "InProgress",
+      "lifecycle": "exists_while_team_exists",
+      "completion_policy": "never_complete_while_team_exists"
+    }
+  },
+  "workers": [
+    {
+      "intern_name": "intern_code2env_worker_1",
+      "project": "code2env",
+      "workspace_root": "/home/leisong/codes/work-agents/intern_code2env_worker_1/code2env",
+      "status": "active",
+      "created_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    },
+    {
+      "intern_name": "intern_code2env_worker_2",
+      "project": "code2env",
+      "workspace_root": "/home/leisong/codes/work-agents/intern_code2env_worker_2/code2env",
+      "status": "active",
+      "created_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    },
+    {
+      "intern_name": "intern_code2env_worker_3",
+      "project": "code2env",
+      "workspace_root": "/home/leisong/codes/work-agents/intern_code2env_worker_3/code2env",
+      "status": "active",
+      "created_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    },
+    {
+      "intern_name": "intern_code2env_worker_4",
+      "project": "code2env",
+      "workspace_root": "/home/leisong/codes/work-agents/intern_code2env_worker_4/code2env",
+      "status": "active",
+      "created_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    },
+    {
+      "intern_name": "intern_code2env_worker_5",
+      "project": "code2env",
+      "workspace_root": "/home/leisong/codes/work-agents/intern_code2env_worker_5/code2env",
+      "status": "active",
+      "created_at": "2026-06-14T03:26:53Z",
+      "updated_at": "2026-06-14T03:26:53Z"
+    }
+  ],
+  "status": "active",
+  "created_at": "2026-06-14T03:26:53Z",
+  "updated_at": "2026-06-14T03:26:53Z",
+  "coordinator": {
+    "coordinator_id": "code2env",
+    "intern_name": "intern_code2env_coordinator",
+    "anchor_project": "code2env",
+    "anchor_workspace_root": "/home/leisong/codes/work-agents/intern_code2env_coordinator/code2env",
+    "bound_at": "2026-06-14T03:26:53Z"
+  }
+}
