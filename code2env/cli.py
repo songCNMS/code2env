@@ -121,6 +121,7 @@ def _scan(args: argparse.Namespace) -> int:
     else:
         print(f"Repository: {snapshot.source}")
         print(f"Python files: {len(snapshot.python_files)}")
+        print(f"Test files: {len(snapshot.test_files)}")
         for index, candidate in enumerate(candidates, start=1):
             flags = ",".join(candidate.risk_flags) or "none"
             print(

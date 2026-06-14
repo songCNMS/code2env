@@ -17,6 +17,29 @@ class RepoSnapshot:
     python_files: list[str]
     dependency_files: list[str]
     license_file: str | None
+    test_files: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> JsonDict:
+        return asdict(self)
+
+
+@dataclass(slots=True)
+class TestLink:
+    """Association between a source candidate and a test / fixture / golden artifact.
+
+    ``target_kind`` is one of ``test``, ``fixture`` or ``golden``. ``evidence`` lists
+    the signals that produced the link (``name_match``, ``body_ref``, ``import_ref``,
+    ``fixture_use``, ``data_ref``) so provenance can stay auditable.
+    """
+
+    candidate_symbol: str
+    target: str
+    target_kind: str
+    path: str
+    lineno: int
+    end_lineno: int
+    evidence: list[str]
+    confidence: float
 
     def to_dict(self) -> JsonDict:
         return asdict(self)

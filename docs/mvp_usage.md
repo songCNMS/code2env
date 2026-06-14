@@ -12,7 +12,9 @@ scan -> draft -> build -> smoke
 python -m code2env scan /path/to/repo --top-k 10 --json
 ```
 
-`scan` parses Python files with `ast`, ranks functions by line count, branch count, call count, helper calls, docstring quality, and side-effect risk.
+`scan` parses Python files with `ast`, ranks functions by line count, branch count, call count, helper calls, docstring quality, and side-effect risk. It also reports a `Test files` count: test modules (`tests/`/`test/` directories, `test_*.py`, `*_test.py`, `conftest.py`) are mined separately into `RepoSnapshot.test_files` for the TestLinkIndex and are excluded from the ranked source corpus.
+
+The indexer's `build_test_link_index(snapshot, candidates)` links each candidate to its tests, fixtures, and golden-data files (by import reference, name similarity, and fixture usage), recording the `evidence` and a `confidence` per link.
 
 ```bash
 python -m code2env draft /path/to/repo \
@@ -21,7 +23,7 @@ python -m code2env draft /path/to/repo \
   --output /tmp/env_spec.json
 ```
 
-`draft` creates an `EnvSpec` with task text, tool specs, fixture, provenance, and an exact-match golden answer computed from the pinned source function.
+`draft` creates an `EnvSpec` with task text, tool specs, fixture, provenance, and an exact-match golden answer computed from the pinned source function. The `provenance.task_sources` list always holds at least two diverse sources — a `source_span` and a `signature` — plus any `test_link` / `fixture` / `golden` artifacts found by the TestLinkIndex. When no test artifacts are linked, `provenance.test_link_status` is `"no_test_links_found"` and a `degradation` note records that grounding fell back to signature-level evidence.
 
 ```bash
 python -m code2env build /tmp/env_spec.json --output-dir /tmp/generated_envs

@@ -28,6 +28,14 @@ python -m code2env smoke /tmp/generated_envs/<env_id>
 
 The generated runtime exposes `inspect_task`, `call_entrypoint`, optional `call_helper`, and `submit_answer` tools. The default scorer uses exact match against the pinned source function output.
 
+### Test linking & provenance
+
+`scan` reports both `Python files` and `Test files`: tests (anything under a `tests/`/`test/` directory, `test_*.py`, `*_test.py`, or `conftest.py`) are indexed separately into `RepoSnapshot.test_files` and never pollute the ranked source corpus.
+
+The indexer builds a **TestLinkIndex** (`code2env.indexer.build_test_link_index`) associating each source candidate with the tests, fixtures, and golden-data files that exercise it, using import references, name similarity, and pytest fixture usage. Each link records its `evidence` and a `confidence` score.
+
+`draft` consumes these links so every spec's `provenance.task_sources` carries **at least two diverse sources** — a `source_span` and a `signature`, plus any `test_link` / `fixture` / `golden` artifacts. When no test artifacts are linked the spec stays valid but is flagged with `test_link_status: "no_test_links_found"` and an explicit `degradation` note (oracle priority drops from test assertions to signature-level evidence).
+
 Export LLM-screened candidates as JSONL:
 
 ```bash
