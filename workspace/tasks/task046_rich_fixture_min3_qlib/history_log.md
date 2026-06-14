@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -25,3 +25,11 @@
 - Stop-hook audit required task046 history to contain an explicit Session 5 record in the worker_4 validator branch.
 - Current task046 validator state remains BLOCKED/FAIL for PR#32 head `7635f5289bd577bbb7d297ae129e3164730b3beb` because the PR diff is metadata-only and lacks rich fixture implementation/tests.
 - Mailbox report `task046-pr32-validation-blocked-c625fa0` was already stored for lead with exact commands, results, environment, and uncovered risk.
+
+## Session 6 - 2026-06-14 UTC - Formal PR#32 rich fixture validation FAIL
+
+- Fetched and validated PR#32 head `750a714d8fbd8b1b5ad360ba24e7fb990a44a464`; reviewed `code2env/rich_fixtures.py`, executor/spec/runtime/materialize/batch/envdeps changes, and focused tests.
+- Focused tests: `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_envdeps.py tests/test_batch.py` => 45 passed, 1 skipped; full suite: `python3 -m pytest -q` => 169 passed, 1 skipped.
+- Default compatibility probe passed for non-rich scalar JSON fixtures: typed `int` fixture remained `{"args":[1],"kwargs":{}}`, `fixture_rich_params=[]`, and default batch built/smoked with `min_semantic_helpers=0`.
+- Validation result FAIL / blocker: automatic `Path` fixture synthesis can broaden default batch into filesystem-writing candidates not caught by current side-effect detection; reproduction built and smoked a `Path`-annotated `persist(p: Path)` function that writes `(p / "code2env_created.txt").write_text(...)` and created the file in the source tree.
+- Additional Path safety concern: `path_descriptor("../escape.txt", base="source_root")` hydrates outside the source root; pandas/numpy paths covered, torch unavailable locally and its focused test skipped cleanly.

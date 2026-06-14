@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - Task Knowledge
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Knowledge Entries
 
@@ -11,3 +11,5 @@
 5. Worker_4 validation scope is code/tests only until PR arrives: confirm rich descriptor hydration, canonical serialization, default behavior preservation, unsafe candidate skipping, focused tests, and full pytest; worker_2 owns pinned qlib batch plus rollout/export validation evidence.
 6. PR#32 head `7635f5289bd577bbb7d297ae129e3164730b3beb` is metadata-only, so task046 acceptance cannot be validated until worker_1 pushes implementation and focused tests.
 7. Session 5 stop-hook correction aligned task046 history/task knowledge metadata with the active worker session; validation result remains unchanged.
+8. PR#32 head `750a714d8fbd8b1b5ad360ba24e7fb990a44a464` has rich fixture implementation and tests, but independent validation found a blocker: `Path` fixture synthesis plus incomplete filesystem side-effect detection can run source-tree writes in default batch mode.
+9. Local dependency environment for Session 6 validation: pandas and numpy installed, torch missing; torch descriptor/serialization test skipped as designed.
