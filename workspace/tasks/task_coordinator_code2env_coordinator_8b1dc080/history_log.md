@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=9 -->
+<!-- METADATA:SESSION=10 -->
 
 ## Session 0 - Created with coordinator
 
@@ -79,3 +79,13 @@
   ②非确定性/机器相关 golden：内存地址 repr(@0x..)、worker_5 绝对路径、sha1 HASH 对象→每次跑不同,永不可 match;weak_oracle_skipped=25 只剔了仍报错的,剩 75 仍混非确定性,可用集高估。
 - 诚实结论给用户：管线/多轮/依赖修复成立；0% 是 oracle 契约+非确定性,exact-match 对这类函数太脆,可修。已 AskUserQuestion 请定方向：A 契约归一比较+确定性过滤再重跑(推荐) / B 仅 prompt 指示提交完整信封再重跑 / C 接受诊断转 backlog 差分oracle。
 - 下步：按用户选择下发 lead 或收尾。
+
+## Session 10 - 下发信封归一+确定性过滤+重跑v3
+
+- 用户选 A(契约归一+确定性过滤再重跑)。已下发 pressing goal code2env-oracle-normalize-rerun-session9 给 intern_code2env_lead：
+  ①runtime 信封归一比较:submit 与 golden 比较前剥/统一 {ok,value} 信封,让确定性纯函数(json.dumps/_path_is_ancestor 等)能判对;保 scripted_smoke 通过+补单测两种提交形态。
+  ②确定性门禁:源函数重复跑 N≥2-3 次,不一致或命中非确定性特征(0x内存地址/绝对路径/<...object at>/HASH/时间戳)标 nondeterministic 剔除出确定性可用集。
+  ③对确定性可用集 gpt-5.5 重跑,存 outputs/rollouts_v3/(不覆盖)+report_v3,给真实非零 correct 率+类别占比(可用/因信封修复转对/非确定性剔除/仍错)+v1→v2→v3 对比。
+- 范围:只做归一+过滤+重跑;差分oracle 仍 backlog。
+- coordinator 布置 Monitor bll16k64r(60min)待 rollouts_v3+report_v3 就绪自动通知核验。
+- 下步:v3 产物落地后独立核验真实非零正确率,向用户汇报。
