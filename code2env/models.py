@@ -61,6 +61,7 @@ class FunctionCandidate:
     metrics: JsonDict
     score: float
     risk_flags: list[str] = field(default_factory=list)
+    steps: list[JsonDict] = field(default_factory=list)
 
     def to_dict(self) -> JsonDict:
         return asdict(self)
@@ -78,6 +79,7 @@ class ToolSpec:
     output_schema: JsonDict
     side_effects: str = "none"
     timeout_ms: int = 1000
+    provenance: JsonDict = field(default_factory=dict)
 
     def to_dict(self) -> JsonDict:
         return asdict(self)

@@ -25,6 +25,15 @@ class Code2Env:
         self.timeout_seconds = float(self.spec.runtime.get("timeout_seconds", 3))
         self.allowed_tools = {tool.name for tool in self.spec.tools}
         self.allowed_helpers = set(self.spec.provenance.get("helper_candidates", []))
+        # Named semantic helper tools (call_<helper>) map to their backing symbol via
+        # the ToolSpec provenance written by the extractor.
+        self.semantic_tools = {
+            tool.name: tool.provenance["backing"]["symbol"]
+            for tool in self.spec.tools
+            if tool.provenance.get("kind") == "wrapper"
+            and tool.provenance.get("backing", {}).get("kind") == "function"
+            and isinstance(tool.provenance.get("backing", {}).get("symbol"), str)
+        }
         self.trajectory: list[dict[str, Any]] = []
         self.state: dict[str, Any] = {}
         self.done = False
@@ -152,12 +161,26 @@ class Code2Env:
                 "helpers": sorted(self.allowed_helpers),
                 "golden_answer_available": self.spec.golden_answer is not None,
             }
+        if tool_name == "inspect_state":
+            return {
+                "ok": True,
+                "state": copy.deepcopy(self.state),
+                "available_tools": sorted(self.allowed_tools),
+                "helpers": sorted(self.allowed_helpers),
+                "budget": {"remaining_steps": max(0, self.max_steps - int(self.state.get("step", 0)))},
+            }
         if tool_name == "call_entrypoint":
             payload = {
                 "args": arguments.get("args", self.spec.fixture.get("args", [])),
                 "kwargs": arguments.get("kwargs", self.spec.fixture.get("kwargs", {})),
             }
             return self._call_source(self.spec.source["entrypoint"], payload["args"], payload["kwargs"])
+        if tool_name in self.semantic_tools:
+            return self._call_source(
+                self.semantic_tools[tool_name],
+                list(arguments.get("args", [])),
+                dict(arguments.get("kwargs", {})),
+            )
         if tool_name == "call_helper":
             helper = arguments.get("helper")
             if helper not in self.allowed_helpers:
