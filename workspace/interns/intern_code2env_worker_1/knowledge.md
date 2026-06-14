@@ -1,6 +1,6 @@
 # intern_code2env_worker_1 - 个人知识库
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=3 -->
 
 ---
 
@@ -12,4 +12,4 @@
 4. 文件修改(task010)：runtime 想 dispatch 动态生成的语义 tool，可在 ToolSpec.provenance 里写 backing.symbol，runtime __init__ 据此建 name→symbol 映射，避免硬编码 tool 名。
 5. 流程：本仓库默认分支是 `main`(非 playbook 写的 master)；GitHub repo 用 `gh pr merge <n> --squash`(playbook 的 codeup_pr 是 codeup 仓库专用)。
 6. 流程：daemon HTTP API 端口是 ephemeral，记录在 /tmp/feishu_daemon.json 的 http_port；mailbox 汇报 POST http://127.0.0.1:<http_port>/api/intern/mail/to。
-
+7. 技术事实(task045)：batch 侧需要筛选最终 dedicated semantic helper tools 时应复用 `spec.semantic_helpers_for_candidate`，避免与 `ToolSpec` 里的 `call_<helper>`、side-effect helper partition、`MAX_SEMANTIC_HELPER_TOOLS` 上限语义漂移。

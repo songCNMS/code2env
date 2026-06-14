@@ -1,6 +1,6 @@
 # task045_min3_semantic_helpers_gate - Add minimum semantic helper gate for batch env generation
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 
