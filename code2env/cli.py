@@ -13,6 +13,7 @@ from code2env.jsonio import loads_object, write_json
 from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
 from code2env.materialize import materialize_env_spec
+from code2env.report import write_report
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
 from code2env.spec import draft_env_spec
@@ -87,6 +88,19 @@ def main(argv: list[str] | None = None) -> int:
     materialize_parser.add_argument("--no-golden", action="store_true")
     materialize_parser.add_argument("--timeout", type=float, default=10)
 
+    report_parser = subcommands.add_parser(
+        "report",
+        help="Summarize env generation + rollouts into markdown/json reports",
+    )
+    report_parser.add_argument("manifest", help="Path to the D1 generation manifest.json")
+    report_parser.add_argument(
+        "--rollouts",
+        default=None,
+        help="Path to a rollouts directory (<env_id>.json / rollouts.jsonl) or a .jsonl file",
+    )
+    report_parser.add_argument("--output-dir", required=True, help="Directory to write report.md + report.json")
+    report_parser.add_argument("--low-score-threshold", type=float, default=0.5)
+
     args = parser.parse_args(argv)
     try:
         if args.command == "scan":
@@ -103,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
             return _draft_from_jsonl(args)
         if args.command == "materialize":
             return _materialize(args)
+        if args.command == "report":
+            return _report(args)
     except Exception as exc:  # noqa: BLE001 - CLI should return structured failure.
         print(f"code2env: error: {exc}", file=sys.stderr)
         return 1
@@ -228,6 +244,17 @@ def _materialize(args: argparse.Namespace) -> int:
         timeout_seconds=args.timeout,
     )
     _print_json(summary)
+    return 0
+
+
+def _report(args: argparse.Namespace) -> int:
+    paths = write_report(
+        args.manifest,
+        args.rollouts,
+        args.output_dir,
+        low_score_threshold=args.low_score_threshold,
+    )
+    _print_json(paths)
     return 0
 
 

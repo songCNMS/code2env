@@ -65,3 +65,24 @@ python -m code2env materialize /tmp/code2env_specs/spec.json \
   --fixture-json '{"args": ["user", "pass"], "kwargs": {}}' \
   --output /tmp/materialized/spec.json
 ```
+
+### Rollout summary report
+
+Summarize a generation `manifest.json` (from `code2env batch`) together with the
+rollout conversation products into a markdown + JSON report — env generation
+success rate, per-repo distribution, rollout qualified rate, mean score, and
+explainable failure clusters:
+
+```bash
+python -m code2env report /path/to/manifest.json \
+  --rollouts /path/to/rollouts/ \
+  --output-dir /tmp/code2env_report
+# writes /tmp/code2env_report/report.md and report.json
+```
+
+`--rollouts` accepts a directory (per-env `<env_id>.json` files, falling back to a
+merged `rollouts.jsonl`) or a `.jsonl` file directly, and may be omitted to report
+on generation only. A rollout is *qualified* when it has `>= 2` tool-call rounds
+and a `submit_answer`. Failure clusters use a fixed, explainable tag set:
+`dependency_failure`, `fixture_unsynthesizable`, `weak_oracle`, `tool_granularity`,
+`format_error`, `other`.

@@ -15,4 +15,5 @@
 ## 最近进展（Session 1）
 
 - 接受 task023（D4 汇总报告生成）；建分支、开 PR#13 (base main)。
-- 实现 code2env/report.py + `code2env report` 子命令中。
+- 实现 code2env/report.py + `code2env report` 子命令 + 11 例单测 + 文档；`pytest tests/`=42 passed，CLI 端到端跑通。
+- 待 mailbox 回报 lead + tester(w5)/lead review。
