@@ -21,7 +21,7 @@ CONTROL_FLOW_NODES = (
     ast.BoolOp,
     ast.IfExp,
 )
-SIDE_EFFECT_CALL_NAMES = {
+FILESYSTEM_CALL_NAMES = {
     "open",
     "remove",
     "unlink",
@@ -29,15 +29,35 @@ SIDE_EFFECT_CALL_NAMES = {
     "mkdir",
     "rename",
     "replace",
+}
+SUBPROCESS_CALL_NAMES = {
     "run",
     "popen",
     "system",
+}
+DIRECT_SIDE_EFFECT_CALL_NAMES = FILESYSTEM_CALL_NAMES | SUBPROCESS_CALL_NAMES | {
     "request",
+}
+HTTP_CALL_NAMES = {
     "get",
     "post",
     "put",
     "delete",
     "patch",
+}
+HTTP_RECEIVER_MODULES = {
+    "aiohttp",
+    "httpx",
+    "requests",
+    "urllib",
+    "urllib3",
+}
+HTTP_RECEIVER_NAMES = {
+    "session",
+}
+SUBPROCESS_RECEIVER_MODULES = {
+    "os",
+    "subprocess",
 }
 
 
@@ -63,7 +83,7 @@ def index_repo(snapshot: RepoSnapshot) -> list[FunctionCandidate]:
                 name for name in calls if name in top_level_functions and name != node.name
             )
             metrics = _metrics(node)
-            risk_flags = _risk_flags(calls, metrics, qualname, _argument_names(node))
+            risk_flags = _risk_flags(node, metrics, qualname, _argument_names(node))
             score = _score(metrics, node, helper_candidates, risk_flags)
             candidates.append(
                 FunctionCandidate(
@@ -238,10 +258,14 @@ def _metrics(node: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, int]:
     }
 
 
-def _risk_flags(calls: list[str], metrics: dict[str, int], qualname: str, args: list[str]) -> list[str]:
+def _risk_flags(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    metrics: dict[str, int],
+    qualname: str,
+    args: list[str],
+) -> list[str]:
     flags: list[str] = []
-    lower_calls = {call.lower() for call in calls}
-    if lower_calls.intersection(SIDE_EFFECT_CALL_NAMES):
+    if _has_possible_side_effect_call(node):
         flags.append("possible_side_effect")
     if "." in qualname and args[:1] in (["self"], ["cls"]):
         flags.append("requires_instance")
@@ -250,6 +274,52 @@ def _risk_flags(calls: list[str], metrics: dict[str, int], qualname: str, args: 
     if metrics["branches"] == 0 and metrics["calls"] == 0:
         flags.append("low_decision_surface")
     return flags
+
+
+def _has_possible_side_effect_call(node: ast.AST) -> bool:
+    for child in ast.walk(node):
+        if isinstance(child, ast.Call) and _is_possible_side_effect_target(child.func):
+            return True
+    return False
+
+
+def _is_possible_side_effect_target(func: ast.AST) -> bool:
+    if isinstance(func, ast.Name):
+        return func.id.lower() in DIRECT_SIDE_EFFECT_CALL_NAMES
+    if not isinstance(func, ast.Attribute):
+        return False
+
+    attr = func.attr.lower()
+    receiver = _qualified_call_receiver(func.value)
+    receiver_parts = [part.lower() for part in receiver.split(".") if part]
+    if attr in FILESYSTEM_CALL_NAMES:
+        return True
+    if attr in SUBPROCESS_CALL_NAMES and _matches_receiver(receiver_parts, SUBPROCESS_RECEIVER_MODULES):
+        return True
+    return attr in HTTP_CALL_NAMES and _matches_http_receiver(receiver_parts)
+
+
+def _qualified_call_receiver(expr: ast.AST) -> str:
+    if isinstance(expr, ast.Name):
+        return expr.id
+    if isinstance(expr, ast.Attribute):
+        parent = _qualified_call_receiver(expr.value)
+        return f"{parent}.{expr.attr}" if parent else expr.attr
+    if isinstance(expr, ast.Call):
+        return _qualified_call_receiver(expr.func)
+    if isinstance(expr, ast.Subscript):
+        return _qualified_call_receiver(expr.value)
+    return ""
+
+
+def _matches_receiver(receiver_parts: list[str], modules: set[str]) -> bool:
+    return bool(receiver_parts) and receiver_parts[0] in modules
+
+
+def _matches_http_receiver(receiver_parts: list[str]) -> bool:
+    if not receiver_parts:
+        return False
+    return receiver_parts[0] in HTTP_RECEIVER_MODULES or receiver_parts[-1] in HTTP_RECEIVER_NAMES
 
 
 def _score(
