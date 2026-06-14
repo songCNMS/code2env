@@ -1,6 +1,6 @@
 # task044_subfunction_trace_rollout - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -24,3 +24,8 @@
 
 - 收到 lead queued 提醒称远端只见 bootstrap metadata；复核 GitHub PR #30 REST/diff，远端 head `a79192f27ea4e282cd6d0dc95c6ae9620148a638` 已包含 `code2env/rollout.py`、`code2env/cli.py`、`tests/test_rollout.py`、`tests/test_rollout_export.py` 实现与测试文件，mergeable state 为 clean。
 - 本轮无代码逻辑改动，仅更新 task/status 记录并准备重发 readiness mailbox，方便 lead/w4 基于当前远端 head 验证。
+
+## Session 4 - 2026-06-14 UTC - Lead approved and PR self-merge prepared
+
+- Lead APPROVE：代码 review 无 blocker；w4 独立验证 PASS（focused rollout tests 38 passed、full pytest 156 passed、默认模式/trace mode/rollout-export 兼容均验证）。
+- 按 worker flow 将 task044 标记 Completed、worker 状态切 Idle；随后 self-merge PR #30 并通过 mailbox 回报 merge 结果。
