@@ -14,6 +14,7 @@ from code2env.jsonio import loads_object, write_json
 from code2env.jsonl_specs import draft_specs_from_jsonl
 from code2env.llm import MockCandidateLLM, OpenAICompatibleLLM, resolve_endpoint_config
 from code2env.materialize import materialize_env_spec
+from code2env.rollout import ScriptedSolveChat, run_rollout
 from code2env.rollout_export import iter_jsonl, write_conversation
 from code2env.runtime import Code2Env
 from code2env.selector import SelectionOptions, export_llm_candidate_jsonl
@@ -89,6 +90,22 @@ def main(argv: list[str] | None = None) -> int:
     materialize_parser.add_argument("--no-golden", action="store_true")
     materialize_parser.add_argument("--timeout", type=float, default=10)
 
+    rollout_parser = subcommands.add_parser("rollout", help="Run a multi-round LLM tool-calling rollout on one env")
+    rollout_parser.add_argument("env_package_or_spec")
+    rollout_parser.add_argument("--output", default=None, help="Write the RolloutResult JSON to this path")
+    rollout_parser.add_argument("--max-rounds", type=int, default=8)
+    rollout_parser.add_argument("--llm-mode", choices=["endpoint", "mock"], default="endpoint")
+    rollout_parser.add_argument("--llm-model", default="gpt-5.5")
+    rollout_parser.add_argument("--fallback-model", default=None, help="Model name to fall back to (e.g. Kimi-K2.6)")
+    rollout_parser.add_argument("--endpoint-file", default=None)
+    rollout_parser.add_argument("--llm-base-url", default=None)
+    rollout_parser.add_argument("--llm-api-key", default=None)
+    rollout_parser.add_argument("--llm-timeout", type=float, default=60)
+    rollout_parser.add_argument("--llm-max-tokens", type=int, default=1200)
+    rollout_parser.add_argument("--max-parse-retries", type=int, default=2)
+    rollout_parser.add_argument("--max-llm-retries", type=int, default=1)
+    rollout_parser.add_argument("--seed", type=int, default=0)
+
     batch_parser = subcommands.add_parser(
         "batch", help="Batch-generate EnvPackages across repos with auto-synthesised fixtures"
     )
@@ -132,6 +149,8 @@ def main(argv: list[str] | None = None) -> int:
             return _draft_from_jsonl(args)
         if args.command == "materialize":
             return _materialize(args)
+        if args.command == "rollout":
+            return _rollout(args)
         if args.command == "batch":
             return _batch(args)
         if args.command == "rollout-export":
@@ -262,6 +281,64 @@ def _materialize(args: argparse.Namespace) -> int:
     )
     _print_json(summary)
     return 0
+
+
+def _rollout(args: argparse.Namespace) -> int:
+    path = Path(args.env_package_or_spec).resolve()
+    spec_path = path / "env_spec.json" if path.is_dir() else path
+    env = Code2Env(spec_path)
+
+    if args.llm_mode == "mock":
+        result = run_rollout(
+            env,
+            ScriptedSolveChat(env),
+            primary_source="mock",
+            max_rounds=args.max_rounds,
+            max_parse_retries=args.max_parse_retries,
+            max_llm_retries=args.max_llm_retries,
+            seed=args.seed,
+        )
+    else:
+        primary_config = resolve_endpoint_config(
+            model=args.llm_model,
+            endpoint_file=args.endpoint_file,
+            base_url=args.llm_base_url,
+            api_key=args.llm_api_key,
+        )
+        primary = OpenAICompatibleLLM(
+            primary_config,
+            timeout_seconds=args.llm_timeout,
+            max_tokens=args.llm_max_tokens,
+        )
+        fallback = None
+        fallback_source = None
+        if args.fallback_model:
+            fallback_config = resolve_endpoint_config(
+                model=args.fallback_model,
+                endpoint_file=args.endpoint_file,
+            )
+            fallback = OpenAICompatibleLLM(
+                fallback_config,
+                timeout_seconds=args.llm_timeout,
+                max_tokens=args.llm_max_tokens,
+            )
+            fallback_source = fallback_config.model
+        result = run_rollout(
+            env,
+            primary,
+            fallback_llm=fallback,
+            primary_source=primary_config.model,
+            fallback_source=fallback_source,
+            max_rounds=args.max_rounds,
+            max_parse_retries=args.max_parse_retries,
+            max_llm_retries=args.max_llm_retries,
+            seed=args.seed,
+        )
+
+    if args.output:
+        write_json(args.output, result)
+    _print_json(result)
+    return 0 if result["final"].get("correct") else 2
 
 
 def _batch(args: argparse.Namespace) -> int:
