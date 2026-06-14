@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from code2env.executor import run_symbol_subprocess
-from code2env.indexer import find_candidate, index_repo, test_links_for_candidate
+from code2env.indexer import find_candidate, index_repo, links_for_candidate
 from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, TestLink, ToolSpec
 
 
@@ -21,7 +21,7 @@ def draft_env_spec(
     candidates = index_repo(snapshot)
     candidate = find_candidate(candidates, symbol)
     normalized_fixture = _normalize_fixture(fixture)
-    test_links = test_links_for_candidate(snapshot, candidate)
+    test_links = links_for_candidate(snapshot, candidate)
     provenance = _build_provenance(candidate, test_links)
     source = {
         "repo": snapshot.source,

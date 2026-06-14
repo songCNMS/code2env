@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from code2env.indexer import build_test_link_index, index_repo, test_links_for_candidate
+from code2env.indexer import build_test_link_index, index_repo, links_for_candidate
 from code2env.ingest import ingest_repo
 from code2env.spec import draft_env_spec
 
@@ -99,7 +99,7 @@ class TestLinkIndexTest(unittest.TestCase):
             candidate = next(
                 c for c in index_repo(snapshot) if c.symbol == "maths:add"
             )
-            links = test_links_for_candidate(snapshot, candidate)
+            links = links_for_candidate(snapshot, candidate)
             # `add` is referenced only by test_add, which must link by name.
             self.assertTrue(any(link.target.endswith("::test_add") for link in links))
             self.assertFalse(

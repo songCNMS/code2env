@@ -227,7 +227,7 @@ def build_test_link_index(
     }
 
 
-def test_links_for_candidate(
+def links_for_candidate(
     snapshot: RepoSnapshot, candidate: FunctionCandidate
 ) -> list[TestLink]:
     """Convenience wrapper returning links for a single candidate."""
