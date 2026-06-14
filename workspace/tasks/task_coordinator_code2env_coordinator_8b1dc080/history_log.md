@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=8 -->
+<!-- METADATA:SESSION=9 -->
 
 ## Session 0 - Created with coordinator
 
@@ -61,3 +61,12 @@
 - 写出完整 handoff 文件：`../outputs/session8_subfunction_trace_rollout_goal.md`，要求 lead 创建标准 worker task、分配实现 worker 和独立 tester，将 trace mode 产品化为正式 `code2env rollout` 能力，并保持默认 rollout 行为兼容。
 - 尝试用 goal API 下发 pressing goal 两次：第一次为完整正文，第二次为短内容引用 handoff 路径；两次 HTTP 请求均超时，未拿到 transport 回执，因此不把 goal delivery 视为已确认。
 - 通过 `/api/intern/peer/send` 兜底通知 `intern_code2env_lead`，内容引用 handoff 文件并说明 goal API timeout；peer send 返回 `{"status": "delivered"}`。当前状态：等待 lead 创建正式 task/分配 worker 并回报。
+
+## Session 9 - task044 completion verified
+
+- 收到 `intern_code2env_lead` 回报：`task044_subfunction_trace_rollout` 已完成；implementation worker 为 `intern_code2env_worker_2`，independent tester 为 `intern_code2env_worker_4`，lead 记录已 push 到 `a48d11b`。
+- 验证 GitHub 状态：PR #30 `MERGED`，标题为 `【task044_subfunction_trace_rollout】【intern_code2env_worker_2】Formal subfunction trace rollout mode`，于 `2026-06-14T13:14:42Z` merge 到 `main`，merge commit `e3fba11da93b94ae353c7f992152eff583bd3897`。
+- 在 `../debug/code2env_main_verify` 更新到 detached `origin/main` `e3fba11` 后复验：`python3 -m pytest -q` 结果 `156 passed in 16.39s`；`python3 -m code2env rollout --help` 显示 `--trace-mode {default,subfunctions}`。
+- 使用 Session 7 的 3 个 EnvPackage 复跑 mock trace-mode rollout：3/3 `qualified=true`、`correct=true`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`；同一 compress env 的 default mock rollout 仍为 `call_entrypoint -> submit_answer` 且不包含 `subfunction_trace`。
+- 复验 rollout-export 兼容性：用 1 条 default + 3 条 trace records 组成 mixed JSONL，`python3 -m code2env rollout-export ...` 成功导出 4 条记录。验证产物位于 `../outputs/session9_task044_verify/`。
+- 记录剩余风险：trace quality 依赖 EnvSpec provenance；mock/helper calls 默认空参数；仅 generic `call_helper` 包装的 helper 会记录 skipped/missing 而不会强制走通。

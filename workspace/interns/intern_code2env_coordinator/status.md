@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 8 |
+| Session | 9 |
 
 ## 最近进展
 
@@ -22,3 +22,4 @@
 - Session 6：复查 rollout JSONL、`rollout.py`、`runtime.py`、`spec.py` 与 qlib-derived harness；确认当前 rollout 语义是 `call_entrypoint` black-box execution + `submit_answer`，不是实际子函数调用轨迹，建议将“真实子函数轨迹”作为显式 decomposed/subfunction-trace 模式或后续改进任务。
 - Session 7：按用户要求生成 10 个 qlib-style subfunction-trace candidate env；每个 env 执行 1 条 endpoint rollout，结果 10/10 qualified、10/10 correct、10/10 helper_trace_complete；merged JSONL 写入 `../outputs/session7_trace_rollouts/session7_trace_rollouts.jsonl`（10 lines, 100,944 bytes）并已发送飞书，文件消息 ID `om_x100b6dddafa690a4b3f92880c767499`。
 - Session 8：按用户“执行下一步”要求，将 subfunction-trace rollout 产品化目标下发给 `intern_code2env_lead`；完整 handoff 写入 `../outputs/session8_subfunction_trace_rollout_goal.md`，goal API 两次 HTTP timeout 未拿到回执，已用 peer send 兜底通知且返回 `delivered`。
+- Session 9：收到并验证 lead 完成回报：`task044_subfunction_trace_rollout` 已完成，PR #30 于 2026-06-14T13:14:42Z merge 到 `main`（merge commit `e3fba11`）；coordinator 在 `../debug/code2env_main_verify` 复跑 full tests `156 passed in 16.39s`，并验证 3 个 Session7 package mock trace rollout 与 default-mode 兼容。
