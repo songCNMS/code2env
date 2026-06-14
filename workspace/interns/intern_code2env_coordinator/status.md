@@ -9,7 +9,7 @@
 | Role | coordinator |
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
-| PR | N/A |
+| PR | #28 |
 | Session | 1 |
 
 ## 最近进展
