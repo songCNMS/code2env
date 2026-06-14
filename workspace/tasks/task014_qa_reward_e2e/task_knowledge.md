@@ -1,6 +1,6 @@
 # task014_qa_reward_e2e - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -18,6 +18,8 @@
 8. [A轮·风险] task011 spec.reward.weights 缺省 = 0.05/0.20/0.65/0.05/0.05，**偏离 PRD 7.7 默认表 0.05/0.25/0.50/0.10/0.10**（机制正确、和=1.0；属默认值问题，已回报 lead 待确认意图）。
 9. [A轮·机制] step 返回 PBRS 增量(Δtotal)，Σ step reward = final − 初始势(0.15)；evaluate 返回绝对加权 total。初始势=0.15 因 schema/efficiency/safety 无动作时乐观取 raw=1.0。
 6. PRD 7.7 五维默认权重：schema_validity 0.05 / process_progress 0.25 / final_correctness 0.50 / efficiency 0.10 / safety 0.10（合计 1.00）。
+10. [B轮] 三项 P0 merge 后 main HEAD f2b3b42 `pytest tests/` = **31 passed, 0 error**；全链路 scan→select(mock)→draft/draft-from-jsonl→materialize→build→smoke 全绿，smoke ok=true/score=1.0，**无回归**。
+11. [B轮·新能力] draft 产物 tools 含 inspect_state + call_<helper>(call_clean_text)，6 tool 均带 ToolSpec.provenance；provenance.task_sources=2(source_span+signature)；smoke/evaluate 输出五维 score_breakdown（均验证可见）。
 
 ---
 

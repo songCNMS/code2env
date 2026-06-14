@@ -1,6 +1,6 @@
 # task014_qa_reward_e2e - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -32,4 +32,24 @@
 - ⚠️ 发现（非阻塞，需 lead/worker_2 确认）：spec.reward.weights 缺省 = 0.05/0.20/0.65/0.05/0.05，与 PRD 7.7 默认表 0.05/0.25/0.50/0.10/0.10 不一致（机制正确、两者均和=1.0，仅默认值偏离）。runtime DEFAULT_REWARD_WEIGHTS 与 spec.py 一致（自洽）。
 - 次要：初始势 0.15（schema/efficiency/safety 无动作时乐观取 raw=1.0），标准 PBRS，不影响 evaluation score。
 - A 轮结论：**全部验收 PASS**；1 个权重默认值 discrepancy 已 mailbox 回报 lead。
+
+## Session 3 - 2026-06-13 - B 轮：三项 P0 merge 后 main 全链路回归
+
+- 环境：main HEAD f2b3b42（PR#9 e2825ad ToolExtractor + PR#7 c166e2f TestLinkIndex + PR#8 f2b3b42 多维 reward 均已 merge），python3 3.12.3。
+- 全量单测：`python3 -m pytest tests/ -q` = **31 passed, 0 error**（与 worker_2 post-merge 一致；含 test_reward.py / test_testlink_index.py）。
+- E2E 全链路（临时 sample repo，select 离线 mock），每步 rc=0、无 stderr：
+  - scan → cand0=sample:normalize_name
+  - select --llm-mode mock → sel.jsonl 1 行
+  - draft-from-jsonl → 1 个 draft spec
+  - draft（单路交叉验证）→ 同样能力
+  - materialize → mat.json（golden=ADA LOVELACE）
+  - build → package dir
+  - smoke → ok=true、evaluation.score=1.0、correct=true
+- 新能力可见性核对（PASS）：
+  - 语义工具：draft 产物 tools 含 `inspect_state` 与 `call_clean_text`(call_<helper>)；6 个 tool 均带 ToolSpec.provenance。
+  - provenance.task_sources = 2（>=2），kinds=[source_span, signature]。
+  - smoke/evaluate 输出五维 score_breakdown，正确轨迹五维 weighted 均非零、total=1.0∈[0,1]。
+- 回归判定：**无回归**，MVP 闭环基线保绿。
+- 既有 discrepancy（A 轮已报）：spec.reward.weights 仍为 0.05/0.20/0.65/0.05/0.05，偏离 PRD 7.7 表 0.05/0.25/0.50/0.10/0.10；非回归、待 lead 决策，B 轮不重复阻塞。
+- B 轮结论：**本轮 P0 交付最终验证 PASS**，已 mailbox 回报 lead。
 
