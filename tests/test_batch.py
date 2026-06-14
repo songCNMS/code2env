@@ -147,6 +147,8 @@ class BatchPipelineTest(unittest.TestCase):
                     "skipped_no_fixture",
                     "real_value",
                     "weak_oracle",
+                    "usable",
+                    "nondeterministic",
                     "by_repo",
                 },
             )
@@ -155,12 +157,22 @@ class BatchPipelineTest(unittest.TestCase):
             self.assertEqual(summary["draft_ok"], 3)
             self.assertEqual(summary["smoke_ok"], 3)
             self.assertEqual(summary["skipped_no_fixture"], 3)
-            # No third-party deps in the synthetic repo → all golden answers are real.
+            # No third-party deps in the synthetic repo → all golden answers are real & deterministic.
             self.assertEqual(summary["real_value"], 3)
             self.assertEqual(summary["weak_oracle"], 0)
+            self.assertEqual(summary["usable"], 3)
+            self.assertEqual(summary["nondeterministic"], 0)
             self.assertEqual(
                 summary["by_repo"][str(repo)],
-                {"build_ok": 3, "smoke_ok": 3, "real_value": 3, "weak_oracle": 0, "deps_status": "no_deps"},
+                {
+                    "build_ok": 3,
+                    "smoke_ok": 3,
+                    "real_value": 3,
+                    "weak_oracle": 0,
+                    "usable": 3,
+                    "nondeterministic": 0,
+                    "deps_status": "no_deps",
+                },
             )
             # repo_deps records per-repo dependency provenance.
             self.assertEqual(manifest["repo_deps"][str(repo)]["deps_status"], "no_deps")
@@ -187,6 +199,7 @@ class BatchPipelineTest(unittest.TestCase):
                 "smoke_ok",
                 "smoke_fail_reason",
                 "golden_status",
+                "determinism",
                 "deps_status",
                 "deps_installed",
                 "spec_path",
@@ -199,6 +212,7 @@ class BatchPipelineTest(unittest.TestCase):
                 )
                 self.assertEqual(set(env["fixture"]["value"].keys()), {"args", "kwargs"})
                 self.assertEqual(env["golden_status"], "real_value")
+                self.assertEqual(env["determinism"], "deterministic")
                 self.assertEqual(env["deps_status"], "no_deps")
                 self.assertTrue(Path(env["spec_path"]).exists())
                 self.assertTrue((Path(env["package_path"]) / "env_spec.json").exists())

@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from code2env.determinism import classify_determinism
 from code2env.envdeps import golden_status_for
 from code2env.executor import run_symbol_subprocess
 from code2env.indexer import find_candidate, index_repo, links_for_candidate
@@ -22,6 +23,7 @@ def draft_env_spec(
     python_executable: str | None = None,
     requirements: list[str] | None = None,
     deps_status: str | None = None,
+    determinism_runs: int = 1,
 ) -> EnvSpec:
     # ``candidates`` lets batch callers reuse a single index_repo() pass across many
     # symbols in the same snapshot instead of re-indexing per draft.
@@ -78,18 +80,31 @@ def draft_env_spec(
         provenance=provenance,
     )
     if compute_golden:
-        spec.golden_answer = run_symbol_subprocess(
-            snapshot.path,
-            candidate.symbol,
-            list(normalized_fixture["args"]),
-            dict(normalized_fixture["kwargs"]),
-            disable_network=True,
-            disable_subprocess=True,
-            python_executable=python_executable,
-        )
-        spec.provenance["golden_status"] = golden_status_for(spec.golden_answer)
+        def _run_golden() -> dict[str, Any]:
+            return run_symbol_subprocess(
+                snapshot.path,
+                candidate.symbol,
+                list(normalized_fixture["args"]),
+                dict(normalized_fixture["kwargs"]),
+                disable_network=True,
+                disable_subprocess=True,
+                python_executable=python_executable,
+            )
+
+        spec.golden_answer = _run_golden()
+        golden_status = golden_status_for(spec.golden_answer)
+        spec.provenance["golden_status"] = golden_status
+        # Determinism gate (task038): only meaningful for a real golden value. For
+        # weak_oracle goldens the env is already excluded by golden_status, so leave
+        # determinism null rather than mislabel an exception traceback as nondeterministic.
+        if golden_status == "real_value":
+            repeats = [_run_golden() for _ in range(max(0, determinism_runs - 1))]
+            spec.provenance["determinism"] = classify_determinism(spec.golden_answer, repeats)
+        else:
+            spec.provenance["determinism"] = None
     else:
         spec.provenance["golden_status"] = "pending_golden"
+        spec.provenance["determinism"] = None
     return spec
 
 

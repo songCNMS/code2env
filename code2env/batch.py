@@ -38,6 +38,7 @@ from pathlib import Path
 from typing import Any
 
 from code2env.builder import build_env_package
+from code2env.determinism import is_usable
 from code2env.envdeps import prepare_repo_env
 from code2env.indexer import index_repo
 from code2env.ingest import ingest_repo
@@ -88,6 +89,7 @@ def generate_batch(
     include_side_effects: bool = False,
     install_deps: bool = True,
     venv_cache_dir: str | Path | None = None,
+    determinism_runs: int = 3,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     """Generate EnvPackages across ``repos`` and return the manifest dict.
@@ -117,7 +119,15 @@ def generate_batch(
         repo_label = snapshot.source
         repo_labels.append(repo_label)
         by_repo.setdefault(
-            repo_label, {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0}
+            repo_label,
+            {
+                "build_ok": 0,
+                "smoke_ok": 0,
+                "real_value": 0,
+                "weak_oracle": 0,
+                "usable": 0,
+                "nondeterministic": 0,
+            },
         )
         # One venv per repo: install runtime deps so golden answers are real values.
         repo_env = prepare_repo_env(
@@ -166,6 +176,7 @@ def generate_batch(
                 specs_dir=specs_dir,
                 packages_dir=packages_dir,
                 run_smoke=run_smoke,
+                determinism_runs=determinism_runs,
             )
             envs.append(env_record)
             if env_record["build_ok"]:
@@ -178,6 +189,10 @@ def generate_batch(
                 by_repo[repo_label]["real_value"] += 1
             elif env_record["golden_status"]:
                 by_repo[repo_label]["weak_oracle"] += 1
+            if is_usable(env_record["golden_status"], env_record["determinism"]):
+                by_repo[repo_label]["usable"] += 1
+            elif env_record["determinism"] and env_record["determinism"] != "deterministic":
+                by_repo[repo_label]["nondeterministic"] += 1
 
         if build_ok_total >= target_count:
             break
@@ -189,11 +204,18 @@ def generate_batch(
         "build_ok": sum(1 for env in envs if env["build_ok"]),
         "smoke_ok": sum(1 for env in envs if env["smoke_ok"]),
         "skipped_no_fixture": len(skipped),
-        # task030: real_value envs form the qualified/usable set; weak_oracle envs are
-        # excluded from the correctness denominator and reported separately.
+        # task030: real_value envs have a real golden; weak_oracle excluded & listed apart.
         "real_value": real_value,
         "weak_oracle": sum(
             1 for env in envs if env["golden_status"] and env["golden_status"] != "real_value"
+        ),
+        # task038: the qualified/usable set is real_value AND deterministic; nondeterministic
+        # envs are excluded from the correctness denominator and reported separately.
+        "usable": sum(1 for env in envs if is_usable(env["golden_status"], env["determinism"])),
+        "nondeterministic": sum(
+            1
+            for env in envs
+            if env["determinism"] and env["determinism"] != "deterministic"
         ),
         "by_repo": by_repo,
     }
@@ -220,6 +242,7 @@ def _generate_one(
     specs_dir: Path,
     packages_dir: Path,
     run_smoke: bool,
+    determinism_runs: int = 3,
 ) -> dict[str, Any]:
     record: dict[str, Any] = {
         "env_id": None,
@@ -234,6 +257,7 @@ def _generate_one(
         "smoke_ok": False,
         "smoke_fail_reason": None,
         "golden_status": None,
+        "determinism": None,
         "deps_status": repo_env["deps_status"],
         "deps_installed": repo_env["installed"],
         "spec_path": None,
@@ -249,10 +273,12 @@ def _generate_one(
             python_executable=repo_env["python"],
             requirements=repo_env["requirements"],
             deps_status=repo_env["deps_status"],
+            determinism_runs=determinism_runs,
         )
         record["env_id"] = spec.id
         record["draft_ok"] = True
         record["golden_status"] = spec.provenance.get("golden_status")
+        record["determinism"] = spec.provenance.get("determinism")
     except Exception as exc:  # noqa: BLE001 - a failed draft is a recorded outcome, not a crash.
         record["smoke_fail_reason"] = f"draft_error:{type(exc).__name__}:{exc}"
         return record

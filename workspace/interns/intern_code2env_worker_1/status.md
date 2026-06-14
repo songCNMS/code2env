@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task038_determinism_gate |
-| PR | https://github.com/songCNMS/code2env/pull/24 |
+| PR | #24 (task038, 实现完成待 review); #22(task035) 已 merged |
 | Session | 4 |

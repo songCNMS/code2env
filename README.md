@@ -103,18 +103,37 @@ never aborting the repo. Pass `--no-install-deps` to skip this step.
 
 After deps are installed, each env carries a `golden_status`:
 
-- `real_value` — the source function returned a real result; these form the
-  qualified/usable set counted toward correctness.
+- `real_value` — the source function returned a real result.
 - `weak_oracle:<reason>` (e.g. `golden_exception:ModuleNotFoundError`) — the golden
   answer is still an exception; the env is reported separately and **excluded from
   the correctness denominator** so it cannot create false positives.
 
-`manifest.summary` reports `real_value` / `weak_oracle` counts and per-repo
-`deps_status`; `manifest.repo_deps` records installed/failed packages per repo.
 Venv creation prefers the stdlib `python -m venv`; on hosts where that fails because
 `python3-venv`/`ensurepip` is unavailable it falls back to `uv venv --seed` when the
 `uv` binary is present (task035). Only when neither backend works does the pipeline
 record `deps_status: venv_failed` and fall back to the base interpreter.
+
+#### Determinism gate
+
+A `real_value` golden can still be unmatchable if the source function returns
+something different every run — an object `repr` with a memory address
+(`<… object at 0x…>`), a random hash, a timestamp, or an absolute worker path. Each
+env therefore also carries a `determinism` field (task038):
+
+- `deterministic` — usable.
+- `nondeterministic:<reason>` (`object_repr` / `memory_addr` / `abs_path` /
+  `unstable_across_runs`) — **excluded from the correctness denominator** and listed
+  separately, like `weak_oracle`.
+
+The **qualified/usable set is `real_value` AND `deterministic`**. To avoid
+over-pruning, a default object `repr` is flagged on its own, but a bare `0x…` hex or a
+`/home//tmp/` path is only flagged when a repeat run (`--determinism-runs`, default 3)
+actually disagrees — a function that *stably* returns such a string stays
+`deterministic`.
+
+`manifest.summary` reports `real_value` / `weak_oracle` / `usable` /
+`nondeterministic` counts and per-repo `deps_status`; `manifest.repo_deps` records
+installed/failed packages per repo.
 
 ### Rollout conversation export (D3)
 
