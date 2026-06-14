@@ -26,7 +26,7 @@ python -m code2env build /tmp/env_spec.json --output-dir /tmp/generated_envs
 python -m code2env smoke /tmp/generated_envs/<env_id>
 ```
 
-The generated runtime exposes `inspect_task`, `call_entrypoint`, optional `call_helper`, and `submit_answer` tools. The default scorer uses exact match against the pinned source function output.
+The generated runtime exposes `inspect_task`, `call_entrypoint`, optional `call_helper`, and `submit_answer` tools. Scoring is multi-dimensional (PRD 7.7 / F7): `schema_validity`, `process_progress`, `final_correctness` (exact match against the pinned source output), `efficiency` and `safety`, weighted by `reward.weights`. `step` returns a dense per-step training reward while `evaluate` returns an explainable `score_breakdown`. See [docs/mvp_usage.md](docs/mvp_usage.md#multi-dimensional-reward-prd-77--f7).
 
 Export LLM-screened candidates as JSONL:
 
