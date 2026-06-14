@@ -12,4 +12,7 @@
 4. PR#9(ToolExtractor) 给 runtime 引入 `inspect_state`（只读）与 `call_<helper>` 语义工具（`self.semantic_tools`，由 ToolSpec provenance.kind==wrapper 解析）；与 reward 集成时把 inspect_state 计入 explored、semantic helper 计入 explored+executed_source，process_progress 才连贯。
 5. 多 worker 同改 runtime.py：按 lead 指定顺序，先让重叠 PR 合入 main，再 `git fetch origin && git merge origin/main` 解决冲突（两边逻辑都保留），重跑 pytest 全绿后 self-merge。
 6. [backlog] reward 权重默认 0.05/0.20/0.65/0.05/0.05（忠实 spec.py 声明）与 PRD 7.7 示例表（0.05/0.25/0.50/0.10/0.10）不一致，lead 裁定本轮保持现状，取值对齐留 backlog 文档。
+7. [踩坑] LLM rollout：自定义 tool 描述不能当 OpenAI 原生 `tools` 字段发给网关(litellm 校验 `tools.0.function` → HTTP 400)。用 JSON-in-content 协议：tools 写进 system prompt，chat payload 不带 tools；模型回 `{"tool":...,"arguments":...}`，用 parse_llm_json 解析。
+8. 多 worker 同改 cli.py：argparse 是“加 subparser + 一行 dispatch + 一个 handler 函数”的累加结构，冲突解决一律“全保留”（imports/subparser/dispatch/handler 四处都合并双方）。本会话合 D1(batch+rollout-export)×D2(rollout) 四处冲突均如此处理，72 passed。
+9. endpoints.txt(/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt)：行1 gpt-5.5 外网，本地 127.0.0.1:39000=gpt-oss-120b、:18000=Kimi-K2.6 等；端口可达性随环境变化，先 `curl :PORT/v1/models` 探活再 live 测。
 

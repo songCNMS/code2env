@@ -1,6 +1,6 @@
 # task022_conversation_json_export - D3 conversation JSON 导出 (per-env + 合并 JSONL)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_3 -->
 
 ## 背景
 

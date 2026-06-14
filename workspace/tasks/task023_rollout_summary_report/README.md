@@ -1,6 +1,6 @@
 # task023_rollout_summary_report - D4 汇总报告生成 (env 生成 + rollout 合格率 + 失败聚类)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## 背景
 

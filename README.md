@@ -30,6 +30,8 @@ The generated runtime exposes a semantic tool set (PRD 7.5): the read-only `insp
 
 Scoring is multi-dimensional (PRD 7.7 / F7): `schema_validity`, `process_progress`, `final_correctness` (exact match against the pinned source output), `efficiency` and `safety`, weighted by `reward.weights`. `step` returns a dense per-step training reward while `evaluate` returns an explainable `score_breakdown`. See [docs/mvp_usage.md](docs/mvp_usage.md#multi-dimensional-reward-prd-77--f7).
 
+Drive an LLM through a multi-round tool-calling rollout (D2) with `python -m code2env rollout <env_package>` (`--llm-mode mock` for an offline deterministic solve, or `--llm-model gpt-5.5 --fallback-model <local>` for live runs with automatic endpoint fallback). The driver (`code2env.rollout.run_rollout`) returns a `RolloutResult` with the full conversation, per-step actions/rewards, final score, and a `qualified` flag. See [docs/mvp_usage.md](docs/mvp_usage.md#llm-rollout-driver-d2).
+
 ### Test linking & provenance
 
 `scan` reports both `Python files` and `Test files`: tests (anything under a `tests/`/`test/` directory, `test_*.py`, `*_test.py`, or `conftest.py`) are indexed separately into `RepoSnapshot.test_files` and never pollute the ranked source corpus.
@@ -65,3 +67,61 @@ python -m code2env materialize /tmp/code2env_specs/spec.json \
   --fixture-json '{"args": ["user", "pass"], "kwargs": {}}' \
   --output /tmp/materialized/spec.json
 ```
+
+### Batch generation
+
+Generate many EnvPackages across repos in one pass, auto-synthesising a JSON fixture
+for each chosen function from its AST signature:
+
+```bash
+python -m code2env batch https://github.com/psf/requests https://github.com/pallets/flask \
+  --output-dir generated_envs/batch --target 100 --cache-dir .code2env_cache/repos
+```
+
+For each repo the pipeline runs `scan → synth fixture → draft → build` (optionally `smoke`)
+and writes a `manifest.json` under `--output-dir`. Fixture synthesis prefers functions with
+no required parameters (`empty_signature`) or whose required parameters carry simple typed
+annotations (`typed_signature`: `str/int/float/bool`, list/dict containers, `Optional`); a
+candidate is skipped (recorded in `manifest.skipped` with a reason) when it is a method
+(`not_module_level` / `requires_instance`), has a possible side effect (`possible_side_effect`,
+unless `--include-side-effects`), or has an untyped/unsupported required parameter. A build
+counts toward `--target` regardless of whether its smoke run passes (smoke failures are
+recorded with a reason). Cloned repo source and generated packages stay out of git
+(`.code2env_cache/` and `generated_envs/` are gitignored).
+
+### Rollout conversation export (D3)
+
+Persist rollout results (`RolloutResult` records, one JSON object per line) as
+readable per-env conversation JSON plus a merged `rollouts.jsonl`:
+
+```bash
+python -m code2env rollout-export /tmp/results.jsonl --export-dir /tmp/rollouts
+```
+
+`--export-dir` defaults to the coordinator's `outputs/rollouts/` (outside the repo,
+not tracked by git, auto-created). The library API — `write_conversation`,
+`validate_conversation`, `load_conversation`, `iter_jsonl` — is documented in
+[docs/mvp_usage.md](docs/mvp_usage.md); `write → load` round-trips, and
+`validate_conversation` enforces the shared schema (including that `qualified` is
+self-consistent: `num_tool_call_rounds >= 2` and a `submit_answer` present).
+
+### Rollout summary report
+
+Summarize a generation `manifest.json` (from `code2env batch`) together with the
+rollout conversation products into a markdown + JSON report — env generation
+success rate, per-repo distribution, rollout qualified rate, mean score, and
+explainable failure clusters:
+
+```bash
+python -m code2env report /path/to/manifest.json \
+  --rollouts /path/to/rollouts/ \
+  --output-dir /tmp/code2env_report
+# writes /tmp/code2env_report/report.md and report.json
+```
+
+`--rollouts` accepts a directory (per-env `<env_id>.json` files, falling back to a
+merged `rollouts.jsonl`) or a `.jsonl` file directly, and may be omitted to report
+on generation only. A rollout is *qualified* when it has `>= 2` tool-call rounds
+and a `submit_answer`. Failure clusters use a fixed, explainable tag set:
+`dependency_failure`, `fixture_unsynthesizable`, `weak_oracle`, `tool_granularity`,
+`format_error`, `other`.

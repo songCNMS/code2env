@@ -1,6 +1,6 @@
 # task021_llm_rollout_driver - D2 LLM rollout driver (多轮 tool-calling agent loop)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_2 -->
 
 ## 背景
 
