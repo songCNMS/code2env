@@ -1,6 +1,6 @@
 # task033_report_true_correct_rate - 报告更新:真实 correct 率(剔除假阳性)+装依赖前后对比
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## 背景
 

@@ -103,6 +103,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     report_parser.add_argument("--output-dir", required=True, help="Directory to write report.md + report.json")
     report_parser.add_argument("--low-score-threshold", type=float, default=0.5)
+    report_parser.add_argument(
+        "--baseline-manifest",
+        default=None,
+        help="Optional pre-dependency-install manifest.json for golden error->real_value / smoke before-after comparison",
+    )
 
     rollout_parser = subcommands.add_parser("rollout", help="Run a multi-round LLM tool-calling rollout on one env")
     rollout_parser.add_argument("env_package_or_spec")
@@ -305,6 +310,7 @@ def _report(args: argparse.Namespace) -> int:
         args.rollouts,
         args.output_dir,
         low_score_threshold=args.low_score_threshold,
+        baseline_manifest_path=args.baseline_manifest,
     )
     _print_json(paths)
     return 0

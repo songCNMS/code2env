@@ -115,13 +115,21 @@ explainable failure clusters:
 ```bash
 python -m code2env report /path/to/manifest.json \
   --rollouts /path/to/rollouts/ \
-  --output-dir /tmp/code2env_report
+  --output-dir /tmp/code2env_report \
+  [--baseline-manifest /path/to/pre_install_manifest.json]
 # writes /tmp/code2env_report/report.md and report.json
 ```
 
 `--rollouts` accepts a directory (per-env `<env_id>.json` files, falling back to a
 merged `rollouts.jsonl`) or a `.jsonl` file directly, and may be omitted to report
 on generation only. A rollout is *qualified* when it has `>= 2` tool-call rounds
-and a `submit_answer`. Failure clusters use a fixed, explainable tag set:
+and a `submit_answer`.
+
+The report computes a **true correct rate** from `manifest.envs[].golden_status`
+(`real_value` / `weak_oracle:<reason>`): rollouts on weak-oracle envs are excluded
+from the denominator (and counted separately), removing error-match false
+positives from the raw correct rate. With `--baseline-manifest` (a pre-dependency
+manifest) it also reports golden `error → real_value` transitions and per-repo
+`smoke_ok` before/after deltas. Failure clusters use a fixed, explainable tag set:
 `dependency_failure`, `fixture_unsynthesizable`, `weak_oracle`, `tool_granularity`,
 `format_error`, `other`.

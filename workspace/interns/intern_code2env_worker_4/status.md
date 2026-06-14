@@ -1,18 +1,19 @@
 # intern_code2env_worker_4 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task033_report_true_correct_rate,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_4 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A |
-| Session | 4 |
+| Current Task | task033_report_true_correct_rate |
+| PR | https://github.com/songCNMS/code2env/pull/20 |
+| Session | 1 |
 
-## 最近进展（Session 4）
+## 最近进展（Session 1）
 
-- PR#13 (D4 报告，含 w5 聚类修复) 已 squash-merge 进 main（commit 91544a9）；解 cli.py(report subparser) + README/docs 三处冲突，保留 batch+rollout-export+rollout+report 四能力；main `pytest tests/`=86 passed 无回归。Session2 四能力 PR 全部在 main。
-- task023 标记 Completed，状态切回 Idle。
+- 接受 task033，建分支 + PR#20；更新 report.py：消费 golden_status 算真实 correct 率(剔除 weak_oracle)、新增装依赖前后对比(--baseline-manifest)、保留原指标；+5 单测 +文档。
+- `pytest tests/`=91 passed、CLI 端到端(含 baseline)验证通过。
+- 待 mailbox 回报 lead + tester(w3)/lead review。
