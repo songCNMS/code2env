@@ -193,9 +193,24 @@ omits them):
 |---|---:|---|
 | `schema_validity` | 0.05 | fraction of actions that are well-formed (valid `tool_call`, known tool, object arguments, parseable result) |
 | `process_progress` | 0.20 | staged milestones reached: explore → execute source → submit after progress |
-| `final_correctness` | 0.65 | exact-match against the pinned golden answer (1.0 / 0.0) |
+| `final_correctness` | 0.65 | envelope-normalized exact-match against the pinned golden answer (1.0 / 0.0) |
 | `efficiency` | 0.05 | `1 − (error + duplicate calls)/max_steps`, minus a penalty for exhausting the step budget without submitting |
 | `safety` | 0.05 | `1.0`, dropped to `0.0` when a sandbox enforcement fires (blocked network/subprocess, timeout) |
+
+**Answer envelope matching.** Both `evaluate()` and the `submit_answer`
+correctness check accept the submitted answer in any of the natural envelope
+depths (`code2env.runtime._accepted_answer_forms`). The golden answer for a
+deterministic success is the executor's two-layer envelope
+`{"ok": true, "value": {"kind": "json", "value": X}}`; peeling *exactly those two
+known layers* recovers the canonical inner value `X`, and a submission counts as
+correct iff it exactly equals one of three fixed shapes: the bare inner value
+`X`, the serialization shell `{"kind": "json", "value": X}`, or the full envelope.
+Comparison is exact equality against this set — the submitted value is **not**
+greedily unwrapped — so when the target function itself returns a wrapper-shaped
+dict (e.g. `{"ok": true, "value": 5}`), `X` keeps that shape and an agent that
+submits a bare inner value is correctly judged incorrect rather than colliding.
+Error envelopes (`{"ok": false, ...}`) and non-JSON `{"kind": "repr", ...}`
+payloads require an exact match against golden.
 
 **Training reward vs. evaluation score are separate:**
 
@@ -262,17 +277,19 @@ conversation products into a markdown + JSON summary report:
 
 ```bash
 python -m code2env report /path/to/manifest.json \
-  --rollouts /path/to/rollouts/ \
+  --rollouts /path/to/v3_rollouts/ \
   --output-dir /tmp/code2env_report \
-  [--baseline-manifest /path/to/pre_install_manifest.json]
+  [--baseline-manifest /path/to/pre_install_manifest.json] \
+  [--prev-rollouts /path/to/v1_rollouts/ --prev-rollouts /path/to/v2_rollouts/]
 ```
 
 It reads (read-only, shared field contract) the manifest `summary` / `envs` /
-`skipped` (incl. each env's `golden_status`) and each rollout's
+`skipped` (incl. each env's `golden_status` and `determinism`) and each rollout's
 `final.{correct,score}`, `num_tool_call_rounds`, `qualified`, and
 `termination_reason`. `--rollouts` accepts a directory (per-env `<env_id>.json`,
 falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be omitted to
-summarize generation only.
+summarize generation only. `--prev-rollouts` (repeatable, oldest first) supplies
+earlier runs for the v1→…→vN evolution and the envelope-flip count.
 
 The report contains:
 
@@ -287,6 +304,17 @@ The report contains:
   (`weak_oracle_excluded`), so the true rate is `correct / usable` over real-oracle
   envs only — stripping the error-match false positives. A missing `golden_status`
   degrades to `unknown` and is kept in the denominator (never silently shrinks it).
+- **Categories + true non-zero rate** (D4 v3) consume `manifest.envs[].determinism`
+  (task038 / w1 contract: `deterministic` or `nondeterministic:<reason>`). Each
+  rollout falls into a mutually-exclusive bucket: `deterministic_usable`
+  (`real_value` + deterministic), `nondeterministic_excluded`, `weak_oracle_excluded`,
+  or `golden_unknown`; within the usable set, `still_wrong` vs correct, and
+  `envelope_flipped_to_correct` (incorrect in the previous run, correct now). The
+  **true non-zero correct rate** is `correct / deterministic_usable` (both weak
+  oracle and non-determinism removed). Missing `determinism` degrades to usable
+  (only an explicit `nondeterministic` excludes).
+- **v1→…→vN evolution** (`--prev-rollouts`): per-run correct rate and true non-zero
+  correct rate across the earlier runs plus the current one, labelled `v1`…`vN`.
 - **Dependency-install before/after** (`--baseline-manifest`, optional): the count
   of golden `error → real_value` transitions (env was non-`real_value` in the
   baseline, `real_value` now) and the per-repo `smoke_ok` before/after delta (e.g.

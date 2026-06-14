@@ -108,6 +108,12 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional pre-dependency-install manifest.json for golden error->real_value / smoke before-after comparison",
     )
+    report_parser.add_argument(
+        "--prev-rollouts",
+        action="append",
+        default=[],
+        help="Earlier rollout run(s), oldest first (repeatable). Drives v1..vN evolution and envelope_flipped_to_correct.",
+    )
 
     rollout_parser = subcommands.add_parser("rollout", help="Run a multi-round LLM tool-calling rollout on one env")
     rollout_parser.add_argument("env_package_or_spec")
@@ -323,6 +329,7 @@ def _report(args: argparse.Namespace) -> int:
         args.output_dir,
         low_score_threshold=args.low_score_threshold,
         baseline_manifest_path=args.baseline_manifest,
+        prev_rollouts_paths=args.prev_rollouts or None,
     )
     _print_json(paths)
     return 0
