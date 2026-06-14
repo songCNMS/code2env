@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=6 -->
+<!-- METADATA:SESSION=7 -->
 
 ## Session 0 - Created with coordinator
 
@@ -46,3 +46,11 @@
 - 回答用户关于“为什么所有 rollout 都走同样 tool trajectory，是否应该是真实子函数轨迹”的问题；复查 `../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`，有效动作确认为 `call_entrypoint {}` 后直接 `submit_answer`，其中首次 endpoint 输出多个 JSON 对象触发 parse retry。
 - 代码复查结论：`code2env/rollout.py` 的系统提示明确要求先运行 entrypoint 或 helper，再 submit，并特别要求 `call_entrypoint` 空参数自动套 fixture；`code2env/runtime.py` 的 process_progress 只要求 explore/execute/submit 里程碑，`call_entrypoint` 已满足执行源码；`code2env/spec.py` 虽记录 entrypoint steps 和生成部分 `call_<helper>` 工具，但没有强制按源码调用顺序调用 helper。
 - 对 qlib-derived harness 的具体判断：目标函数实际调用 `parse_timestamp -> floor_to_sample -> session_label`，但当前 rollout 数据是 black-box target execution，不是动态 call graph trace；若数据目标是训练/评估子函数级工具使用，应新增显式 decomposed/subfunction-trace 模式并改变 prompt/reward/qualification。
+
+## Session 7 - Ten subfunction-trace candidate env rollouts
+
+- 按用户要求执行下一步数据生成：在 repo 外 debug 目录创建 `../debug/session7_trace_task_repo`，包含 10 个 qlib-style JSON-friendly target functions 与 10 个 pytest golden；验证 `PYTHONPATH=. python3 -m pytest -q` 为 `10 passed in 0.02s`。
+- 使用 `code2env scan/draft/build/smoke` 找出并生成 10 个 candidate EnvPackage，输出目录 `../outputs/session7_trace_rollouts/`；每个 env `golden_status=real_value`、`determinism=deterministic`，smoke evaluation `correct=true`、`score=1.0`。
+- 使用 endpoint `gpt-5.5` 和 subfunction-trace custom prompt 为每个 env 执行 1 条 rollout；每条 rollout 先调用真实 helper tools，再调用 `call_entrypoint`，最后 `submit_answer`。汇总结果：10 lines，10/10 qualified，10/10 correct，10/10 helper_trace_complete。
+- 产物：merged JSONL `../outputs/session7_trace_rollouts/session7_trace_rollouts.jsonl`（100,944 bytes），per-env export 目录 `../outputs/session7_trace_rollouts/exported/`，候选清单 `../outputs/session7_trace_rollouts/candidate_envs.json`，summary `../outputs/session7_trace_rollouts/rollout_summary.json`。
+- 已通过本机飞书 daemon 发送 merged JSONL 到 `intern_code2env_coordinator` 飞书会话；file_key `file_v3_0012l_0bbc92b3-9acc-4f78-a634-5e4edb02284g`，文件消息 ID `om_x100b6dddafa690a4b3f92880c767499`，确认文本消息 ID `om_x100b6dddafbb1ca0b281aec9b38f592`。

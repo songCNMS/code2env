@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 6 |
+| Session | 7 |
 
 ## 最近进展
 
@@ -20,3 +20,4 @@
 - Session 4：生成 qlib-derived runnable task `code2env.qlib_task.minute_alignment.align_calendar_minute.9e166be1.v1`，smoke score 1.0；调用 endpoint `gpt-5.5` 生成 2 轮 qualified/correct rollout，JSONL 写入 `../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`。
 - Session 5：按用户要求确认 JSONL 文件已保存在 `../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`（9,459 bytes），并作为飞书文件发送到 `intern_code2env_coordinator` 会话；文件消息 ID `om_x100b6dddcf5934a4b3ce025b39ac988`，确认文本消息 ID `om_x100b6dddcf53eca4b21f6b9a3a00c2a`。
 - Session 6：复查 rollout JSONL、`rollout.py`、`runtime.py`、`spec.py` 与 qlib-derived harness；确认当前 rollout 语义是 `call_entrypoint` black-box execution + `submit_answer`，不是实际子函数调用轨迹，建议将“真实子函数轨迹”作为显式 decomposed/subfunction-trace 模式或后续改进任务。
+- Session 7：按用户要求生成 10 个 qlib-style subfunction-trace candidate env；每个 env 执行 1 条 endpoint rollout，结果 10/10 qualified、10/10 correct、10/10 helper_trace_complete；merged JSONL 写入 `../outputs/session7_trace_rollouts/session7_trace_rollouts.jsonl`（10 lines, 100,944 bytes）并已发送飞书，文件消息 ID `om_x100b6dddafa690a4b3f92880c767499`。
