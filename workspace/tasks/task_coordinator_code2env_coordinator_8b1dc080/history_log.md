@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - Created with coordinator
 
@@ -38,3 +38,11 @@
 - 抽样核验 conversation JSON 结构真实多轮(system→user→assistant(tool_call)→tool→...,含 final/num_tool_call_rounds/qualified/termination_reason)。100 份在 outputs/rollouts/。
 - 失败聚类：fixture_unsynthesizable=675(主导跳过)、dependency_failure=24、weak_oracle=20。
 - 已向用户汇报并提示两点观察：①正确率3%偏低(实为env有区分度,非bug)②flask smoke=0。待用户决定是否做归因优化或收尾。
+
+## Session 5 - 打印 rollout 例子 + 深查正确率真相
+
+- 用户要求打印结果例子。抽样核验：
+  - 例①干净例 requests.cookies.create_cookie：qualified, 3轮, score0.35, 探查 inspect_task→call_entrypoint(真实返回 Cookie repr)→submit；exact-match 未中因 agent 自选 fixture 参数与 golden 不符。五维 reward/score_breakdown 正确落地。
+  - 例②flask.sessions._lazy_sha1(correct,score0.927,4轮)：golden 本身=ModuleNotFoundError(werkzeug 未装)，agent 提交同样报错→exact_match=True。
+- 关键发现：3 个 correct 全是 flask 这种 error-match 假阳性(score 均0.927/4轮)，真实"做对任务"比例≈0；与 report flask build_ok24/smoke_ok0 一致。
+- 诚实结论给用户：管线可用+多轮交互数据合格(99%)成立；但任务正确性信号弱，需①装齐依赖(werkzeug 等)让 golden 非报错 ②差分 oracle+更明确 fixture/任务。已询问是否让 lead 做"装依赖+重跑 flask/弱oracle子集"修正。
