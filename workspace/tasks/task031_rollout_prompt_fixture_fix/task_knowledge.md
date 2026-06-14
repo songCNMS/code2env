@@ -1,6 +1,6 @@
 # task031_rollout_prompt_fixture_fix - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 

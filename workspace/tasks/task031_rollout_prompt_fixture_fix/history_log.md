@@ -1,6 +1,6 @@
 # task031_rollout_prompt_fixture_fix - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -14,3 +14,9 @@
 - 仅动 prompt 层，未改 loop/parse/fallback；RolloutResult 契约字段不变。与 w1(task030)/w4(task033) 解耦。
 - 新增 4 个单测（断言 system prompt 含 guidance、user message 回显 fixture、空 args call_entrypoint 走 fixture 回退仍 qualified+correct、并文档化根因B 假阴性）；`python3 -m pytest tests/` → 90 passed。更新 docs/mvp_usage.md D2 段。
 - 待 mailbox 回报 lead，等 tester(w3)+lead review。
+
+## Session 2 - 2026-06-14 UTC - review 通过 + self-merge
+
+- lead review APPROVE + tester(w3) 五条验收全 PASS（90 passed，dry-run merge clean，过 D3 校验），批准合并；本 PR 为 Session3 第一个合并（rollout.py 单文件，对 main 干净）。
+- 分支落后 main 3 commit（均为新 task 文档），`git merge origin/main` 无代码冲突；`python3 -m pytest tests/` → 90 passed，push。
+- self-merge（squash）待执行，merge 后 mailbox 回报 squash commit。
