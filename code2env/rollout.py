@@ -93,6 +93,21 @@ class ScriptedSolveChat:
         return {"role": "assistant", "content": json.dumps(action), "tool_calls": None}
 
 
+# Guidance that prevents the "executed but mismatched golden" false negative
+# (root cause B): the agent must NOT fabricate call_entrypoint arguments — the
+# runtime falls back to the pinned spec.fixture when args/kwargs are omitted, and
+# the golden answer is graded against that exact fixture.
+CALL_ENTRYPOINT_FIXTURE_GUIDANCE = (
+    "IMPORTANT — call_entrypoint arguments: do NOT invent, guess, or re-type any "
+    'argument values. Call it with empty arguments ({"tool": "call_entrypoint", '
+    '"arguments": {}}); the environment automatically runs the entrypoint with its '
+    "provided fixture, and the submitted answer is graded by exact match against that "
+    "exact fixture. Supplying your own args/kwargs will mismatch the golden answer even "
+    "if the call succeeds. The same applies to dedicated call_<helper> tools — omit "
+    "args/kwargs unless the task explicitly tells you to vary them."
+)
+
+
 def _now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -124,15 +139,24 @@ def build_system_prompt(env: Code2Env, tools: list[dict[str, Any]]) -> str:
         "Do not wrap it in prose or markdown fences. Inspect the task, run the entrypoint "
         "or helper tools to obtain the result, then call submit_answer with the final answer. "
         "Call submit_answer once you are confident.\n\n"
+        f"{CALL_ENTRYPOINT_FIXTURE_GUIDANCE}\n\n"
         f"Available tools:\n{tools_block}"
     )
 
 
-def build_initial_user_message(observation: dict[str, Any]) -> str:
+def build_initial_user_message(observation: dict[str, Any], fixture: dict[str, Any] | None = None) -> str:
     task = observation.get("task", {})
+    fixture_block = ""
+    if fixture is not None:
+        fixture_block = (
+            "Provided fixture (call_entrypoint already uses this automatically — "
+            "do NOT pass these values yourself):\n"
+            f"{json.dumps(fixture, ensure_ascii=False, indent=2)}\n\n"
+        )
     return (
         "Task:\n"
         f"{json.dumps(task, ensure_ascii=False, indent=2)}\n\n"
+        f"{fixture_block}"
         "Initial observation:\n"
         f"{json.dumps({k: v for k, v in observation.items() if k != 'task'}, ensure_ascii=False, indent=2)}\n\n"
         'Respond with one JSON tool_call, e.g. {"tool": "inspect_task", "arguments": {}}.'
@@ -274,7 +298,7 @@ def run_rollout(
     observation = env.reset(seed=seed)
     tools = build_tool_descriptions(env)
     system_content = system_prompt or build_system_prompt(env, tools)
-    user_content = build_initial_user_message(observation)
+    user_content = build_initial_user_message(observation, env.spec.fixture)
 
     api_messages: list[dict[str, Any]] = [
         {"role": "system", "content": system_content},
