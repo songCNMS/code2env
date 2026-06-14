@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Session 0 - Created with coordinator
 
@@ -62,3 +62,10 @@
 - 关键路径：task030 装依赖→重算 golden→task034 重跑v2→task033 报告。
 - coordinator 动作：①peer send(mode=next,不打断)向 lead 要 ETA、确认依赖安装是否顺利、v2 覆盖范围与产物路径(outputs/rollouts_v2/+report_v2)；delivered。②布置后台 Monitor(task bb8rgwfg1,~50min)：当 rollouts_v2/*.json>0 且 summary_v2/report_v2 就绪即通知 coordinator 去核验真实 correct 率。
 - 下步：收到监控通知或 lead 回报后，独立核验剔除假阳性后的真实正确率，向用户汇报。
+
+## Session 8 - lead 回报修正进度 + 修正监控路径
+
+- lead peer 回报：task031(B prompt)已合#17；task030(A 装依赖+golden重算)PR#18 lead APPROVE(99 passed,golden_status 契约与报告一致)待 w3 验证后合(需先 merge main 保 B 不丢)；task033(真实率报告)PR#20 双签可合(91 passed)。合并序 PR#20→#18→ping w5 启动 task034 重跑。
+- 细节：①依赖装 per-repo venv+pip,装不动跳过记 reason,host 缺 python3-venv 则 deps_status=venv_failed 优雅降级;具体哪些库装不动要等 w5 实跑 task034 才有名单。②可用集=非 weak_oracle(golden 真实值);flask 多数 error→real 转好、少数仍剔除;rich/requests 多数本就 real;精确可用数待实跑。③ETA~30-45min。产物:conversation→outputs/rollouts_v2/(不覆盖)、报告→outputs/report_v2/(采纳 coordinator 命名)。
+- coordinator 纠错：上轮监控 bb8rgwfg1 路径写错(查 outputs/report/*v2*,实际报告在 outputs/report_v2/ 目录)→已 TaskStop 旧的，新起 Monitor bh69g15xf 监视 rollouts_v2/*.json>0 且 (report_v2/ | *v2*.json) 就绪→自动通知核验。
+- 下步：产物落地后独立核验真实 correct 率(剔除 weak_oracle 后分母)+装依赖前后对比，向用户汇报。
