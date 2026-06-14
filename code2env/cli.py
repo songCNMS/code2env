@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from code2env.batch import generate_batch
 from code2env.builder import build_env_package
 from code2env.ingest import ingest_repo
 from code2env.indexer import index_repo
@@ -88,6 +89,17 @@ def main(argv: list[str] | None = None) -> int:
     materialize_parser.add_argument("--no-golden", action="store_true")
     materialize_parser.add_argument("--timeout", type=float, default=10)
 
+    batch_parser = subcommands.add_parser(
+        "batch", help="Batch-generate EnvPackages across repos with auto-synthesised fixtures"
+    )
+    batch_parser.add_argument("repos", nargs="+", help="Repo paths or Git URLs")
+    batch_parser.add_argument("--output-dir", default="generated_envs/batch")
+    batch_parser.add_argument("--target", type=int, default=100, help="Stop after this many successful builds")
+    batch_parser.add_argument("--per-repo-limit", type=int, default=None)
+    batch_parser.add_argument("--cache-dir", default=None)
+    batch_parser.add_argument("--no-smoke", action="store_true")
+    batch_parser.add_argument("--include-side-effects", action="store_true")
+
     rollout_export_parser = subcommands.add_parser(
         "rollout-export",
         help="Persist RolloutResult records (JSONL) as per-env conversation JSON + merged rollouts.jsonl",
@@ -120,6 +132,8 @@ def main(argv: list[str] | None = None) -> int:
             return _draft_from_jsonl(args)
         if args.command == "materialize":
             return _materialize(args)
+        if args.command == "batch":
+            return _batch(args)
         if args.command == "rollout-export":
             return _rollout_export(args)
     except Exception as exc:  # noqa: BLE001 - CLI should return structured failure.
@@ -247,6 +261,20 @@ def _materialize(args: argparse.Namespace) -> int:
         timeout_seconds=args.timeout,
     )
     _print_json(summary)
+    return 0
+
+
+def _batch(args: argparse.Namespace) -> int:
+    manifest = generate_batch(
+        args.repos,
+        output_dir=args.output_dir,
+        target_count=args.target,
+        cache_dir=args.cache_dir,
+        per_repo_limit=args.per_repo_limit,
+        run_smoke=not args.no_smoke,
+        include_side_effects=args.include_side_effects,
+    )
+    _print_json({"output_dir": str(Path(args.output_dir).resolve()), "summary": manifest["summary"]})
     return 0
 
 
