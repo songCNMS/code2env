@@ -1,6 +1,6 @@
 # task034_rerun_rollouts_v2 - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -43,3 +43,10 @@
 - ⚠️ **第三根因（C）发现**：exact-match correct=0 不是模型不会做。逐条分析 75：**58/75(77%) 提交了正确 value 但 envelope 不符**——golden=`{ok:true,value:{kind,val}}`(executor 整包)，agent 提交内层 `{kind,val}`(== golden.value) 丢了 `{ok:true}` 外壳 → exact_match=False。仅 17 真错（其中含非确定性 repr，如 `<generator object at 0x..>` 永不可复现，属漏网 weak_oracle）。
 - 即：根因 A(依赖/golden)+B(call_entrypoint 参数) 已修；真实"解对 value"≈77%，但 submit 比对整包 envelope 太严，exact correct=0。w2 prompt 修了 call_entrypoint 参数但未管 submit 格式。
 - 结论：v2 交付完成（manifest/rollouts_v2/report_v2 全产出 + 装依赖前后对比）；新增根因 C 待 lead 决策（prompt 让 agent 提交整包 / oracle 比对 value / submit 自动 wrap）。已 mailbox 回报。
+
+## Session 4 - 2026-06-13 - task034 v2 收尾
+
+- lead 确认 v2 诊断与 coordinator 一致、无需补 77% 到 v2 报告（v3 给真数），并指示 task034 v2 收尾。
+- 设 README Completed；status 同步为当前 Working task041（避免 merge 回退 main）。
+- self-merge PR#21 收尾 task034 v2（交付：rollouts_v2/75 + report_v2 + 装依赖前后对比 + 第三根因诊断）。
+- 后续 v3 由 task041 承接（确定性可用集重跑）。

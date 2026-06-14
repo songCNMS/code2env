@@ -1,6 +1,6 @@
 # task034_rerun_rollouts_v2 - 集成:装依赖重算golden+重跑rollout(v2)+真实正确率报告
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_5 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_5 -->
 
 ## 背景
 
