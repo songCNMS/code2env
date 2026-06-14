@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - Created with coordinator
 
@@ -26,3 +26,11 @@
 - 验证 GitHub 状态：PR #29 `MERGED`，标题为 `【task043_indexer_side_effect_get_filter】【intern_code2env_worker_4】Refine indexer side-effect get filter`，于 `2026-06-14T11:32:01Z` merge 到 `main`，merge commit `d3b1e9e6dd5fa3e83595687b14f35224687e5d29`。
 - lead 报告的验收结果：focused tests 2 passed；full `python3 -m pytest -q` 150 passed；qlib pinned scan get-only false positives 从旧逻辑 93 降到 patched 6。coordinator 在 `../debug/code2env_main_verify` 的 detached `origin/main` worktree 复验：full tests `150 passed in 15.71s`，qlib scan `total=2860 possible_side_effect=122 get_only=6`。
 - 后续 qlib 方向保留为新需求候选：test-backed fixture extraction（`pd.Timestamp` / numpy / class instances）和 instance-method env support。
+
+## Session 4 - qlib-derived runnable task and endpoint rollout
+
+- 按用户要求继续执行到可运行任务和 endpoint 多轮交互数据；基于 qlib `cal_sam_minute` 测试语义，在 repo 外 debug 目录创建 standalone harness `../debug/session4_qlib_task_repo`，保留分钟日历对齐逻辑、helper 拆分和 4 个 pytest golden。
+- 使用 `origin/main` worktree 生成 EnvSpec/EnvPackage：`code2env.qlib_task.minute_alignment.align_calendar_minute.9e166be1.v1`；provenance `test_link_status=linked`、`test_link_count=4`、`golden_status=real_value`、`determinism=deterministic`，工具包含 `call_entrypoint`、`call_floor_to_sample`、`call_session_label`、`call_helper`、`submit_answer`。
+- 验证结果：debug harness `PYTHONPATH=. python3 -m pytest -q` 为 `4 passed in 0.02s`；EnvPackage `python3 -m code2env smoke ... --json` score 1.0；主项目 `origin/main` `python3 -m pytest -q` 为 `150 passed in 15.61s`。
+- Endpoint rollout：使用 `/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt`，primary `gpt-5.5` 成功，无 fallback；`qualified=true`、`num_tool_call_rounds=2`、`termination_reason=submitted`、`correct=true`、`score=1.0`。
+- 交互数据已写入并 schema-export：`../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`（1 line, 9,459 bytes）和 `../outputs/session4_qlib_rollout/exported/code2env.qlib_task.minute_alignment.align_calendar_minute.9e166be1.v1.json`。
