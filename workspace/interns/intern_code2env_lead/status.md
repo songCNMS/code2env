@@ -10,6 +10,6 @@
 | Team | code2env |
 | Current Task | code2env_lead |
 | PR | N/A |
-| Session | 2 |
+| Session | 3 |
 
-最近进展：Session2 subfunction/decomposed trace rollout 产品化完成。按 coordinator handoff 创建 task044_subfunction_trace_rollout，分配 w2 实现、w4 独立验证；PR#30 已 merge 到 main，merge commit e3fba11d。实现为 `code2env rollout` 增加 `--trace-mode subfunctions`，默认 rollout 保持 black-box `call_entrypoint -> submit_answer` 且不输出 `subfunction_trace`；trace mode 从 EnvSpec/ToolSpec provenance 抽 direct semantic helper 序列，prompt 要求 helpers -> call_entrypoint -> submit_answer，并写入 required/observed/complete/skipped 等机读 metadata。w4 验证 focused tests 38 passed、full `python3 -m pytest -q` 156 passed、3 个 Session7 package trace mock rollout 均 qualified/correct/helper_trace_complete/entrypoint_after_helpers=true，rollout-export 验证兼容。
+最近进展：Session3 min-three semantic helper gate 已完成。按 coordinator Session13 handoff 创建 task045_min3_semantic_helpers_gate，分配 w1 实现、w4 独立代码/测试验证、w2 独立 qlib constrained batch 验证；PR#31 已 self-merge 到 main，squash commit dc695ba9。实现为 `code2env batch` / `generate_batch` 增加 `--min-semantic-helpers N` / `min_semantic_helpers`，默认 0 兼容既有行为，N 限制 0..3，计数复用最终 direct safe `call_<helper>` ToolSpec 语义并排除 side-effect helpers。w4 验证 `tests/test_batch.py` 19 passed、full `python3 -m pytest -q` 162 passed；w2 pinned qlib N=3 run 扫描 2860、semantic_gate_passed 6、skipped_insufficient_semantic_helpers 267、build/real_value/usable/rollout 0，0 build 是现有 DataFrame/untyped/None-domain fixture synthesis blocker，非本 gate 失效。

@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - Created with team lead
 
@@ -109,3 +109,14 @@
 - 三个 Session7 package mock trace rollout 验证 PASS：compress_feature_window、summarize_trading_window、normalize_symbol_bundle 均 qualified/correct/helper_trace_complete/entrypoint_after_helpers=true；rollout-export 对 default+trace JSONL 和 trace-only JSONL 均 validation-on export 成功。
 - PR#30 已由 w2 self-merge 到 main，merge commit e3fba11d；task044 Completed，w2 Idle。
 - 剩余风险：trace extraction 依赖 EnvSpec provenance 质量；mock helper 调用用空参数，live endpoint/helper 无默认参数场景仍需模型推理；generic-wrapper-only helpers 会记录 skipped 而不强行走 `call_helper`。
+
+## Session 3 - min-three semantic helper gate for qlib
+
+- 收到 coordinator Session13 fallback handoff：为 qlib pipeline 增加最少 semantic helper gate，batch option `--min-semantic-helpers N` 默认 0，用户运行用 N=3；handoff 文件为 `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session13_min3_semantic_helpers_goal.md`。
+- 创建并推送 task045_min3_semantic_helpers_gate；分配 w1 实现、w4 独立代码/测试验证、w2 独立 pinned qlib constrained batch 验证。
+- Lead review 结论：PR#31 复用 `spec.semantic_helpers_for_candidate()`，与最终 dedicated safe `call_<helper>` ToolSpec 生成一致；排除 `call_entrypoint`/inspect/submit/generic `call_helper` 与 side-effect helpers；gate 位于 fixture synthesis/draft/build 之前；summary/env/skipped records 增加 `min_semantic_helpers`、`semantic_gate_passed`、`skipped_insufficient_semantic_helpers`、`semantic_helper_count`、`semantic_helpers`。
+- Tester w4 验证 PASS：PR head 6ac3da78；`python3 -m pytest -q tests/test_batch.py` 为 19 passed，`python3 -m pytest -q` 为 162 passed；CLI help/bounds、API invalid values、default compatibility 和 manifest audit fields 均通过。
+- Tester w2 qlib 验证 PASS：pinned qlib `/home/leisong/codes/work-agents/intern_code2env_coordinator/debug/qlib_cache/d7cf7c8de0969b81` at d5379c520f66a39953bad76234a7019a72796fd0，`SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0`，target 20，`--min-semantic-helpers 3 --no-install-deps`；scanned 2860，semantic_gate_passed 6，skipped_insufficient_semantic_helpers 267，draft/build/smoke 0/0/0，real_value/usable/rollout 0/0/0。
+- qlib artifacts：manifest `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session13_min3_semantic_helpers/w2_pr31_batch_target20_min3_no_deps/manifest.json`，summary `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session13_min3_semantic_helpers/w2_pr31_validation_summary.md`。
+- PR#31 已由 w1 self-merge 到 main，squash commit dc695ba9b17cb1d4a000eb1f08fb703517a21497；w1 final full `python3 -m pytest -q` 为 162 passed，task045 Completed，w1 Idle。
+- 剩余风险：qlib 6 个 gate-passing candidates 全卡在既有 fixture synthesis 限制(DataFrame、untyped `positions`/`all_preds`、`qlib_dir:None`)；endpoint rollouts 未产出，因为 build_ok/usable 为 0；下一步要补测试/fixture extraction 与 instance-method env support 才能把 gate passers 转成可 rollout env。

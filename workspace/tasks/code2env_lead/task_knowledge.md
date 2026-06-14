@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -26,3 +26,4 @@
 17. qlib 后续改进方向:复杂函数入选后要补测试夹具抽取能力(`pd.Timestamp`、`np`、class instance)与 instance-method env support，才能覆盖 `FullHistoryStateInterpreter.interpret` 一类有测试但依赖实例/fixture 的目标。
 18. rollout 数据质量教训:默认 black-box rollout 的 `call_entrypoint -> submit_answer` 能验正确性但不能代表目标函数内部 helper 轨迹；需要显式 trace mode 和机读 `subfunction_trace` metadata 才能生产 helper/sub-function 轨迹数据。
 19. trace mode 范围边界:helper sequence 应优先用 direct semantic `call_<helper>` 工具并记录 skipped/unavailable helpers；不要默认强迫所有 rollout 变长，也不要把 generic `call_helper` 当作 direct helper trace 的无损替代。
+20. min semantic helper gate 应复用最终 ToolSpec 的 direct safe `call_<helper>` 生成逻辑与 `MAX_SEMANTIC_HELPER_TOOLS` 上限；不要把 generic `call_helper`、entrypoint/inspect/submit 或 `sandboxed_side_effect_helpers` 算入 semantic helper count。qlib N=3 gate 能筛出 6 个候选，但当前瓶颈已转为 DataFrame/untyped/None-domain fixture synthesis。
