@@ -1,6 +1,6 @@
 # task024_integration_rollout_runner - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -17,6 +17,15 @@
 - [PR#11 D2 task021, HEAD 01c6152] **PASS**：pytest=46；chat() 新增、多轮 loop、parse 多格式+malformed 重试、回退、RolloutResult 契约、qualified 全 PASS。CLI：`code2env rollout <env_pkg> --max-rounds --llm-mode endpoint|mock --llm-model gpt-5.5 --fallback-model --endpoint-file`。
   - 放量协议要点：tools 走 JSON-in-content（写进 system prompt），**不发 OpenAI 原生 tools 字段**（网关会拒）；mock 用 ScriptedSolveChat/MockChatLLM；live 可用本地 127.0.0.1:39000 gpt-oss-120b。
 - **Phase1 完成**：D1/D2/D3/D4 四 PR 全 PASS（仅 D4 带 1 个 fixture_unsynthesizable 聚类 finding）。等 lead 确认 D1/D2/D3 merged 启动 Phase3。
+
+## Phase3 执行（Session 3）
+
+- **踩坑**：`code2env batch` 的 repo 参数须传 **Git URL**（https://github.com/...）；裸名（如 `requests`）被当本地路径报 "Repository path does not exist"。clone 由 `_looks_like_git_url` 触发 → .code2env_cache/repos。
+- **踩坑**：自写 orchestrator 用 `python3 /abs/script.py` 时 cwd 不在 sys.path，`import code2env` 失败 → 须 `PYTHONPATH=<repo> python3 script.py`（repo=含 code2env/ 包的目录）。
+- 放量 batch：`code2env batch <5 GitHub URLs> --target 100 --output-dir outputs/phase3/envs` → build_ok=100/draft_ok=100/candidates=1458/skipped=675/smoke_ok=56；by_repo rich43/requests33/flask24（达标即停）。
+- 放量 rollout：orchestrator `outputs/phase3/run_rollouts.py`（gpt-5.5 主+gpt-oss-120b 回退，ThreadPool workers=4，max_rounds=6，per-env try/except 隔离，write_conversation 导出）。后台跑，PID/log 在 outputs/phase3/。
+- 路径：manifest=outputs/phase3/envs/manifest.json；rollouts=coordinator outputs/rollouts/；run 汇总=outputs/phase3/rollout_run_summary.json。
+- 报告：`code2env report <manifest> --rollouts <rollouts dir> --output-dir <outputs>`（report.py 已随 PR#13 91544a9 merged）。
 
 ## Knowledge Entries
 

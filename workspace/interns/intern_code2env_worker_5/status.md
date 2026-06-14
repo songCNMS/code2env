@@ -10,6 +10,6 @@
 | Team | code2env |
 | Current Task | task024_integration_rollout_runner |
 | PR | https://github.com/songCNMS/code2env/pull/15 |
-| Session | 6 |
+| Session | 7 |
 
-最近进展：Phase1 四个 PR 全部验证完毕 — PR#12(D3)/PR#14(D1)/PR#13(D4)/PR#11(D2) 均 PASS（仅 D4 带 1 个 fixture_unsynthesizable 聚类 finding，已回报）。各 PR 逐一 mail lead。等 lead 确认 D1/D2/D3 merged 启动 Phase3（格式门→≥100 env 放量→导出→报告）。
+最近进展：Phase3 进行中 — 格式门 PASS（已报 lead）；放量 batch 完成 build_ok=100（manifest at outputs/phase3/envs/）；100-env gpt-5.5+fallback rollout 后台跑中（orchestrator outputs/phase3/run_rollouts.py，导出到 coordinator outputs/rollouts/）。待 rollout 完成→出报告→报最终数字。

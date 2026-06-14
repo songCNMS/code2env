@@ -1,6 +1,6 @@
 # task024_integration_rollout_runner - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -57,3 +57,12 @@
 - CLI：`code2env rollout <env_pkg> --max-rounds --llm-mode endpoint|mock --llm-model gpt-5.5 --fallback-model --endpoint-file`。
 - 注：本轮用 mock 验证（确定性）；真实本地端点(127.0.0.1:39000 gpt-oss-120b)/gpt-5.5 的 live 调用留到 Phase3 格式门实跑。
 - 结论 **PASS**，已 mailbox 回报。Phase1 四个 PR(D1/D2/D3/D4) 全部验证完毕。
+
+## Session 3 - 2026-06-13 - Phase3 启动：格式门 PASS + 放量进行中
+
+- main HEAD（D1 3c247c1/D2 1811e1e/D3 f79197d，后 D4 report PR#13 91544a9 也 merged，report.py 就位），pytest=72 passed。
+- **格式门 PASS**：合成 repo batch --target 3 → 3 build_ok → `rollout --llm-mode mock` → `rollout-export` → D3 validate_conversation + 逐条契约核对（≥2轮 tool_call+submit+每步 reward+final 五维 score_breakdown+qualified 自洽）全绿。已 mailbox 报格式 OK。
+- **真实端点连通**：1 env live `rollout --llm-mode endpoint --llm-model gpt-oss-120b` → endpoint_source=gpt-oss-120b、6 轮、qualified、submitted、retries=1。resolve_endpoint_config 对 gpt-5.5(外网)/gpt-oss-120b(127.0.0.1:39000) 均正确解析。
+- **放量 batch 完成**：`code2env batch <5 GitHub URLs> --target 100` → build_ok=**100**、draft_ok=100、candidates_scanned=1458、skipped=675、smoke_ok=56；by_repo=rich 43/requests 33/flask 24（达 100 即停，click/jinja 未触及）。注意：repo 须传 Git URL（裸名被当本地路径报错）。manifest：outputs/phase3/envs/manifest.json。
+- **放量 rollout 进行中**：自写 orchestrator outputs/phase3/run_rollouts.py（gpt-5.5 主 + gpt-oss-120b 回退，ThreadPool workers=4，max_rounds=6，per-env 隔离失败），对 100 env 跑 → write_conversation 导出到 coordinator outputs/rollouts/。后台 PID 见 outputs/phase3/rollouts.pid，日志 rollouts.log。合格判定按 D 定义=≥2轮+submit（correct/score 反映模型解题质量，不影响合格）。
+- 下一步：rollout 跑完 → `code2env report manifest --rollouts <coordinator rollouts> --output-dir <outputs>` 出 md+json → mailbox 报最终数字（manifest/rollouts/报告 路径 + 生成成功率/合格率/平均 score）。
