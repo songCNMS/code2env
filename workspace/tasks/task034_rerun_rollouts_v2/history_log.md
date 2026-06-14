@@ -1,6 +1,6 @@
 # task034_rerun_rollouts_v2 - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -25,3 +25,13 @@
 - **task034 启动调整**：Step1 先重新 `code2env batch <5 Git URLs> --target 100`（确定性复现 env 集）作为"装依赖前"基线，再用 w1 机制装依赖重算 golden 得 v2 manifest；"装依赖前后对比"的 before 也可参考 coordinator 旧 report.json（smoke_ok=56、flask smoke 0 等）。
 - 依赖进度（lead 告知）：task031(B) 已 APPROVE+w3 验证中；task030(A)/task033(报告) 实现中。三 PR 全 merged 后 lead ping 我启动。
 - 当前：task024 已 Completed 收尾；task034 待命。
+
+## Session 3 - 2026-06-13 - Phase task034 启动：Step1 装依赖重算 golden（含 venv 阻塞排查+uv 绕过）
+
+- 三修复全 merged：A 装依赖+golden 重算(346d88e, envdeps.py)/B prompt(b59a067)/报告(f486609)；main 108 passed。新增 `batch --no-install-deps`、`report --baseline-manifest`、manifest.envs[].golden_status。
+- Step1a baseline（--no-install-deps，确定性复现同一 100 env 集）：build_ok=100，golden_status real_value=67 / weak_oracle=33（ModuleNotFoundError=24 多为 flask、InvalidExecutorOutput=4、ValueError=2、AssertionError=2、OSError=1）。作"装依赖前"基线。
+- Step1b v2（装依赖）首跑：**deps_status=venv_failed（全 repo）**，golden_status 与 baseline 相同（依赖没装上、golden 未修复）。
+- **根因排查**：`python3 -m venv` 因 ensurepip 不可用失败（本节点缺 python3.12-venv apt 包，无 passwordless sudo）。envdeps `_create_venv` 用 `python -m venv` → 抛错 → venv_failed。
+- **绕过（runner 侧，不改合入代码）**：本机有 `uv 0.11.21`。`uv venv --seed` 可建带 pip 的 venv（无需 ensurepip），且 `venv_python -m pip install` 正常（验证装上 flask/werkzeug）。写 wrapper `outputs/phase3_v2/batch_uv.py`：monkeypatch `envdeps._create_venv` 改用 `uv venv --seed`（`_create_venv` 在 call 时按模块全局解析，patch 生效），其余（幂等检查、_pip_install）不变。清 `.code2env_cache/venvs` 重跑。
+- 已 git worktree(/tmp/wt_task034) 更新本 task 文档，避免在跑批期间切换主工作树的 executor.py（golden 子进程从磁盘 import code2env.executor）。
+- 待：uv-wrapped v2 batch 跑完确认 golden 由 error→real_value（尤其 flask 24→?）→ Step2 重跑 → Step3 报告。venv 阻塞+uv 绕过会回报 lead（含建议 envdeps 兜底 uv）。

@@ -12,4 +12,4 @@
 | PR | https://github.com/songCNMS/code2env/pull/21 |
 | Session | 8 |
 
-最近进展：task024 PR#15 已 self-merge（MERGED，task024→Completed）；当前 Working task034（v2 重跑 runner），重跑计划就绪（PR#21）。注意：merge 收尾清理删了 outputs/phase3 但可由 .code2env_cache 确定性重 batch 复现 env 集。待 lead 确认 task030/031/033 三 PR merged 后 ping 启动。
+最近进展：task034 Step1 进行中 — baseline(装依赖前)build_ok=100/real_value=67;v2 装依赖首跑遇 venv_failed(节点缺 python3.12-venv/ensurepip)→用 uv venv --seed wrapper 绕过(不改合入代码)重跑中。待 golden 修复确认→Step2 重跑→Step3 报告。venv 阻塞将回报 lead。

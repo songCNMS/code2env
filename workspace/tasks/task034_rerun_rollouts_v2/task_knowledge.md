@@ -1,6 +1,6 @@
 # task034_rerun_rollouts_v2 - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
@@ -72,3 +72,11 @@
 - 真实 correct 率分母 = 非 weak_oracle env 数（核对报告分母与 weak_oracle 计数自洽）。
 - 抽 1-2 个上轮 flask 假阳性 env，确认装依赖后 golden 由 error→real_value（根因A 修复证据）。
 - 抽 requests.cookies.create_cookie 类例，确认修正 prompt 后 agent 不自造参数（根因B 修复证据）。
+
+## Session 3 — 关键踩坑与绕过
+
+- **venv 阻塞**：本节点 `python3 -m venv` 失败（ensurepip 不可用，缺 python3.12-venv，无 passwordless sudo）→ envdeps `_create_venv` 抛错 → deps_status=venv_failed → golden 不修复。
+- **uv 绕过**：本机 `uv 0.11.21`；`uv venv --seed <dir>` 建带 pip 的 venv，`venv_python -m pip install <req>` 正常。wrapper `outputs/phase3_v2/batch_uv.py` monkeypatch `envdeps._create_venv`→uv（不改合入代码）。建议 lead/w1 把 uv 兜底折进 envdeps（python -m venv 失败时 try `uv venv --seed`）。
+- baseline（装依赖前）golden_status：real_value=67 / weak_oracle=33（ModuleNotFoundError=24/InvalidExecutorOutput=4/ValueError=2/AssertionError=2/OSError=1）。路径 outputs/phase3_v2/baseline/manifest.json。
+- v2（装依赖后，uv）manifest：outputs/phase3_v2/envs/manifest.json；orchestrator outputs/phase3_v2/run_rollouts_v2.py（仅跑 golden_status==real_value 子集，导出 outputs/rollouts_v2/）。
+- 路径全部在仓外 `../outputs`（不是 repo 内 code2env/outputs，注意别写错）；rollouts_v2 与旧 rollouts 并存不覆盖。
