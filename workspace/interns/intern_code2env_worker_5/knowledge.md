@@ -20,3 +20,10 @@
 ### QA 方法论（本任务有效）
 - 不只看单测数：另构造对照轨迹独立核对每个维度（超步/重复→efficiency=0、网络违例→safety=0、未知 tool→schema=0、正确轨迹→五维全非零 total=1）。
 - 发现 spec.reward.weights 缺省(0.05/0.20/0.65/0.05/0.05) 偏离 PRD 7.7 表(0.05/0.25/0.50/0.10/0.10)：机制正确仅默认值偏，作为非阻塞 discrepancy 回报 lead 由其决策（已记 backlog 本轮不改），不擅自改别人代码。
+
+### Session2 集成放量 runner（task024）经验
+- code2env Phase3 链路：`batch <Git URLs> --target N`（须传 https:// URL，裸名当本地路径报错；clone→.code2env_cache gitignored）→ rollout（CLI `--llm-mode mock|endpoint --llm-model gpt-5.5 --fallback-model gpt-oss-120b --endpoint-file <endpoints.txt>`）→ `rollout-export <jsonl> --export-dir <dir>` → `report <manifest> --rollouts <dir> --output-dir <dir>`。
+- endpoints：gpt-5.5 外网(xyzlapi，限速)，本地回退 gpt-oss-120b@127.0.0.1:39000；resolve_endpoint_config 按 model 名匹配行。
+- 自写 orchestrator 放量：ThreadPool 控并发（workers≈4）、per-env try/except 隔离、run_rollout+write_conversation 导出；脚本须 `PYTHONPATH=<repo> python3 script.py`（脚本自身目录上 sys.path，cwd 不上）。
+- 跨模块验证：把上游真实产物（如 D1 batch 的 skip reason 串）喂下游（D4 report classify_reason），能抓到单测漏掉的契约/词表不匹配——QA 不只跑别人单测，要用真实数据端到端对一遍。
+- 假阳性教训：exact-match correct 率要警惕 golden 本身被污染（env 没装依赖→golden=ModuleNotFoundError，agent 同错即 match）；以及 prompt 让 agent 自造 fixture 参数→与 golden 不符。correct/score 低未必是 driver 问题，要查 golden 真实性。
