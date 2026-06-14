@@ -1,15 +1,15 @@
 # intern_code2env_worker_5 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task034_rerun_rollouts_v2,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_5 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A |
-| Session | 4 |
+| Current Task | task034_rerun_rollouts_v2 |
+| PR | (pending) |
+| Session | 8 |
 
-最近进展：task014 完结 — A 轮 reward 验证 + B 轮全链路回归(无回归)均 PASS；经 lead 授权 self-merge QA 文档 PR#10，task014 标记 Completed，状态切回 Idle。权重默认值偏离 PRD 7.7 已记 backlog 本轮不改。
+最近进展：接受 task034（v2 重跑 runner）。已读三依赖 task(030/031/033) + 写重跑计划到 task_knowledge（装依赖重算 golden→标 weak_oracle→非 weak 子集 gpt-5.5 重跑→rollouts_v2/→真实率报告）。等三 PR merged 后 lead ping 启动。注：task024 文档 PR#15 仍 open 待 lead merge 授权。
