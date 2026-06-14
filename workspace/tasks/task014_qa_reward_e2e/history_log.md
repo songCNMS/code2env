@@ -1,6 +1,6 @@
 # task014_qa_reward_e2e - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -52,4 +52,11 @@
 - 回归判定：**无回归**，MVP 闭环基线保绿。
 - 既有 discrepancy（A 轮已报）：spec.reward.weights 仍为 0.05/0.20/0.65/0.05/0.05，偏离 PRD 7.7 表 0.05/0.25/0.50/0.10/0.10；非回归、待 lead 决策，B 轮不重复阻塞。
 - B 轮结论：**本轮 P0 交付最终验证 PASS**，已 mailbox 回报 lead。
+
+## Session 4 - 2026-06-13 - 完结：self-merge PR#10，task Completed，切回 Idle
+
+- lead 授权 self-merge QA 文档 PR#10；权重默认值偏离 PRD 7.7 已记 backlog、本轮不改。
+- Merge 前更新（自己分支）：status STATUS=Idle/清空 TASK、README STATUS=Completed、精炼知识到个人 knowledge.md。
+- 执行 merge PR#10，确认 state=MERGED 后清理本地分支、回 main pull。
+- 通过 mailbox 向 team_lead 汇报 merge 结果。task014（A 轮 reward 验证 + B 轮全链路回归）正式完结。
 
