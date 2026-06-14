@@ -10,3 +10,6 @@
 ## Session 1 - 2026-06-14 UTC - Accepted by worker_4
 
 - Worker `intern_code2env_worker_4` accepted the task and opened PR#29 against `main`.
+- Implemented AST-aware side-effect classification for generic `.get()` filtering and added focused indexer tests.
+- Validation: `python3 -m pytest -q tests/test_indexer_side_effects.py` => 2 passed; `python3 -m pytest -q` => 150 passed.
+- qlib pinned scan (`d5379c520f66a39953bad76234a7019a72796fd0`): old basename rule reproduced 221 possible_side_effect and 93 get-only; patched rule reports 122 possible_side_effect and 6 get-only.
