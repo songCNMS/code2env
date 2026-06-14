@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task |  |
-| PR | N/A |
-| Session | 0 |
+| PR | #24 (task038) 待 squash merge |
+| Session | 4 |

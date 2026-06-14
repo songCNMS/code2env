@@ -12,7 +12,9 @@ scan -> draft -> build -> smoke
 python -m code2env scan /path/to/repo --top-k 10 --json
 ```
 
-`scan` parses Python files with `ast`, ranks functions by line count, branch count, call count, helper calls, docstring quality, and side-effect risk.
+`scan` parses Python files with `ast`, ranks functions by line count, branch count, call count, helper calls, docstring quality, and side-effect risk. It also reports a `Test files` count: test modules (`tests/`/`test/` directories, `test_*.py`, `*_test.py`, `conftest.py`) are mined separately into `RepoSnapshot.test_files` for the TestLinkIndex and are excluded from the ranked source corpus.
+
+The indexer's `build_test_link_index(snapshot, candidates)` links each candidate to its tests, fixtures, and golden-data files (by import reference, name similarity, and fixture usage), recording the `evidence` and a `confidence` per link.
 
 ```bash
 python -m code2env draft /path/to/repo \
@@ -21,7 +23,7 @@ python -m code2env draft /path/to/repo \
   --output /tmp/env_spec.json
 ```
 
-`draft` creates an `EnvSpec` with task text, tool specs, fixture, provenance, and an exact-match golden answer computed from the pinned source function.
+`draft` creates an `EnvSpec` with task text, tool specs, fixture, provenance, and an exact-match golden answer computed from the pinned source function. The `provenance.task_sources` list always holds at least two diverse sources — a `source_span` and a `signature` — plus any `test_link` / `fixture` / `golden` artifacts found by the TestLinkIndex. When no test artifacts are linked, `provenance.test_link_status` is `"no_test_links_found"` and a `degradation` note records that grounding fell back to signature-level evidence.
 
 ```bash
 python -m code2env build /tmp/env_spec.json --output-dir /tmp/generated_envs
@@ -37,7 +39,7 @@ python -m code2env smoke /tmp/generated_envs/<env_id> --json
 
 1. `call_entrypoint` with the fixture.
 2. `submit_answer` with the serialized result.
-3. Score by exact match against the golden source output.
+3. Score with the multi-dimensional reward (see below); a clean correct run totals `1.0`.
 
 Before building a draft EnvSpec, materialize it with a concrete JSON fixture:
 
@@ -47,11 +49,280 @@ python -m code2env materialize /tmp/env_spec_draft.json \
   --output /tmp/env_spec.json
 ```
 
+## Batch generation
+
+```bash
+python -m code2env batch <repo-or-git-url> [<repo-or-git-url> ...] \
+  --output-dir generated_envs/batch --target 100 \
+  --cache-dir .code2env_cache/repos [--per-repo-limit N] [--no-smoke] \
+  [--include-side-effects] [--no-install-deps] [--venv-cache-dir DIR]
+```
+
+`batch` (`code2env/batch.py`) drives `prepare venv → scan → synth fixture → draft → build [→ smoke]`
+across all given repos, stopping once `--target` successful builds are reached (counted globally,
+candidates taken in descending static score). It writes one `manifest.json` under
+`--output-dir`.
+
+**Dependency install (task030).** Before drafting, each repo gets an isolated venv
+(`code2env/envdeps.py`, cached under `.code2env_cache/venvs`) with its declared runtime
+dependencies installed, so golden answers and rollout `call_entrypoint` run with real
+imports. The interpreter is recorded on `spec.runtime.python_executable` and reused by
+the runtime (falling back to the default interpreter if the path is gone). Uninstallable
+packages are skipped with a reason; `--no-install-deps` skips the whole step. Venv
+creation prefers the stdlib `python -m venv`; when that fails because
+`python3-venv`/`ensurepip` is missing it falls back to `uv venv --seed` if the `uv`
+binary is available (task035). Only when neither backend works is `deps_status` set to
+`venv_failed` and the base interpreter used.
+
+**Golden status (task030).** Each env is classified `real_value` or
+`weak_oracle:<reason>` (golden still an exception, e.g.
+`golden_exception:ModuleNotFoundError`); weak-oracle envs are **excluded from the
+correctness denominator** and reported separately, preventing the Session2 false-positive
+where an agent "matched" an import error.
+
+**Determinism gate (task038).** A `real_value` golden is further classified
+`deterministic` or `nondeterministic:<reason>` (`object_repr` / `memory_addr` /
+`abs_path` / `unstable_across_runs`). Each golden is repeat-executed `--determinism-runs`
+times (default 3); a default object `repr` (`<… at 0x…>`) is flagged on its own, while a
+bare `0x…` hex or `/home//tmp/` path is flagged **only** when a repeat run actually
+disagrees — a function that *stably* returns such a string stays `deterministic` (avoids
+over-pruning). The **qualified/usable set is `real_value` AND `deterministic`**;
+nondeterministic envs are excluded from the correctness denominator and listed separately.
+
+**Fixture auto-synthesis** reads each candidate's AST signature:
+
+- No required parameters (all defaulted, or only `*args`/`**kwargs`) → `empty_signature`, `{"args": [], "kwargs": {}}`.
+- All required parameters carry a supported annotation → `typed_signature`. Mapping: `str→"x"`, `int→1`, `float→1.0`, `bool→false`, `complex/Any/object→…`; list-like (`list`, `tuple`, `set`, `Sequence`, `Iterable`, …) → `[]`; dict-like (`dict`, `Mapping`, …) → `{}`; `Optional`/`Union`/`None` → `null`; subscripted generics (`list[int]`) resolve to their base; forward-ref string annotations are re-parsed.
+- Otherwise the candidate is **skipped** with a reason in `manifest.skipped`: `untyped_required_param:<name>`, `unsupported_param_type:<name>:<type>`, `not_module_level`, `requires_instance`, or `possible_side_effect` (the latter only without `--include-side-effects`).
+
+A candidate counts as `build_ok` (toward `--target`) on a successful draft+build regardless of
+smoke; smoke failures are recorded in `smoke_fail_reason` (`golden_error:*`, `answer_mismatch`,
+`smoke_exception:*`). Side-effecting functions are skipped by default because the golden-answer
+subprocess sandboxes network/subprocess but **not** filesystem writes — exposing them safely
+needs a sandbox adapter (future work).
+
+### `manifest.json` contract
+
+Consumed by reporting (w4) and scale-out (w5) — field names are fixed:
+
+```json
+{
+  "generated_at": "<iso8601>",
+  "repos": ["<repo>", "..."],
+  "summary": {
+    "candidates_scanned": 0, "draft_ok": 0, "build_ok": 0, "smoke_ok": 0,
+    "skipped_no_fixture": 0, "real_value": 0, "weak_oracle": 0, "usable": 0, "nondeterministic": 0,
+    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0, "usable": 0, "nondeterministic": 0, "deps_status": "no_deps"}}
+  },
+  "repo_deps": {"<repo>": {"deps_status": "installed", "python": "...", "requirements": [], "installed": [], "failed": [], "reason": null}},
+  "envs": [{
+    "env_id": "...", "repo": "...", "symbol": "...", "file": "...",
+    "line_start": 0, "line_end": 0,
+    "fixture": {"ok": true, "strategy": "typed_signature", "value": {"args": [], "kwargs": {}}, "reason": null},
+    "draft_ok": true, "build_ok": true, "smoke_ok": true, "smoke_fail_reason": null,
+    "golden_status": "real_value", "determinism": "deterministic", "deps_status": "installed", "deps_installed": [],
+    "spec_path": "...", "package_path": "..."
+  }],
+  "skipped": [{"symbol": "...", "repo": "...", "reason": "..."}]
+}
+```
+
+`golden_status` ∈ `{real_value, weak_oracle:<reason>}`; `determinism` ∈
+`{deterministic, nondeterministic:<reason>}` (null for non-`real_value` envs);
+`deps_status` ∈
+`{no_deps, skipped, installed, partial, uninstallable, venv_failed}`. The usable set is
+`real_value` AND `deterministic`. Field names are
+fixed (shared with w4 reporting / w5 scale-out).
+
+Cloned repo source (`--cache-dir`, default `.code2env_cache/repos`) and generated packages
+(`--output-dir`, default `generated_envs/batch`) are gitignored and must not be committed.
+
 ## Runtime Tools
 
-- `inspect_task`: returns task, fixture, source metadata, and allowed helpers.
-- `call_entrypoint`: executes the selected function in an isolated Python subprocess.
-- `call_helper`: optional, executes same-module top-level helper functions discovered from the entrypoint call graph.
+The Tool Extractor (PRD 7.5) emits a semantic tool set per env, kept within the 3–8 tool window:
+
+- `inspect_task`: read-only; returns task, fixture, source metadata, and allowed helpers.
+- `inspect_state`: read-only state inspector; returns the current episode state (step, phase, last tool result, submitted answer, available tools, remaining budget). Guarantees the env always has at least one query/validation tool so the agent never has to call blind.
+- `call_entrypoint`: executes the selected entrypoint in an isolated Python subprocess. Its provenance records the decomposed main-function step blocks.
+- `call_<helper>`: one dedicated tool per safe direct callee (e.g. `call_clean_text`). Each is a key step of the main function, executed by calling the backing symbol in the sandbox. Side-effecting helpers are *not* exposed this way — they are listed under the entrypoint tool's `provenance.sandboxed_side_effect_helpers` for later sandbox-adapter work.
+- `call_helper`: optional backward-compatible sandboxed adapter that runs any same-module helper by name.
 - `submit_answer`: ends the episode and scores the submitted payload by exact match.
 
+Each `ToolSpec` carries `input_schema`, `output_schema`, `side_effects`, and `provenance` (`kind`, `backing` symbol/source span, and the main-function steps a helper tool maps to).
+
 The runtime API is available as `code2env.runtime.Code2Env` with `reset`, `step`, `evaluate`, and `close`.
+
+## Rollout conversation export (D3)
+
+`code2env.rollout_export` is the persistence layer for rollout results. It takes a
+`RolloutResult` dict (produced by the rollout driver) and writes it to disk for
+human inspection and downstream reporting. It does not run rollouts.
+
+```bash
+python -m code2env rollout-export /path/to/results.jsonl --export-dir /path/to/out
+```
+
+For each record it writes a readable per-env `<env_id>.json` (atomic temp-file +
+`os.replace`) and appends one line to a merged `rollouts.jsonl`. `--export-dir`
+defaults to the coordinator's `outputs/rollouts/` directory (outside the repo, not
+tracked by git, auto-created); override with `--export-dir` or the
+`CODE2ENV_ROLLOUT_EXPORT_DIR` env var.
+
+Library API:
+
+- `write_conversation(result, out_dir=None, *, validate=True) -> Path` — write per-env JSON + append to `rollouts.jsonl`.
+- `validate_conversation(obj)` — enforce the shared schema; raises `ConversationSchemaError` on missing/typed-wrong fields or a `qualified` flag inconsistent with the contract.
+- `load_conversation(path)` / `iter_jsonl(path)` — load a single conversation or stream the merged log; `write → load` round-trips to an equal object.
+
+The conversation contract (shared verbatim with the rollout producer and the report
+consumer — **do not rename fields**) carries `env_id`, `model`, `endpoint_source`,
+`started_at`/`finished_at`, full `messages` (`system`/`user`/`assistant`/`tool`),
+per-step `steps` (`action` + `tool_result` + `reward` + `parse_error`), a `final`
+block (`submitted_answer`, `correct`, `score`, `score_breakdown`, `steps`),
+`num_tool_call_rounds`, `qualified`, `termination_reason`, `retries`, and `errors`.
+`qualified` is `num_tool_call_rounds >= 2` **and** a `submit_answer` appears in the
+messages or steps.
+
+## Multi-dimensional reward (PRD 7.7 / F7)
+
+Every episode accumulates raw signals for five dimensions, each weighted by
+`reward.weights` from the EnvSpec (falling back to the defaults below when a spec
+omits them):
+
+| Dimension | Default weight | Raw signal |
+|---|---:|---|
+| `schema_validity` | 0.05 | fraction of actions that are well-formed (valid `tool_call`, known tool, object arguments, parseable result) |
+| `process_progress` | 0.20 | staged milestones reached: explore → execute source → submit after progress |
+| `final_correctness` | 0.65 | envelope-normalized exact-match against the pinned golden answer (1.0 / 0.0) |
+| `efficiency` | 0.05 | `1 − (error + duplicate calls)/max_steps`, minus a penalty for exhausting the step budget without submitting |
+| `safety` | 0.05 | `1.0`, dropped to `0.0` when a sandbox enforcement fires (blocked network/subprocess, timeout) |
+
+**Answer envelope matching.** Both `evaluate()` and the `submit_answer`
+correctness check accept the submitted answer in any of the natural envelope
+depths (`code2env.runtime._accepted_answer_forms`). The golden answer for a
+deterministic success is the executor's two-layer envelope
+`{"ok": true, "value": {"kind": "json", "value": X}}`; peeling *exactly those two
+known layers* recovers the canonical inner value `X`, and a submission counts as
+correct iff it exactly equals one of three fixed shapes: the bare inner value
+`X`, the serialization shell `{"kind": "json", "value": X}`, or the full envelope.
+Comparison is exact equality against this set — the submitted value is **not**
+greedily unwrapped — so when the target function itself returns a wrapper-shaped
+dict (e.g. `{"ok": true, "value": 5}`), `X` keeps that shape and an agent that
+submits a bare inner value is correctly judged incorrect rather than colliding.
+Error envelopes (`{"ok": false, ...}`) and non-JSON `{"kind": "repr", ...}`
+payloads require an exact match against golden.
+
+**Training reward vs. evaluation score are separate:**
+
+- `step(action)` returns a dense, per-step **training reward** — potential-based
+  shaping over the weighted total, so the per-step rewards telescope to the final
+  evaluation score. Each step's `info["score_breakdown"]` carries the live breakdown.
+- `evaluate()` returns the **evaluation score** and a fully explainable
+  `score_breakdown`: per dimension `raw` value, `weight`, `weighted` contribution
+  and a human-readable `detail`, plus a `total` clamped to `[0, 1]`.
+
+```python
+env = Code2Env("env_spec.json"); env.reset()
+env.step({"type": "tool_call", "tool": "call_entrypoint", "arguments": env.spec.fixture})
+env.step({"type": "tool_call", "tool": "submit_answer", "arguments": {"answer": ...}})
+evaluation = env.evaluate()
+evaluation["score"]                       # weighted total in [0, 1]
+evaluation["score_breakdown"]["dimensions"]["safety"]  # {raw, weight, weighted, detail}
+```
+
+## LLM rollout driver (D2)
+
+`code2env.rollout.run_rollout(env, llm, ...)` drives a multi-round tool-calling
+agent loop: it feeds the env observation and the available tool schemas to an
+OpenAI-compatible chat model, asks for a single JSON `tool_call` action
+(`{"tool": ..., "arguments": {...}}`), parses it (native `tool_calls` or
+JSON-in-content via `parse_llm_json`), runs `Code2Env.step`, and loops until
+`submit_answer` or the step budget is exhausted. It adds bounded LLM retries,
+format-correction retries (malformed actions are re-prompted and recorded as
+`parse_error`), and multi-endpoint fallback. The model is reached via
+`OpenAICompatibleLLM.chat(messages)`; tools are described in the system prompt
+(not sent as an OpenAI native `tools` field).
+
+The prompt explicitly tells the model **not to fabricate `call_entrypoint`
+arguments**: it should call the entrypoint with empty `arguments` so the runtime
+falls back to the pinned `spec.fixture`, and the concrete fixture is echoed into
+the task text for reference. This removes the "executed successfully but graded
+wrong" false negative where an agent passes its own args that differ from the
+fixture the golden answer was computed against.
+
+```bash
+# Offline deterministic solver (no network) — good for CI/demos:
+python -m code2env rollout /tmp/generated_envs/<env_id> --llm-mode mock
+
+# Live: primary gpt-5.5 (external), automatic fallback to a local endpoint:
+python -m code2env rollout /tmp/generated_envs/<env_id> \
+  --endpoint-file /home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt \
+  --llm-model gpt-5.5 --fallback-model Kimi-K2.6 \
+  --max-rounds 8 --output /tmp/rollout.json
+```
+
+`run_rollout` returns a **RolloutResult** dict (field names shared with downstream
+loaders): `env_id`, `model`, `endpoint_source` (`gpt-5.5` | `fallback:<model>` |
+`mock`), `started_at`, `finished_at`, `messages` (system/user/assistant/tool),
+`steps` (`action` + `tool_result` + `reward` + `parse_error`), `final`
+(`submitted_answer`, `correct`, `score`, `score_breakdown`, `steps`),
+`num_tool_call_rounds`, `qualified` (≥2 tool-call rounds **and** a `submit_answer`),
+`termination_reason` (`submitted` | `step_budget_exhausted` | `error`), `retries`,
+and `errors`.
+
+## Summary reports (D4)
+
+`code2env report` aggregates the batch-generation `manifest.json` and the rollout
+conversation products into a markdown + JSON summary report:
+
+```bash
+python -m code2env report /path/to/manifest.json \
+  --rollouts /path/to/v3_rollouts/ \
+  --output-dir /tmp/code2env_report \
+  [--baseline-manifest /path/to/pre_install_manifest.json] \
+  [--prev-rollouts /path/to/v1_rollouts/ --prev-rollouts /path/to/v2_rollouts/]
+```
+
+It reads (read-only, shared field contract) the manifest `summary` / `envs` /
+`skipped` (incl. each env's `golden_status` and `determinism`) and each rollout's
+`final.{correct,score}`, `num_tool_call_rounds`, `qualified`, and
+`termination_reason`. `--rollouts` accepts a directory (per-env `<env_id>.json`,
+falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be omitted to
+summarize generation only. `--prev-rollouts` (repeatable, oldest first) supplies
+earlier runs for the v1→…→vN evolution and the envelope-flip count.
+
+The report contains:
+
+- **Env generation**: `draft_ok` / `build_ok` / `smoke_ok` rates over candidates,
+  and a per-repo distribution (`total` / `build_ok` / `smoke_ok` / `skipped`).
+- **Rollouts**: total, qualified count + rate (qualified = `>= 2` tool rounds and a
+  `submit_answer`), raw correct count + rate, **true correct rate**, mean
+  `final.score`, low-score count, and a per-model breakdown.
+- **True correct rate** consumes `manifest.envs[].golden_status` (task030 / w1
+  contract: `real_value` or `weak_oracle:<reason>`). Rollouts whose env has a weak
+  oracle are **excluded from the denominator** and counted separately
+  (`weak_oracle_excluded`), so the true rate is `correct / usable` over real-oracle
+  envs only — stripping the error-match false positives. A missing `golden_status`
+  degrades to `unknown` and is kept in the denominator (never silently shrinks it).
+- **Categories + true non-zero rate** (D4 v3) consume `manifest.envs[].determinism`
+  (task038 / w1 contract: `deterministic` or `nondeterministic:<reason>`). Each
+  rollout falls into a mutually-exclusive bucket: `deterministic_usable`
+  (`real_value` + deterministic), `nondeterministic_excluded`, `weak_oracle_excluded`,
+  or `golden_unknown`; within the usable set, `still_wrong` vs correct, and
+  `envelope_flipped_to_correct` (incorrect in the previous run, correct now). The
+  **true non-zero correct rate** is `correct / deterministic_usable` (both weak
+  oracle and non-determinism removed). Missing `determinism` degrades to usable
+  (only an explicit `nondeterministic` excludes).
+- **v1→…→vN evolution** (`--prev-rollouts`): per-run correct rate and true non-zero
+  correct rate across the earlier runs plus the current one, labelled `v1`…`vN`.
+- **Dependency-install before/after** (`--baseline-manifest`, optional): the count
+  of golden `error → real_value` transitions (env was non-`real_value` in the
+  baseline, `real_value` now) and the per-repo `smoke_ok` before/after delta (e.g.
+  flask `0 → N` once deps install). Without a baseline it degrades to the current
+  golden-status distribution with a note.
+- **Failure clusters**: generation-stage and rollout-stage failures bucketed into a
+  fixed explainable tag set — `dependency_failure`, `fixture_unsynthesizable`,
+  `weak_oracle`, `tool_granularity`, `format_error`, `other` — with per-tag counts
+  and example reasons. The `report.json` carries the same numbers as the markdown
+  for programmatic consumption. The classifier matches the canonical D1/D3 reason
+  tokens (`tag:detail`) emitted by `batch` and the rollout driver.
