@@ -66,3 +66,12 @@
 - lead 定义 golden_status 契约(manifest.envs[].golden_status ∈ {real_value, weak_oracle:<reason>})解耦 w1/w4/w5。
 - 依赖:w5 重跑 blockedBy task030/031/033 merge;rollouts_v2/ 与旧 rollouts/ 并存不覆盖。
 - 范围控制:只做依赖修复+prompt修正+重跑+报告,差分oracle/QualityGate 仍 backlog;装不动的库跳过记 reason 不卡死。
+
+## Session 3 续/Session 4 - 信封归一+确定性过滤(拿真实非零正确率)
+- Session3 三修复(A 装依赖/B prompt/报告)全 merged(main 108 passed)。w5 v2 重跑:根因A 证实(flask golden ModuleNotFoundError 24→0、real_value 0→9、smoke 0→8),根因B 证实(agent call_entrypoint 传空 args 用 fixture)。
+- 但 v2 true_correct=0/75。lead 抽查+全量核对发现:75 个 incorrect 全是 wrapper 形状不符,非值错——agent submit 里层 value,golden 存完整工具信封 {ok:true,value:{kind:json,value:..}};70/75 submit==call_result.value(verbatim 即对),agent 实际 value-correct≈93%。0% 是假阴性。
+- coordinator 核验后开 Session4 新目标,并补第二根因:②非确定性 golden(内存地址 repr/绝对路径/hash/时间戳,每次跑不同,永不可 match;v2 weak_oracle_skipped=25 只剔'仍报错'的,75 里仍混非确定性→可用集高估)。coordinator 选 runtime 信封归一(优于 lead 原 prompt 方案)+确定性门禁。
+- 拆 5 worker:w2 task037 runtime 信封归一比较(evaluate/submit 归一,scripted_smoke 不破,双形状都对);w1 task038 确定性门禁(重复执行N次+非确定性特征→nondeterministic 剔除,determinism 字段);w4 task039 report_v3 类别拆分(确定性可用/信封转对/非确定性剔除/仍错+v1→v2→v3);w3 task040 tester;w5 task041 v3 重跑(确定性可用集→rollouts_v3/→report_v3/)。
+- lead 契约:manifest.envs[].determinism ∈ {deterministic, nondeterministic:<reason>};与 golden_status 配合定确定性可用集。
+- 并行:w1 task035 uv venv 兜底 PR#22 待 w3 验+合(硬化 A 装依赖在缺 python3-venv 节点可用;v2 用 runner 侧 uv wrapper 临时绕过)。
+- 范围:只做信封归一+确定性过滤+重跑+报告;差分/变形 oracle 仍 backlog。
