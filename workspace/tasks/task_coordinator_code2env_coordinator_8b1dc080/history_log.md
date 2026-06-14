@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=12 -->
+<!-- METADATA:SESSION=13 -->
 
 ## Session 0 - Created with coordinator
 
@@ -96,3 +96,12 @@
 - 核对本地实现：`code2env/spec.py` 将目标函数的安全直接 callee 拆成最多 3 个 dedicated `call_<helper>` tools，并写入 backing symbol、source span、entrypoint step provenance；side-effecting helper 不直接暴露，而记录到 `call_entrypoint.provenance.sandboxed_side_effect_helpers`。
 - 核对 runtime：`code2env/runtime.py` 通过 ToolSpec provenance 将 `call_<helper>` dispatch 到真实 backing function，并把成功调用的 semantic helper 计入 explored/executed_source。
 - 结论：semantic helper 的核心作用是把主函数实现里的关键子步骤变成可调用、可追溯、可评分的工具，使 subfunction trace rollout 能检查 agent 是否按实现结构调用 helper；它不是动态自动记录的内部 call graph，也不是任意 helper 的无约束执行入口。
+
+## Session 13 - Minimum three semantic helpers gate handed off
+
+- 按用户要求执行下一步，并设置限制：只考虑能抽出至少 3 个子函数的函数转为环境。coordinator 遵守 role 边界，不直接改产品代码，将实现与验证任务下发给 `intern_code2env_lead`。
+- 核对当前实现：`code2env batch` 目前没有 `--min-semantic-helpers` 参数；`MAX_SEMANTIC_HELPER_TOOLS=3` 只是最多暴露 3 个 dedicated semantic helper，不会自动筛掉 helper 少于 3 的候选。
+- 明确计数口径：门槛必须按最终可暴露的 dedicated `call_<helper>` ToolSpec 计算；不计 `call_entrypoint`、`submit_answer`、`inspect_*`、generic `call_helper`，也不计 side-effect helper。
+- qlib 预扫描：pinned qlib clone `../debug/qlib_cache/d7cf7c8de0969b81` 共 2,860 个候选；pure semantic helpers >=3 的候选 8 个；再应用当前 batch 基础过滤（module-level、非 side-effect、非 requires_instance）后剩 6 个。
+- 写出 handoff 文件 `../outputs/session13_min3_semantic_helpers_goal.md`，要求 lead 创建标准 task，添加可配置 batch gate（建议 `--min-semantic-helpers N`，默认 0 保持兼容），新增 skip reason/manifest metadata、focused tests、full pytest，并在 qlib 上用 `N=3` 产出 constrained batch/rollout summary。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task045_min3_semantic_helpers_gate` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status": "delivered"}`。

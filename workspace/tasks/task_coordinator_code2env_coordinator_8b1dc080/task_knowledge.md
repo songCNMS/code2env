@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=12 -->
+<!-- METADATA:SESSION=13 -->
 
 ## Knowledge Entries
 
@@ -18,3 +18,4 @@
 12. 正式 `--trace-mode subfunctions` 在 Session 7 的 10 个 JSON-friendly EnvPackage 上完成 endpoint 数据闭环：primary `gpt-5.5` 能按 required helper tools 生成完整 trace；side-effect helper 未暴露时会进入 `skipped_helpers`，不影响 `helper_trace_complete` 对“可要求 helper”的判定。
 13. 真实 qlib 原仓库上的 limiting factor 已实测定位：fresh batch 60 个 env 只有 1 个同时 usable + semantic helper tools。正式 trace-mode 在这个 env 上 endpoint 1/1 correct/helper_trace_complete，说明 trace 产品化可用；提高真实 qlib 数据量应优先解决 test-backed fixture extraction、typed fixture（`pd.Timestamp`/numpy/class instance）、最小依赖/import slicing 和 instance-method env support，而不是继续微调 rollout prompt。
 14. semantic helper 是从目标函数实现中抽出的安全直接 callee，并以 dedicated `call_<helper>` ToolSpec 暴露；它的价值是把黑盒 entrypoint 执行拆成可验证的源码子步骤，用于 subfunction trace 覆盖、provenance 审计和过程奖励，而不是代表运行时自动捕获的真实内部调用栈。
+15. “至少三个子函数”限制必须按最终可暴露的 dedicated semantic helper tools 计算：只统计安全 direct callee 生成的 `call_<helper>`，不统计 generic `call_helper` 或 side-effect helper；qlib 预扫描显示该门槛很强，2,860 个候选里基础过滤后只有 6 个满足 pure semantic helpers >=3。

@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 12 |
+| Session | 13 |
 
 ## 最近进展
 
@@ -26,3 +26,4 @@
 - Session 10：基于已合入 `main` 的正式 `code2env rollout --trace-mode subfunctions`，对 Session7 的 10 个 EnvPackage 重新执行 endpoint trace rollout；结果 10/10 qualified、10/10 correct、10/10 helper_trace_complete、10/10 entrypoint_after_helpers，JSONL 写入 `../outputs/session10_official_trace_rollouts/official_trace_endpoint_rollouts.jsonl`（10 lines, 113,805 bytes）并已发送飞书，文件消息 ID `om_x100b6ddf683008a8b321a54cc264066`。
 - Session 11：扩展到真实 qlib 原仓库候选：用 `qlib_min_deps` + `SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0` 重跑 60 个 qlib env batch，得到 `real_value=8`、`usable=6`、`with semantic tools=13`、`usable+semantic=1`；正式 trace-mode 在唯一 usable+semantic env `qlib.utils:fill_placeholder` 上 endpoint 1/1 correct/helper_trace_complete，summary 与 JSONL 写入 `../outputs/session11_qlib_trace_eval/` 并已发送飞书。
 - Session 12：回应用户关于 semantic helper 作用的澄清；核对 `spec.py`/`runtime.py` 后确认 semantic helper 是从目标函数安全直接 callee 抽出的 `call_<helper>` 专用工具，用于让 rollout 暴露可验证的源码子步骤，而不是仅黑盒调用 `call_entrypoint`。
+- Session 13：按用户要求将“只考虑能抽出至少三个子函数的函数转为环境”拆成 lead 实现任务；预扫描 qlib 显示 2,860 个候选中 pure semantic helpers >=3 的候选 8 个、基础过滤后 6 个；handoff 写入 `../outputs/session13_min3_semantic_helpers_goal.md`，goal API timeout，peer send 兜底已 delivered。
