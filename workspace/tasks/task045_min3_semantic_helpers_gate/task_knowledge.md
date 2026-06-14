@@ -1,6 +1,6 @@
 # task045_min3_semantic_helpers_gate - Task Knowledge
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=5 -->
 
 ## 记录规则
 
@@ -15,3 +15,4 @@
 4. Pinned qlib target-20 initial run with `--min-semantic-helpers 3 --no-install-deps` found 6 gate-passing candidates but 0 generated envs because those 6 require unsupported/untyped fixture inputs (`DataFrame`, untyped `positions`/`all_preds`, or `qlib_dir:None`).
 5. qlib artifacts: manifest `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session13_min3_semantic_helpers/w1_initial_batch_target20_no_deps/manifest.json`; summary `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session13_min3_semantic_helpers/w1_initial_batch_summary.md`.
 6. Merge approval received from `intern_code2env_lead` after lead review plus worker_4 and worker_2 independent PASS validation.
+7. Follow-on task046 targets the task045 residual issue: all six qlib candidates that passed `--min-semantic-helpers 3` failed before env build because fixture synthesis could not hydrate rich inputs.
