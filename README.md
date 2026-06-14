@@ -89,6 +89,31 @@ counts toward `--target` regardless of whether its smoke run passes (smoke failu
 recorded with a reason). Cloned repo source and generated packages stay out of git
 (`.code2env_cache/` and `generated_envs/` are gitignored).
 
+#### Dependency install & golden status
+
+For each repo the pipeline first builds an isolated venv (cached under
+`.code2env_cache/venvs`, gitignored) and installs the declared runtime dependencies
+(`requirements*.txt`, `pyproject` dependencies), so the golden answer and rollout
+`call_entrypoint` execute with real third-party imports instead of producing a
+`ModuleNotFoundError` that an agent could trivially "match". The interpreter is
+persisted on the spec (`runtime.python_executable`) and reused by the runtime; if
+that path is missing at rollout time the runtime falls back to the default
+interpreter. A package that will not install is skipped (recorded with a reason),
+never aborting the repo. Pass `--no-install-deps` to skip this step.
+
+After deps are installed, each env carries a `golden_status`:
+
+- `real_value` — the source function returned a real result; these form the
+  qualified/usable set counted toward correctness.
+- `weak_oracle:<reason>` (e.g. `golden_exception:ModuleNotFoundError`) — the golden
+  answer is still an exception; the env is reported separately and **excluded from
+  the correctness denominator** so it cannot create false positives.
+
+`manifest.summary` reports `real_value` / `weak_oracle` counts and per-repo
+`deps_status`; `manifest.repo_deps` records installed/failed packages per repo.
+Running real venvs requires `python3-venv`/`ensurepip` on the host; without it the
+pipeline records `deps_status: venv_failed` and falls back to the base interpreter.
+
 ### Rollout conversation export (D3)
 
 Persist rollout results (`RolloutResult` records, one JSON object per line) as

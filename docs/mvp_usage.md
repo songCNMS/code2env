@@ -54,13 +54,29 @@ python -m code2env materialize /tmp/env_spec_draft.json \
 ```bash
 python -m code2env batch <repo-or-git-url> [<repo-or-git-url> ...] \
   --output-dir generated_envs/batch --target 100 \
-  --cache-dir .code2env_cache/repos [--per-repo-limit N] [--no-smoke] [--include-side-effects]
+  --cache-dir .code2env_cache/repos [--per-repo-limit N] [--no-smoke] \
+  [--include-side-effects] [--no-install-deps] [--venv-cache-dir DIR]
 ```
 
-`batch` (`code2env/batch.py`) drives `scan → synth fixture → draft → build [→ smoke]` across
-all given repos, stopping once `--target` successful builds are reached (counted globally,
+`batch` (`code2env/batch.py`) drives `prepare venv → scan → synth fixture → draft → build [→ smoke]`
+across all given repos, stopping once `--target` successful builds are reached (counted globally,
 candidates taken in descending static score). It writes one `manifest.json` under
 `--output-dir`.
+
+**Dependency install (task030).** Before drafting, each repo gets an isolated venv
+(`code2env/envdeps.py`, cached under `.code2env_cache/venvs`) with its declared runtime
+dependencies installed, so golden answers and rollout `call_entrypoint` run with real
+imports. The interpreter is recorded on `spec.runtime.python_executable` and reused by
+the runtime (falling back to the default interpreter if the path is gone). Uninstallable
+packages are skipped with a reason; `--no-install-deps` skips the whole step. Real venv
+creation needs `python3-venv`/`ensurepip` on the host — otherwise `deps_status` is
+`venv_failed` and the base interpreter is used.
+
+**Golden status (task030).** Each env is classified `real_value` (usable, counted toward
+correctness) or `weak_oracle:<reason>` (golden still an exception, e.g.
+`golden_exception:ModuleNotFoundError`); weak-oracle envs are **excluded from the
+correctness denominator** and reported separately, preventing the Session2 false-positive
+where an agent "matched" an import error.
 
 **Fixture auto-synthesis** reads each candidate's AST signature:
 
@@ -84,19 +100,25 @@ Consumed by reporting (w4) and scale-out (w5) — field names are fixed:
   "repos": ["<repo>", "..."],
   "summary": {
     "candidates_scanned": 0, "draft_ok": 0, "build_ok": 0, "smoke_ok": 0,
-    "skipped_no_fixture": 0,
-    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0}}
+    "skipped_no_fixture": 0, "real_value": 0, "weak_oracle": 0,
+    "by_repo": {"<repo>": {"build_ok": 0, "smoke_ok": 0, "real_value": 0, "weak_oracle": 0, "deps_status": "no_deps"}}
   },
+  "repo_deps": {"<repo>": {"deps_status": "installed", "python": "...", "requirements": [], "installed": [], "failed": [], "reason": null}},
   "envs": [{
     "env_id": "...", "repo": "...", "symbol": "...", "file": "...",
     "line_start": 0, "line_end": 0,
     "fixture": {"ok": true, "strategy": "typed_signature", "value": {"args": [], "kwargs": {}}, "reason": null},
     "draft_ok": true, "build_ok": true, "smoke_ok": true, "smoke_fail_reason": null,
+    "golden_status": "real_value", "deps_status": "installed", "deps_installed": [],
     "spec_path": "...", "package_path": "..."
   }],
   "skipped": [{"symbol": "...", "repo": "...", "reason": "..."}]
 }
 ```
+
+`golden_status` ∈ `{real_value, weak_oracle:<reason>}`; `deps_status` ∈
+`{no_deps, skipped, installed, partial, uninstallable, venv_failed}`. Field names are
+fixed (shared with w4 reporting / w5 scale-out).
 
 Cloned repo source (`--cache-dir`, default `.code2env_cache/repos`) and generated packages
 (`--output-dir`, default `generated_envs/batch`) are gitignored and must not be committed.

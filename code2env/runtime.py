@@ -454,4 +454,19 @@ class Code2Env:
             timeout_seconds=self.timeout_seconds,
             disable_network=sandbox.get("network") is False,
             disable_subprocess=sandbox.get("subprocess") in {False, "disabled"},
+            python_executable=self._python_executable,
         )
+
+    @property
+    def _python_executable(self) -> str | None:
+        """Repo venv interpreter from the spec (task030), if it still exists.
+
+        Falls back to the default interpreter when the recorded venv path is absent
+        (e.g. the package was moved to another machine), so rollouts never hard-fail
+        on a missing cache directory.
+        """
+
+        python = self.spec.runtime.get("python_executable")
+        if python and Path(python).exists():
+            return str(python)
+        return None

@@ -64,10 +64,21 @@ def run_symbol_subprocess(
     timeout_seconds: float = 3,
     disable_network: bool = False,
     disable_subprocess: bool = False,
+    python_executable: str | None = None,
 ) -> dict[str, Any]:
+    """Run ``symbol`` in a subprocess and return its serialized result.
+
+    ``python_executable`` selects the interpreter (default ``sys.executable``).
+    Pass a repo venv's python so the target's third-party runtime dependencies
+    import correctly instead of polluting the golden answer with ImportError.
+    When a non-default interpreter is used, ``code2env`` is exposed to it via
+    ``PYTHONPATH`` so ``-m code2env.executor`` still resolves from inside the venv.
+    """
+
+    python = python_executable or sys.executable
     payload = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True)
     command = [
-        sys.executable,
+        python,
         "-m",
         "code2env.executor",
         "--source-root",
@@ -81,6 +92,14 @@ def run_symbol_subprocess(
         command.append("--disable-network")
     if disable_subprocess:
         command.append("--disable-subprocess")
+    env = None
+    if python != sys.executable:
+        env = dict(os.environ)
+        package_parent = str(Path(__file__).resolve().parent.parent)
+        existing = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = (
+            package_parent + os.pathsep + existing if existing else package_parent
+        )
     try:
         result = subprocess.run(
             command,
@@ -89,6 +108,7 @@ def run_symbol_subprocess(
             stderr=subprocess.PIPE,
             text=True,
             timeout=timeout_seconds,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         return {"ok": False, "error_type": "TimeoutExpired", "error_message": "tool timeout"}
