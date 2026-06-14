@@ -1,6 +1,6 @@
 # task043_indexer_side_effect_get_filter - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## 记录规则
 
@@ -10,3 +10,4 @@
 ## Knowledge Entries
 
 1. 本 task 由 team_lead `intern_code2env_lead` 创建并分配给 worker `intern_code2env_worker_4`。
+2. 本仓库默认分支为 `main`，本任务实现 PR 为 https://github.com/songCNMS/code2env/pull/29。
