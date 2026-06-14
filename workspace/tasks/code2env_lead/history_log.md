@@ -7,7 +7,7 @@
 - 创建 team lead `intern_code2env_lead` 时自动生成本 manage team 常驻任务。
 - 本任务在 team 存在期间保持 InProgress。
 
-## Session 1 - PRD P0 三项缺口拆解与下发
+## Archive P0-1 - PRD P0 三项缺口拆解与下发
 
 - 收到 Pressing Goal：对照 docs/code2env_agentic_rl_prd.md 落地 P0 三项（F5 ToolExtractor / F7 多维 reward / F2 TestLinkIndex）。
 - 核对现状：MVP 闭环已通（main 分支）。定位三项落点：
@@ -21,7 +21,7 @@
 - 下步：等 worker mailbox 回报，分支就绪后 ping 对应 tester，再 review + approve + 通知 self-merge。
 - P1/P2（差分 oracle、QualityGate 6 项、Phase4 RL 接入、CorpusManager、人工审阅）列 backlog，本轮不做。
 
-### Session 1 续 - 实现完成 + review + 合并编排
+### Archive P0-1 续 - 实现完成 + review + 合并编排
 - 三项实现 PR 全部完成：PR#9(task010 ToolExtractor,16 passed)、PR#7(task012 TestLinkIndex,18 passed)、PR#8(task011 reward,23 passed)。
 - Lead 代码 review（派 3 个 review 子代理对照各自 PRD 节逐条核）：三项均 APPROVE，仅非阻塞 nits。
   - PR#9 nit：WIP.md 重复行；分支落后 main(diff 幻影删除非合并危险)。
@@ -32,7 +32,7 @@
 - 关键校正：默认分支是 main（非 master）。
 - 监工采用事件驱动后台等待器（mailbox 有未读即唤醒），替代盲轮询 cron。
 
-### Session 1 完结 - 三项 P0 全 merge + 最终验证 + 回报 coordinator
+### Archive P0-1 完结 - 三项 P0 全 merge + 最终验证 + 回报 coordinator
 - 合并顺序执行无碍：PR#9(e2825ad) 先合(对 main 干净)；PR#7(c166e2f) 先修阻塞缺陷(test_links_for_candidate→links_for_candidate, pytest 误收集 test_ 前缀公有函数, unittest 漏检)再 merge main(ort 自动无冲突)；PR#8(f2b3b42) merge main 解 runtime.py 冲突(五维 reward + inspect_state/call_<helper> dispatch 两边共存)。
 - 最终 main HEAD f2b3b42 含三项；pytest=31 passed；worker_5 B 轮 E2E scan→select(mock)→draft→materialize→build→smoke 全绿(ok=true,score=1.0)，新能力端到端可见(语义工具+inspect_state+ToolSpec.provenance、task_sources>=2、五维 score_breakdown)，判无回归。
 - 已回报 coordinator(default 通道)；通知 w4/w5 self-merge QA 文档 PR#6/#10 并回 Idle。
@@ -53,7 +53,7 @@
 - 依赖:w5 Phase3 放量 blockedBy task020/021/022 merge;Phase1 各 PR 到达即验。先 1-3 env 验格式(mock/本地)再放量100(避 gpt-5.5 限速)。
 - 踩坑提醒已下发:公有函数名勿以 test_ 开头(pytest 收集坑,ERROR_BOOK E1);cli.py 三 worker 都加子命令→各仅加 subparser+一行减冲突,merge 顺序解决。
 
-## Session 3 - 清除假阳性 + 拿真实正确率（拆解下发）
+## Archive P0-3 - 清除假阳性 + 拿真实正确率（拆解下发）
 - Coordinator 抽查 Session2 100 rollout:99% 合格成立、五维 reward 正确,但 exact-match correct 3/100 全是假阳性,真实正确率≈0。
 - 两根因(coordinator 已定位):A 依赖缺失—flask 全 env golden=ModuleNotFoundError(werkzeug 未装),agent 同样报错即 exact_match=True;B agent 自造 fixture—requests.cookies.create_cookie 自传 args=[x,x] 与 golden fixture 不符。
 - 侦察确认:executor.run_symbol_subprocess 用 sys.executable 跑子进程,repo 第三方依赖未装;runtime._call_source 同问题。
@@ -67,7 +67,7 @@
 - 依赖:w5 重跑 blockedBy task030/031/033 merge;rollouts_v2/ 与旧 rollouts/ 并存不覆盖。
 - 范围控制:只做依赖修复+prompt修正+重跑+报告,差分oracle/QualityGate 仍 backlog;装不动的库跳过记 reason 不卡死。
 
-## Session 3 续/Session 4 - 信封归一+确定性过滤(拿真实非零正确率)
+## Archive P0-3 to P0-4 - 信封归一+确定性过滤(拿真实非零正确率)
 - Session3 三修复(A 装依赖/B prompt/报告)全 merged(main 108 passed)。w5 v2 重跑:根因A 证实(flask golden ModuleNotFoundError 24→0、real_value 0→9、smoke 0→8),根因B 证实(agent call_entrypoint 传空 args 用 fixture)。
 - 但 v2 true_correct=0/75。lead 抽查+全量核对发现:75 个 incorrect 全是 wrapper 形状不符,非值错——agent submit 里层 value,golden 存完整工具信封 {ok:true,value:{kind:json,value:..}};70/75 submit==call_result.value(verbatim 即对),agent 实际 value-correct≈93%。0% 是假阴性。
 - coordinator 核验后开 Session4 新目标,并补第二根因:②非确定性 golden(内存地址 repr/绝对路径/hash/时间戳,每次跑不同,永不可 match;v2 weak_oracle_skipped=25 只剔'仍报错'的,75 里仍混非确定性→可用集高估)。coordinator 选 runtime 信封归一(优于 lead 原 prompt 方案)+确定性门禁。
