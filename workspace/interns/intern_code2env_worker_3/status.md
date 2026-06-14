@@ -10,4 +10,4 @@
 | Team | code2env |
 | Current Task | task032_qa_session3_fixes (Phase1 done: PR#17 PASS) |
 | PR | https://github.com/songCNMS/code2env/pull/19 |
-| Session | 4 |
+| Session | 2 |
