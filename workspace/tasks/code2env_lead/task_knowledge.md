@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Knowledge Entries
 
@@ -22,3 +22,5 @@
 13. 验收要看真实语义而非表面数字:99% 合格率(≥2轮+submit)成立但 correct 3% 全假阳性——合格率衡量交互闭环,正确率才衡量解题;exact-match 正确率必须先保证 golden 是真实值(依赖齐全)且剔除 weak_oracle。
 14. exact-match oracle 第三/四类坑(Session4):③提交契约信封错位——golden_answer 存的是 executor 完整信封 {ok:true,value:{kind:json,value:X}},agent 自然 submit 里层 X→精确比差壳判错(假阴性)。修法:runtime 比较前对 submitted 与 golden 做信封归一(剥到底层 value)。④非确定性 golden——内存地址 repr(0x..)/绝对路径/<object at>/hash/时间戳每次跑不同,任何 agent 永不可 match;须确定性门禁(重复执行N次不一致 或 命中特征)标 nondeterministic 剔除分母。教训:0% 正确率别急着归因模型能力,先核 submit 形状与 golden 是否确定/无壳——75 个 incorrect 经核 70+ 实为 value-correct。
 15. 诊断纪律:报告关键数字(正确率)前,team_lead 应抽样核对底层语义(submit vs golden 逐条),而非直接转述 worker 报的数字——本轮正是抽查一条 requests env 发现 0% 是信封假阴性,避免了把"真实正确率0%"误报成模型结论。
+16. qlib 调试教训: indexer 的 side-effect risk 不能只看 call basename；`payload.get()`/普通 object `.get()` 与 `requests.get()` 需要用 AST call target/receiver 区分，否则大型仓库会产生大量 get-only false positives。
+17. qlib 后续改进方向:复杂函数入选后要补测试夹具抽取能力(`pd.Timestamp`、`np`、class instance)与 instance-method env support，才能覆盖 `FullHistoryStateInterpreter.interpret` 一类有测试但依赖实例/fixture 的目标。

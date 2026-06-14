@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Session 0 - Created with team lead
 
@@ -88,3 +88,13 @@
 - v3 重跑关键路径事故:原 runner w5(task041)疑似 session 卡住——lead ping 启动后 w5 status 仍"待 ping"、无 rerun 进程、outputs/rollouts_v3 无产物。coordinator roll-call 告警并授权改派。
 - 处置:核实(0 产物/0 进程/status 未动)确认 w5 卡住→改派 v3 执行给空闲 w1(task042,深谙 envdeps/determinism;uv 兜底已折进 envdeps 无需 wrapper)→令 w5 stand down 避免双跑 outputs/rollouts_v3→回 coordinator。
 - 教训:peer send "delivered" 只到 transport,不保证 worker session 消费;关键路径单点 runner 卡住要靠客观信号(产物/进程/status)核实,不能只看 delivered;coordinator roll-call 用客观活跃度(git+PR+产物)发现卡点很有效。worker 卡住时果断改派给空闲 worker,别让关键路径空等。
+
+## Session 1 - qlib indexer side-effect refinement
+
+- 收到 coordinator qlib 扫描结论：microsoft/qlib commit d5379c520f66a39953bad76234a7019a72796fd0 共 2860 candidates、493 有 test links，221 个标 possible_side_effect，其中 93 个仅因 generic `get` 命中。
+- 评估 5 个 active workers：w1/w2/w4 idle，w3/w5 working；本项为单一 indexer 代码路径 + 独立验证，分配 w4 实现、w2 tester，未用满 5 人以避免窄改动上的 PR/验证冲突。
+- 在共享 repo 创建并推送 task043_indexer_side_effect_get_filter；w4 实现 PR#29，w2 独立验证。
+- Lead review 结论：PR#29 将 possible_side_effect 从 basename-only call matching 改为 AST call-target matching，普通 dict/object `.get()` 不再标风险，`requests.get`、`session.post`、`open`、`subprocess.run` 仍标风险；聚焦测试覆盖验收点。
+- Tester w2 验证 PASS：`python3 -m pytest -q tests/test_indexer_side_effects.py` 为 2 passed，`python3 -m pytest -q` 为 150 passed，qlib pinned scan old basename get-only=93 降为 patched get-only=6。
+- PR#29 已由 w4 self-merge 到 main，merge commit d3b1e9e6；GitHub formal approve 因同一 GitHub identity 被拒，team lead merge decision 仍为 APPROVE 并通过 peer send 通知 worker self-merge。
+- 已记录 broader future work：基于测试的 fixture extraction for `pd.Timestamp`/`np`/class instance，以及 instance-method env support。
