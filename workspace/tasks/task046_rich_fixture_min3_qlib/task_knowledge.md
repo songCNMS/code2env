@@ -11,3 +11,6 @@
 5. PR opened at https://github.com/songCNMS/code2env/pull/32 from branch `intern_code2env_worker_1/task046_rich_fixture_min3_qlib` to `main`.
 6. The pinned qlib checkout needs `SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0` for replay outside the git checkout; generated specs now persist this env var through a narrow allowlist instead of capturing arbitrary process environment.
 7. Default scalar fixture behavior stays on the existing JSON path; rich descriptors are opt-in dicts keyed by `__code2env_rich_fixture__`.
+8. The successful qlib min-3 env for this task is `scripts.data_collector.utils:calc_adjusted_price`; it uses two pandas DataFrame rich descriptors and returns a canonical pandas DataFrame golden.
+9. Mock subfunction rollout can still record helper TypeErrors for qlib helpers with required args, but qualification and final correctness are driven by the ordered helper trace plus successful entrypoint and exact submitted answer.
+10. Local `gpt-oss-120b` endpoint on port 39000 responded to `/v1/models`, but the endpoint rollout produced no stdout/JSON after multiple minutes; deterministic mock rollout/export is the reliable evidence for implementation validation.
