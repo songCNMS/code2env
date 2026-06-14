@@ -1,6 +1,6 @@
 # task038_determinism_gate - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -25,3 +25,10 @@
 - lead review PR#24 APPROVE(over-flag 防护好, 契约一致)。非阻塞: 合前 git rm 误提交的 WIP.md。
 - 合并序: PR#23(信封①)先合 → 我 git merge origin/main → git rm WIP.md → pytest 全绿 → self-merge；等 w3 验 PASS + PR#23 merged，lead 再 ping。**先待命，未合并。**
 - 待办(收到 ping 后): merge origin/main(可能与 PR#23 在 spec/batch 有交集需解冲突)→git rm WIP.md→pytest→self-merge PR#24→清理→mailbox 回报 squash commit。
+
+## Session 3 - 2026-06-14 - 三签齐, 合并 (Session4 最后一个)
+
+- 三签齐: lead APPROVE + tester(w3) 131 passed(over-flag 防护到位, 038↔039 取值交叉核对一致)。批准合并。
+- main 现含 PR#23 信封①(7c0a82c) + PR#26 report_v3(ba7dbf7)。
+- 合并: git fetch && git merge origin/main → ort 自动合并无冲突(runtime/cli/docs 各自演进, 我的 determinism 与 PR#23 envelope 不冲突) → git rm WIP.md → pytest tests/ = 148 passed → self-merge PR#24(squash)。
+- 状态文件 →Idle/Completed; mailbox 立即回报 squash commit; 三项修复齐, lead 随即 ping w5 启动 v3 重跑。

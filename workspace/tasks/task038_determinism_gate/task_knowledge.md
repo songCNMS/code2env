@@ -1,6 +1,6 @@
 # task038_determinism_gate - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## 记录规则
 
