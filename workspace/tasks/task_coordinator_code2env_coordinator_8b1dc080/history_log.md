@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=15 -->
+<!-- METADATA:SESSION=16 -->
 
 ## Session 0 - Created with coordinator
 
@@ -126,3 +126,14 @@
 - 判断:改派 w1 后恢复良好、健康活跃,只是重跑未完(ETA~25-35min,w1 刚起约8min)。无需 nudge。
 - coordinator:重新布置 Monitor bgp0aka73(60min)待 rollouts_v3+report_v3(扩匹配 report_v3/*.md|*.json|rollout_v3_run_summary.json)就绪通知核验。
 - 下步:v3 产物落地后独立核验真实非零正确率+确定性可用集大小+四类别占比+v1→v2→v3,向用户汇报。
+
+## Session 16 - v3 核验:真实正确率 0%→93.65%(里程碑)
+
+- Monitor bgp0aka73 触发:rollouts_v3=63 份+report_v3/report.json。
+- coordinator 独立复算(glob rollouts_v3):total=63 qualified=63 correct=59→与报告完全一致。
+- v3 数字:确定性可用集 63(=100-25 weak_oracle deps-fail-12 非确定性),correct 59,真实正确率 59/63=93.65%,mean_score 0.9587,全 gpt-5.5。类别:envelope_flipped_to_correct=59(信封归一直接救活)、still_wrong=4、nondeterministic/weak_oracle 已在门禁前剔除。
+- evolution: v1(total100,correct3 全假阳性,真实仅1=1.6%)→v2(total75,correct0,信封契约错位杀光)→v3(total63,correct59=93.65%)。
+- 抽样 rich.cells.cell_len:3轮干净解 inspect_task→call_entrypoint(value=1)→submit_answer(value=1)→correct,score1.0。
+- 结论(全链路诊断验证成立):0%/3% 完全是 oracle/契约+非确定性 artifact,非 gpt-5.5 能力;修两根因后真实正确率 93.65%。管线+env+gpt-5.5 rollout 全部成立,确定性可用子集数据可用于训练/评测。
+- 团队:w5 中断由 lead 改派 w1(task042)化解,关键路径未空等,产物按时落地。
+- 已向用户汇报里程碑。任务核心目标(生成env+gpt-5.5多轮rollout+conversation JSON+真实正确率)达成;剩 backlog(差分oracle/QualityGate其余/Phase4 RL接入)按需后续。
