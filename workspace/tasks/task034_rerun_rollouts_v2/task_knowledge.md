@@ -1,6 +1,6 @@
 # task034_rerun_rollouts_v2 - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -15,7 +15,8 @@
 
 ## 复用 Session2(task024) 资产
 
-- 上轮 manifest（build_ok=100）：`/home/leisong/codes/work-agents/intern_code2env_worker_5/outputs/phase3/envs/manifest.json`；EnvPackage 在 `outputs/phase3/envs/packages/`、specs/。
+- ⚠️ **上轮 outputs/phase3 已被 task024 merge 收尾的 playbook step8 清理删除**（manifest/packages/orchestrator）。**可恢复**：`.code2env_cache/repos`（克隆源）完好 → `batch` 确定性可复现同一 100 env 集；coordinator 旧 report.json/rollouts 在另一路径未删（作"装依赖前"基线）。**task034 Step1 须先重新 batch 复现 env 集**。
+- 上轮 manifest（已删，需重生）原路径：`outputs/phase3/envs/manifest.json`（build_ok=100）。orchestrator run_rollouts.py 也已删，将重写 v2 版。
 - **旧 rollouts（勿覆盖/勿删）**：`/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/rollouts/`（100 json + rollouts.jsonl）。
 - 上轮 orchestrator：`outputs/phase3/run_rollouts.py`（gpt-5.5 主 + gpt-oss-120b 回退，ThreadPool）。本轮改造复用：输出改 rollouts_v2、仅跑非 weak_oracle 子集。
 - 踩坑沿用：batch repo 须传 Git URL；自写脚本须 `PYTHONPATH=<repo> python3`。
