@@ -10,4 +10,5 @@
 ## Session 1 - 2026-06-14 UTC - Task accepted by worker_2
 
 - 接受 task044，准备在分支 `intern_code2env_worker_2/task044_subfunction_trace_rollout` 实现 formal subfunction/decomposed trace rollout mode。
+- 创建 PR #30：https://github.com/songCNMS/code2env/pull/30。
 - 验收关注：默认 rollout 行为不变、trace mode helper 顺序可机读、focused/full pytest、3-env trace-mode evidence，独立 tester 为 worker_4。
