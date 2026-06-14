@@ -19,6 +19,7 @@ Design notes:
 from __future__ import annotations
 
 import hashlib
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -188,21 +189,53 @@ def _venv_dir_for(
     return base / digest
 
 
-def _create_venv(venv_dir: Path, base_python: str) -> str:
-    """Create a venv (idempotent) and return its python interpreter path."""
+def _create_venv(
+    venv_dir: Path,
+    base_python: str,
+    *,
+    runner=subprocess.run,
+    which=shutil.which,
+) -> str:
+    """Create a venv (idempotent) and return its python interpreter path.
+
+    Prefers the stdlib ``python -m venv`` (matches the base interpreter exactly).
+    On nodes where that fails because ``ensurepip``/the ``python3-venv`` apt package
+    is unavailable (task035), falls back to ``uv venv --seed`` — which builds a
+    pip-enabled venv without ensurepip — when the ``uv`` binary is present. If
+    neither works the original venv error propagates so the caller records
+    ``deps_status=venv_failed`` and degrades to the base interpreter.
+
+    ``runner``/``which`` are injectable so tests exercise both paths offline.
+    """
 
     python_path = _venv_python_path(venv_dir)
     if python_path.exists():
         return str(python_path)
     venv_dir.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [base_python, "-m", "venv", str(venv_dir)],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    return str(python_path)
+    try:
+        runner(
+            [base_python, "-m", "venv", str(venv_dir)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        return str(python_path)
+    except (subprocess.CalledProcessError, OSError) as venv_exc:
+        uv = which("uv")
+        if not uv:
+            raise
+        try:
+            runner(
+                [uv, "venv", "--seed", "--python", base_python, str(venv_dir)],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        except (subprocess.CalledProcessError, OSError) as uv_exc:
+            raise uv_exc from venv_exc
+        return str(python_path)
 
 
 def _venv_python_path(venv_dir: Path) -> Path:
