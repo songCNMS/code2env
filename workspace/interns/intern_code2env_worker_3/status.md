@@ -8,6 +8,6 @@
 | Status | Working |
 | Role | worker (本轮 tester) |
 | Team | code2env |
-| Current Task | task040 QA: PR#23 暂停(lead 驳回过度剥壳), 等 task038/039 ping |
+| Current Task | task040 QA: PR#23修订版 PASS + PR#26 PASS; 等 task038(PR#24) ping |
 | PR | https://github.com/songCNMS/code2env/pull/19 |
-| Session | 7 |
+| Session | 8 |

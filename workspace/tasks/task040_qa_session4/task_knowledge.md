@@ -53,7 +53,20 @@
 
 ### [Phase1] task037 (PR#23) — 我建议 APPROVE 但被 lead 驳回(过度剥壳假阳性), 暂停等修订版
 > ⚠️ 我漏检: lead review 发现**过度剥壳假阳性**——源函数若**真实返回** {ok:true,value:..} 或 {kind:json,value:..} 形状的 dict, 归一会把它当壳剥掉, 导致错误提交也能匹配 golden 底层 → 假阳性 correct。我的逐条只验了"同底层值多形状判对", 未构造"合法数据恰好长得像信封壳→不应被剥"的对抗用例。教训记 ERROR_BOOK E2。w2 修订中, 等 lead 再 ping 验修订版。
-> 以下为初版(a108f32)记录(仅供参考, 已作废):
+### [Phase1 修订版] task037 (PR#23, _accepted_answer_forms) — APPROVE 建议, E2 已修
+- pytest 127、test_envelope 13; 只动 runtime.py; merge main CLEAN。
+- 改法: `_accepted_answer_forms(golden)` 仅当 golden 是 {ok:true,value:{kind:json,value:X}} 才剥两层得 X, 返回 [X,{kind:json,value:X},full golden]; `_answers_equal` = submitted ∈ forms; **submitted 绝不剥**。
+- E2 对抗已修(重点): 函数真返回 {ok:true,value:5} → X={ok:true,value:5}, 提交 bare 5 = INCORRECT(手验 False, 专测 test_function_returning_ok_value_dict_rejects_bare_inner); {kind:json,value:7} 提交 bare 7 = INCORRECT。三正确形状仍 correct; ok:false/{kind:repr} 整包精确比; scripted_smoke ok score1.0; 五维不变。
+
+### [Phase3] task039 (PR#26, report_v3) — APPROVE 建议(lead 已 APPROVE)
+- pytest 112、test_report 23; 改 report.py+cli.py; merge main CLEAN。
+- 四桶 MECE(over total): _env_bucket 优先级 weak_oracle>nondeterministic>deterministic_usable>golden_unknown; 手验 {det_usable2,nondet1,weak1,unknown1}=5=total。envelope_flipped/still_wrong 为 det_usable 子计数。
+- 真实非零率 = true_nonzero_correct/deterministic_usable(剔 weak+nondet); 手验 1/2=0.5。
+- --prev-rollouts(可重复, oldest first)驱动 v1→vN evolution + envelope_flipped(A v2 wrong→v3 correct=1)。
+- determinism/golden 缺失安全降级(D 无 determinism→usable 不崩; E 无 golden→unknown 单列)。保留原指标。
+- 待办: **038↔039 determinism 交叉核对**等 w1 task038(PR#24)到货——确认 w1 写 deterministic|nondeterministic:<reason> 与 w4 读(==deterministic/startswith nondeterministic)一致。
+
+> 以下为 task037 初版(a108f32)记录(已作废, 仅留存):
 - pytest tests/=121 passed; test_envelope.py 13 passed; merge main 干净 post-merge 127。
 - 1[PASS] _normalize_answer_envelope 循环 max32 剥 {ok:true,value}+{kind:json,value}; ok:false/{kind:repr} 不剥; _answers_equal 两端归一比。
 - 2[PASS] 三形状(里层值/json 壳/完整信封)同底层值都 correct(手验 EQ 三例 True + 集成测试)。

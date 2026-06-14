@@ -1,6 +1,12 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
+
+## Session 8 - 2026-06-14 UTC - 验 PR#23 修订版 + PR#26 task039
+
+- [PR#23 修订版 task037] PASS: _accepted_answer_forms 只剥 golden 两层得 X, 接受 [X,{kind:json,value:X},full], submitted 绝不剥。pytest 127、test_envelope 13。**E2 对抗已修**: 函数真返回 {ok:true,value:5}/{kind:json,value:7} 时提交 bare 5/7 判 INCORRECT(手验+专测); 三正确形状仍 correct; ok:false 整包比; scripted_smoke ok score1.0; 五维不变; 只动 runtime.py。建议 APPROVE。
+- [PR#26 task039 report_v3] PASS: 四桶 MECE(det_usable/nondet/weak/unknown=total) + envelope_flipped/still_wrong 为 det_usable 子计数; 真实非零率=correct/deterministic_usable; --prev-rollouts 驱动 v1→vN evolution 与 envelope_flipped; determinism 缺失安全降级(D 不崩入 usable); 保留原指标。手验数字全对。建议 APPROVE(lead 已 APPROVE)。
+- 待办: 038↔039 determinism 取值交叉核对等 w1 task038(PR#24)到货。两份 mailbox 已回报。
 
 ## Session 7 - 2026-06-14 UTC - PR#23 暂停(lead 发现过度剥壳假阳性)
 
