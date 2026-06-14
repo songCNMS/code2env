@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=17 -->
+<!-- METADATA:SESSION=18 -->
 
 ## Session 0 - Created with coordinator
 
@@ -145,3 +145,11 @@
 - 已发送 outputs/report_v3/report.json(5KB,完整 dependency_comparison/env_generation/evolution v1→v2→v3/rollouts categories/failure_clusters/sources)。飞书 code=0 success,message_id om_x100b6ddc08ea84a0b4bfe61dd47bcd6。
 - 知识:发飞书文件=key.txt 凭据+open-apis /im/v1/files→/im/v1/messages;群 chat_id 查 relay_registry.json。
 - 下步:如用户还要发 63 份 conversation JSON 或 v1/v2 报告,可打包后同法发送。
+
+## Session 18 - 发 63 份 conversation JSON 到飞书
+
+- 用户:发 63 份 conversation JSON。
+- 环境无 `zip` 命令→用 Python zipfile 打包 outputs/rollouts_v3/*.json(63 份)为 /tmp/code2env_rollouts_v3.zip(167KB,远低于飞书 30MB 限)。
+- 同 Session17 方法(key.txt 凭据→/auth token→/im/v1/files multipart Content-Type application/zip 拿 file_key→/im/v1/messages?receive_id_type=chat_id msg_type=file)发到傻姑娘群 oc_95e88ada32dbd770c5137bc2c9a65167。
+- 结果:upload code=0 success, send code=0 success, message_id om_x100b6ddc2e53bcb4b34d4a8bfe526ce。
+- 知识补充:本环境无 zip 命令,打包用 python3 zipfile(ZIP_DEFLATED, arcname=basename 去路径)。
