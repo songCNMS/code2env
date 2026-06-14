@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from code2env.executor import run_symbol_subprocess
-from code2env.indexer import find_candidate, index_repo
-from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, ToolSpec
+from code2env.indexer import find_candidate, index_repo, links_for_candidate
+from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, TestLink, ToolSpec
 
 
 def draft_env_spec(
@@ -21,6 +21,8 @@ def draft_env_spec(
     candidates = index_repo(snapshot)
     candidate = find_candidate(candidates, symbol)
     normalized_fixture = _normalize_fixture(fixture)
+    test_links = links_for_candidate(snapshot, candidate)
+    provenance = _build_provenance(candidate, test_links)
     source = {
         "repo": snapshot.source,
         "source_root": snapshot.path,
@@ -59,20 +61,7 @@ def draft_env_spec(
         },
         fixture=normalized_fixture,
         golden_answer=None,
-        provenance={
-            "task_sources": [
-                {
-                    "kind": "source_span",
-                    "path": candidate.file,
-                    "symbol": candidate.symbol,
-                    "line_start": candidate.lineno,
-                    "line_end": candidate.end_lineno,
-                }
-            ],
-            "metrics": candidate.metrics,
-            "risk_flags": candidate.risk_flags,
-            "helper_candidates": candidate.helper_candidates,
-        },
+        provenance=provenance,
     )
     if compute_golden:
         spec.golden_answer = run_symbol_subprocess(
@@ -84,6 +73,72 @@ def draft_env_spec(
             disable_subprocess=True,
         )
     return spec
+
+
+_TEST_LINK_KINDS = {"test": "test_link", "fixture": "fixture", "golden": "golden"}
+
+
+def _build_provenance(
+    candidate: FunctionCandidate, test_links: list[TestLink]
+) -> dict[str, Any]:
+    """Assemble provenance with >=2 diverse task_sources (PRD 7.2 / 469).
+
+    Always grounds the task in a ``source_span`` plus a ``signature`` source, then
+    appends ``test_link`` / ``fixture`` / ``golden`` sources discovered by the
+    TestLinkIndex. When no test artifacts are found the spec is still valid but
+    flagged as degraded so downstream review knows the oracle priority dropped to
+    signature-level evidence.
+    """
+
+    task_sources: list[dict[str, Any]] = [
+        {
+            "kind": "source_span",
+            "path": candidate.file,
+            "symbol": candidate.symbol,
+            "line_start": candidate.lineno,
+            "line_end": candidate.end_lineno,
+        },
+        {
+            "kind": "signature",
+            "path": candidate.file,
+            "symbol": candidate.symbol,
+            "args": candidate.args,
+            "defaults_count": candidate.defaults_count,
+            "has_docstring": bool(candidate.docstring),
+            "line_start": candidate.lineno,
+            "line_end": candidate.end_lineno,
+        },
+    ]
+    for link in test_links:
+        task_sources.append(
+            {
+                "kind": _TEST_LINK_KINDS.get(link.target_kind, "test_link"),
+                "path": link.path,
+                "target": link.target,
+                "line_start": link.lineno,
+                "line_end": link.end_lineno,
+                "evidence": link.evidence,
+                "confidence": link.confidence,
+            }
+        )
+
+    has_tests = bool(test_links)
+    provenance: dict[str, Any] = {
+        "task_sources": task_sources,
+        "test_link_status": "linked" if has_tests else "no_test_links_found",
+        "test_link_count": len(test_links),
+        "metrics": candidate.metrics,
+        "risk_flags": candidate.risk_flags,
+        "helper_candidates": candidate.helper_candidates,
+    }
+    if not has_tests:
+        provenance["degradation"] = (
+            "No test/fixture/golden artifacts linked to this candidate; task grounding "
+            "falls back to source_span + signature evidence only (oracle priority dropped "
+            "from test assertions to function signature). Consider adding tests for a "
+            "stronger oracle."
+        )
+    return provenance
 
 
 def _normalize_fixture(fixture: dict[str, Any] | None) -> dict[str, Any]:

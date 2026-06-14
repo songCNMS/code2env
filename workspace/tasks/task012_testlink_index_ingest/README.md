@@ -1,6 +1,6 @@
 # task012_testlink_index_ingest - P0-3 TestLinkIndex + 放开 tests 扫描 (F2 / PRD 7.2)
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_3 -->
 
 ## 背景
 
