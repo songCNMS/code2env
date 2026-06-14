@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - Created with team lead
 
@@ -39,3 +39,16 @@
 - 5 worker 全投入(w1/w2/w3 实现、w4/w5 tester)，符合用满 active workers 原则。
 - backlog：reward 默认权重 vs PRD 7.7 表对齐(裁定本轮保持现状)、TestLink 子串匹配改词边界。
 - team_lead 管理任务按生命周期规则保持 InProgress。
+
+## Session 2 - 规模化100 env + gpt-5.5 多轮 rollout 验证（拆解下发）
+- 新目标:GitHub 拉 requests/flask/rich/click/jinja2→生成≥100 env→gpt-5.5 多轮 rollout 验证→conversation JSON+报告。非 RL 训练,只做 rollout 验证 driver。
+- 侦察关键事实:
+  - OpenAICompatibleLLM 只有 evaluate_candidate,无通用 chat→driver 须新增 chat()。
+  - endpoints.txt(/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt) 行1 gpt-5.5(外网)+行2- 本地127.0.0.1(Kimi-K2.6/xyz-30b)可作回退;endpoints.vpn.txt 不存在;llm.py 默认 /work-agents/endpoints.txt 不存在,必须显式 --endpoint-file。
+  - CLI 无 batch/rollout/report 命令需新建;.code2env_cache/ 已 gitignore(clone 安全);coordinator outputs/rollouts/ 需 mkdir。
+  - Session1 语义工具(3-8 tools+inspect_state)支撑'≥2轮 tool_call'可达。
+- 拆 5 子任务(4 能力独立 PR+1 集成/tester,用满5 worker):
+  - w1 task020 批量pipeline+fixture合成+gen manifest;w2 task021 rollout driver(+LLM.chat+多端点回退);w3 task022 conversation JSON 导出;w4 task023 汇总报告;w5 task024 QA+集成放量runner。
+- lead 定义跨worker契约解耦:gen manifest schema(w1产,w4/w5消费)+conversation JSON schema(w2产,w3落盘,w4消费)。字段勿改名,歧义先问 lead。
+- 依赖:w5 Phase3 放量 blockedBy task020/021/022 merge;Phase1 各 PR 到达即验。先 1-3 env 验格式(mock/本地)再放量100(避 gpt-5.5 限速)。
+- 踩坑提醒已下发:公有函数名勿以 test_ 开头(pytest 收集坑,ERROR_BOOK E1);cli.py 三 worker 都加子命令→各仅加 subparser+一行减冲突,merge 顺序解决。

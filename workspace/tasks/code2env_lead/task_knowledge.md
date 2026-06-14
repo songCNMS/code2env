@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Knowledge Entries
 
@@ -14,3 +14,7 @@
 5. 多 PR 并行合并：多个 PR 改同一批文件(spec/indexer/models/runtime/README)时，先合一个干净的→其余各自 `git merge origin/main` 解冲突+重测+复验再顺序 self-merge；互不重叠的 PR(如 PR#7 spec/indexer vs PR#8 runtime)可在 base 合入后并行收尾。
 6. pytest 收集坑(ERROR_BOOK E1)：公有 API 函数名勿以 test_ 开头，否则 pytest 误当用例收集报 fixture not found；unittest 不收集裸函数会漏检。本仓 CI/基线用 `pytest tests/`，验收须以 pytest 而非 unittest 为准。
 7. 本仓默认分支是 main(非 master)；team_lead 监工用事件驱动后台等待器(轮询 mailbox unread, 有即唤醒)比盲 cron 高效。
+8. LLM/endpoint(Session2):code2env/llm.py OpenAICompatibleLLM 仅有 evaluate_candidate(候选筛选),无通用 chat;resolve_endpoint_config 支持 --endpoint-file+按 model 名匹配多端点。gpt-5.5 endpoint=/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt(行1 外网 gpt-5.5,行2- 本地127.0.0.1 Kimi-K2.6/xyz-30b 作回退);endpoints.vpn.txt 不存在;默认 /work-agents/endpoints.txt 不存在必须显式传 --endpoint-file。
+9. 多 worker 共改 cli.py(batch/rollout/report 子命令):每个仅加 subparser+一行 dispatch、实现放各自模块,冲突面小;参考 Session1 PR#7/#9 不同区域 ort 自动合并经验。
+10. 跨 worker 数据契约由 lead 在 task 文档统一定义(gen manifest / conversation JSON schema),产出方与消费方共享、字段勿改名、歧义先 mailbox 问 lead——避免并行实现 schema 漂移。
+11. 大执行任务(放量100+rollout)由 tester/集成 runner 跑(team_lead 不亲跑);先小样(1-3 env,mock/本地端点)验格式再放量,避免外网模型限速浪费。
