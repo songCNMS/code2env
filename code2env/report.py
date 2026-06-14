@@ -317,12 +317,93 @@ def _golden_kind(status: str | None) -> str:
     return "unknown"
 
 
+# --------------------------------------------------------------------------- #
+# determinism (task038 / w1 contract): manifest.envs[].determinism is
+# "deterministic" or "nondeterministic:<reason>". Non-deterministic envs cannot
+# give a stable correctness signal, so they are excluded from the *true non-zero*
+# correct-rate denominator. Missing degrades to "unknown" -> treated as usable
+# (only an explicit "nondeterministic" excludes, so we never over-shrink).
+# --------------------------------------------------------------------------- #
+DETERMINISM_OK = "deterministic"
+DETERMINISM_NONDET_PREFIX = "nondeterministic"
+
+
+def _determinism_by_env(manifest: dict[str, Any]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for env in manifest.get("envs", []) or []:
+        env_id = env.get("env_id")
+        value = env.get("determinism")
+        if env_id is not None and isinstance(value, str) and value:
+            out[env_id] = value
+    return out
+
+
+def _determinism_kind(value: str | None) -> str:
+    if not isinstance(value, str) or not value:
+        return "unknown"
+    if value == DETERMINISM_OK:
+        return "deterministic"
+    if value.startswith(DETERMINISM_NONDET_PREFIX):
+        return "nondeterministic"
+    return "unknown"
+
+
+def _env_bucket(
+    env_id: Any, golden_by_env: dict[str, str], determinism_by_env: dict[str, str]
+) -> str:
+    """Mutually-exclusive bucket for a rollout's backing env.
+
+    Returns one of: ``weak_oracle`` / ``nondeterministic`` / ``deterministic_usable``
+    / ``golden_unknown``. Weak oracle takes precedence over non-determinism. Missing
+    determinism degrades to usable (only explicit ``nondeterministic`` excludes).
+    """
+
+    golden = _golden_kind(golden_by_env.get(env_id))
+    if golden == "weak_oracle":
+        return "weak_oracle"
+    if _determinism_kind(determinism_by_env.get(env_id)) == "nondeterministic":
+        return "nondeterministic"
+    if golden == "real_value":
+        return "deterministic_usable"
+    return "golden_unknown"
+
+
+def _correctness_stats(
+    rollouts: list[dict[str, Any]],
+    golden_by_env: dict[str, str],
+    determinism_by_env: dict[str, str],
+) -> dict[str, Any]:
+    """Core correctness numbers for one rollout run (used by current + evolution)."""
+
+    total = len(rollouts)
+    correct = sum(1 for c in rollouts if _final(c).get("correct") is True)
+    det_usable = 0
+    true_nonzero_correct = 0
+    for conv in rollouts:
+        if _env_bucket(conv.get("env_id"), golden_by_env, determinism_by_env) == "deterministic_usable":
+            det_usable += 1
+            if _final(conv).get("correct") is True:
+                true_nonzero_correct += 1
+    return {
+        "total": total,
+        "correct": correct,
+        "correct_rate": _rate(correct, total),
+        "deterministic_usable": det_usable,
+        "true_nonzero_correct": true_nonzero_correct,
+        "true_nonzero_correct_rate": _rate(true_nonzero_correct, det_usable),
+    }
+
+
 def _summarize_rollouts(
     rollouts: list[dict[str, Any]],
     low_score_threshold: float,
     golden_status_by_env: dict[str, str] | None = None,
+    determinism_by_env: dict[str, str] | None = None,
+    prev_correct_by_env: dict[str, bool] | None = None,
 ) -> dict[str, Any]:
     golden_status_by_env = golden_status_by_env or {}
+    determinism_by_env = determinism_by_env or {}
+    prev_correct_by_env = prev_correct_by_env or {}
     total = len(rollouts)
     qualified = sum(1 for c in rollouts if _is_qualified(c))
     correct = sum(1 for c in rollouts if _final(c).get("correct") is True)
@@ -330,22 +411,43 @@ def _summarize_rollouts(
     mean_score = round(sum(scores) / total, 4) if total else 0.0
     low_score = sum(1 for s in scores if s < low_score_threshold)
 
-    # True correct rate: exclude rollouts whose env has a weak oracle from the
-    # denominator; count them separately. correct among the usable (non-weak) set.
+    # True correct rate (task033): exclude only weak-oracle envs from the denominator.
+    # Categories (task039): further split by determinism into a mutually-exclusive
+    # partition over all rollouts.
     weak_oracle_excluded = 0
     golden_unknown = 0
     usable = 0
     true_correct = 0
+    nondeterministic_excluded = 0
+    deterministic_usable = 0
+    true_nonzero_correct = 0
+    still_wrong = 0
+    envelope_flipped_to_correct = 0
     for conv in rollouts:
-        kind = _golden_kind(golden_status_by_env.get(conv.get("env_id")))
+        env_id = conv.get("env_id")
+        kind = _golden_kind(golden_status_by_env.get(env_id))
+        is_correct = _final(conv).get("correct") is True
+        # task033 weak-only-excluded view (kept for "保留原指标").
         if kind == "weak_oracle":
             weak_oracle_excluded += 1
-            continue
-        if kind == "unknown":
-            golden_unknown += 1
-        usable += 1
-        if _final(conv).get("correct") is True:
-            true_correct += 1
+        else:
+            if kind == "unknown":
+                golden_unknown += 1
+            usable += 1
+            if is_correct:
+                true_correct += 1
+        # task039 determinism-aware partition.
+        bucket = _env_bucket(env_id, golden_status_by_env, determinism_by_env)
+        if bucket == "nondeterministic":
+            nondeterministic_excluded += 1
+        elif bucket == "deterministic_usable":
+            deterministic_usable += 1
+            if is_correct:
+                true_nonzero_correct += 1
+                if prev_correct_by_env.get(env_id) is False:
+                    envelope_flipped_to_correct += 1
+            else:
+                still_wrong += 1
 
     by_model: dict[str, dict[str, Any]] = {}
     for conv in rollouts:
@@ -374,6 +476,19 @@ def _summarize_rollouts(
         "golden_unknown": golden_unknown,
         "true_correct": true_correct,
         "true_correct_rate": _rate(true_correct, usable),
+        # task039 determinism-aware categories (mutually-exclusive partition of total).
+        "categories": {
+            "deterministic_usable": deterministic_usable,
+            "envelope_flipped_to_correct": envelope_flipped_to_correct,
+            "nondeterministic_excluded": nondeterministic_excluded,
+            "weak_oracle_excluded": weak_oracle_excluded,
+            "golden_unknown": golden_unknown,
+            "still_wrong": still_wrong,
+        },
+        # True non-zero correct rate: denominator = deterministic usable set
+        # (weak_oracle AND nondeterministic both removed).
+        "true_nonzero_correct": true_nonzero_correct,
+        "true_nonzero_correct_rate": _rate(true_nonzero_correct, deterministic_usable),
         "mean_score": mean_score,
         "low_score_threshold": low_score_threshold,
         "low_score_count": low_score,
@@ -499,33 +614,78 @@ def _dependency_comparison(
 # --------------------------------------------------------------------------- #
 # Top-level report
 # --------------------------------------------------------------------------- #
+def _correct_by_env(rollouts: list[dict[str, Any]]) -> dict[str, bool]:
+    """Map env_id -> whether that rollout was correct (last write wins per env)."""
+
+    out: dict[str, bool] = {}
+    for conv in rollouts:
+        env_id = conv.get("env_id")
+        if env_id is not None:
+            out[env_id] = _final(conv).get("correct") is True
+    return out
+
+
+def _build_evolution(
+    runs: list[list[dict[str, Any]]],
+    golden_by_env: dict[str, str],
+    determinism_by_env: dict[str, str],
+) -> list[dict[str, Any]]:
+    """Per-run correct / true-nonzero stats labelled v1..vN (current last)."""
+
+    evolution: list[dict[str, Any]] = []
+    for index, run in enumerate(runs, start=1):
+        stats = _correctness_stats(run, golden_by_env, determinism_by_env)
+        evolution.append({"label": f"v{index}", **stats})
+    return evolution
+
+
 def build_report(
     manifest_path: str | Path,
     rollouts_path: str | Path | None = None,
     *,
     low_score_threshold: float = 0.5,
     baseline_manifest_path: str | Path | None = None,
+    prev_rollouts_paths: list[str | Path] | None = None,
 ) -> dict[str, Any]:
     """Build the structured report dict from a manifest and rollout products.
 
     ``baseline_manifest_path`` is an optional pre-dependency-install manifest used
     for the golden ``error -> real_value`` / smoke before-after comparison.
+
+    ``prev_rollouts_paths`` are earlier rollout runs (oldest first); the current
+    ``rollouts_path`` is the newest. They drive the v1..vN correct-rate evolution
+    and the ``envelope_flipped_to_correct`` count (rollouts that were incorrect in
+    the immediately-previous run but correct now).
     """
 
     manifest = read_json(manifest_path)
     rollouts = load_rollouts(rollouts_path)
     baseline_manifest = read_json(baseline_manifest_path) if baseline_manifest_path else None
     golden_status_by_env = _golden_status_by_env(manifest)
+    determinism_by_env = _determinism_by_env(manifest)
+
+    prev_runs = [load_rollouts(p) for p in (prev_rollouts_paths or [])]
+    prev_correct_by_env = _correct_by_env(prev_runs[-1]) if prev_runs else {}
+    evolution = _build_evolution([*prev_runs, rollouts], golden_status_by_env, determinism_by_env)
+
     return {
         "sources": {
             "manifest": str(manifest_path),
             "rollouts": str(rollouts_path) if rollouts_path is not None else None,
+            "prev_rollouts": [str(p) for p in (prev_rollouts_paths or [])],
             "baseline_manifest": str(baseline_manifest_path) if baseline_manifest_path else None,
             "manifest_generated_at": manifest.get("generated_at"),
             "rollout_records": len(rollouts),
         },
         "env_generation": _summarize_generation(manifest),
-        "rollouts": _summarize_rollouts(rollouts, low_score_threshold, golden_status_by_env),
+        "rollouts": _summarize_rollouts(
+            rollouts,
+            low_score_threshold,
+            golden_status_by_env,
+            determinism_by_env,
+            prev_correct_by_env,
+        ),
+        "evolution": evolution,
         "dependency_comparison": _dependency_comparison(manifest, baseline_manifest),
         "failure_clusters": {
             "generation": _cluster_generation_failures(manifest),
@@ -636,11 +796,42 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| **True correct (weak-oracle excluded)** | "
         f"**{rollouts['true_correct']}/{rollouts['usable_total']} ({_pct(rollouts['true_correct_rate'])})** |"
     )
+    lines.append(
+        f"| **True non-zero correct (weak-oracle + nondeterministic excluded)** | "
+        f"**{rollouts['true_nonzero_correct']}/{rollouts['categories']['deterministic_usable']} "
+        f"({_pct(rollouts['true_nonzero_correct_rate'])})** |"
+    )
     lines.append(f"| Weak-oracle excluded from denominator | {rollouts['weak_oracle_excluded']} |")
-    lines.append(f"| Golden status unknown (kept in denominator) | {rollouts['golden_unknown']} |")
+    lines.append(f"| Golden status unknown (kept in weak-only denominator) | {rollouts['golden_unknown']} |")
     lines.append(f"| Mean score | {rollouts['mean_score']} |")
     lines.append(f"| Low score (< {rollouts['low_score_threshold']}) | {rollouts['low_score_count']} |")
     lines.append("")
+
+    cats = rollouts.get("categories", {})
+    lines.append("### Categories")
+    lines.append("")
+    lines.append("| Category | Count |")
+    lines.append("|---|---:|")
+    lines.append(f"| deterministic_usable | {cats.get('deterministic_usable', 0)} |")
+    lines.append(f"| envelope_flipped_to_correct | {cats.get('envelope_flipped_to_correct', 0)} |")
+    lines.append(f"| nondeterministic_excluded | {cats.get('nondeterministic_excluded', 0)} |")
+    lines.append(f"| weak_oracle_excluded | {cats.get('weak_oracle_excluded', 0)} |")
+    lines.append(f"| still_wrong | {cats.get('still_wrong', 0)} |")
+    lines.append(f"| golden_unknown | {cats.get('golden_unknown', 0)} |")
+    lines.append("")
+
+    evolution = report.get("evolution", [])
+    if len(evolution) > 1:
+        lines.append("### v1 → … → vN evolution")
+        lines.append("")
+        lines.append("| Run | Total | Correct | Correct rate | True non-zero | True rate |")
+        lines.append("|---|---:|---:|---:|---:|---:|")
+        for run in evolution:
+            lines.append(
+                f"| {run['label']} | {run['total']} | {run['correct']} | {_pct(run['correct_rate'])} "
+                f"| {run['true_nonzero_correct']}/{run['deterministic_usable']} | {_pct(run['true_nonzero_correct_rate'])} |"
+            )
+        lines.append("")
 
     if rollouts["by_model"]:
         lines.append("### By Model")
@@ -676,6 +867,7 @@ def write_report(
     *,
     low_score_threshold: float = 0.5,
     baseline_manifest_path: str | Path | None = None,
+    prev_rollouts_paths: list[str | Path] | None = None,
 ) -> dict[str, str]:
     """Build and write ``report.json`` + ``report.md`` into ``output_dir``."""
 
@@ -684,6 +876,7 @@ def write_report(
         rollouts_path,
         low_score_threshold=low_score_threshold,
         baseline_manifest_path=baseline_manifest_path,
+        prev_rollouts_paths=prev_rollouts_paths,
     )
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)

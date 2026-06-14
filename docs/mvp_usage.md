@@ -265,17 +265,19 @@ conversation products into a markdown + JSON summary report:
 
 ```bash
 python -m code2env report /path/to/manifest.json \
-  --rollouts /path/to/rollouts/ \
+  --rollouts /path/to/v3_rollouts/ \
   --output-dir /tmp/code2env_report \
-  [--baseline-manifest /path/to/pre_install_manifest.json]
+  [--baseline-manifest /path/to/pre_install_manifest.json] \
+  [--prev-rollouts /path/to/v1_rollouts/ --prev-rollouts /path/to/v2_rollouts/]
 ```
 
 It reads (read-only, shared field contract) the manifest `summary` / `envs` /
-`skipped` (incl. each env's `golden_status`) and each rollout's
+`skipped` (incl. each env's `golden_status` and `determinism`) and each rollout's
 `final.{correct,score}`, `num_tool_call_rounds`, `qualified`, and
 `termination_reason`. `--rollouts` accepts a directory (per-env `<env_id>.json`,
 falling back to `rollouts.jsonl`) or a `.jsonl` file, and may be omitted to
-summarize generation only.
+summarize generation only. `--prev-rollouts` (repeatable, oldest first) supplies
+earlier runs for the v1→…→vN evolution and the envelope-flip count.
 
 The report contains:
 
@@ -290,6 +292,17 @@ The report contains:
   (`weak_oracle_excluded`), so the true rate is `correct / usable` over real-oracle
   envs only — stripping the error-match false positives. A missing `golden_status`
   degrades to `unknown` and is kept in the denominator (never silently shrinks it).
+- **Categories + true non-zero rate** (D4 v3) consume `manifest.envs[].determinism`
+  (task038 / w1 contract: `deterministic` or `nondeterministic:<reason>`). Each
+  rollout falls into a mutually-exclusive bucket: `deterministic_usable`
+  (`real_value` + deterministic), `nondeterministic_excluded`, `weak_oracle_excluded`,
+  or `golden_unknown`; within the usable set, `still_wrong` vs correct, and
+  `envelope_flipped_to_correct` (incorrect in the previous run, correct now). The
+  **true non-zero correct rate** is `correct / deterministic_usable` (both weak
+  oracle and non-determinism removed). Missing `determinism` degrades to usable
+  (only an explicit `nondeterministic` excludes).
+- **v1→…→vN evolution** (`--prev-rollouts`): per-run correct rate and true non-zero
+  correct rate across the earlier runs plus the current one, labelled `v1`…`vN`.
 - **Dependency-install before/after** (`--baseline-manifest`, optional): the count
   of golden `error → real_value` transitions (env was non-`real_value` in the
   baseline, `real_value` now) and the per-repo `smoke_ok` before/after delta (e.g.

@@ -141,9 +141,10 @@ explainable failure clusters:
 
 ```bash
 python -m code2env report /path/to/manifest.json \
-  --rollouts /path/to/rollouts/ \
+  --rollouts /path/to/v3_rollouts/ \
   --output-dir /tmp/code2env_report \
-  [--baseline-manifest /path/to/pre_install_manifest.json]
+  [--baseline-manifest /path/to/pre_install_manifest.json] \
+  [--prev-rollouts /path/to/v1_rollouts/ --prev-rollouts /path/to/v2_rollouts/]
 # writes /tmp/code2env_report/report.md and report.json
 ```
 
@@ -155,8 +156,15 @@ and a `submit_answer`.
 The report computes a **true correct rate** from `manifest.envs[].golden_status`
 (`real_value` / `weak_oracle:<reason>`): rollouts on weak-oracle envs are excluded
 from the denominator (and counted separately), removing error-match false
-positives from the raw correct rate. With `--baseline-manifest` (a pre-dependency
-manifest) it also reports golden `error → real_value` transitions and per-repo
-`smoke_ok` before/after deltas. Failure clusters use a fixed, explainable tag set:
-`dependency_failure`, `fixture_unsynthesizable`, `weak_oracle`, `tool_granularity`,
-`format_error`, `other`.
+positives from the raw correct rate. It also consumes
+`manifest.envs[].determinism` (`deterministic` / `nondeterministic:<reason>`) to
+report **categories** (`deterministic_usable`, `envelope_flipped_to_correct`,
+`nondeterministic_excluded`, `weak_oracle_excluded`, `still_wrong`) and a **true
+non-zero correct rate** over the deterministic-usable set (weak oracle *and*
+non-determinism removed). `--prev-rollouts` (repeatable, oldest first) adds a
+`v1→…→vN` correct-rate evolution and the envelope-flip count. With
+`--baseline-manifest` (a pre-dependency manifest) it also reports golden
+`error → real_value` transitions and per-repo `smoke_ok` before/after deltas.
+Failure clusters use a fixed, explainable tag set: `dependency_failure`,
+`fixture_unsynthesizable`, `weak_oracle`, `tool_granularity`, `format_error`,
+`other`.
