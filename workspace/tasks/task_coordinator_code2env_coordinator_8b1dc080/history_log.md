@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=14 -->
+<!-- METADATA:SESSION=15 -->
 
 ## Session 0 - Created with coordinator
 
@@ -119,3 +119,10 @@
 - w1 即刻执行:batch 产 v3 manifest(golden_status+determinism)→确定性可用集 gpt-5.5 重跑→outputs/rollouts_v3/+report_v3(真实非零 correct率+四类别+v1→v2→v3 对比)。ETA~25-35min。
 - coordinator:确认 lead 处置正确(改派而非空等),不干预;监控 b0zkh9q4w 就位待产物。
 - 下步:v3 产物落地后独立核验真实非零正确率+确定性可用集大小+四类别占比,向用户汇报;监控超时则 re-arm。
+
+## Session 15 - v3 监控二次超时,核查 w1 进度(健康)
+
+- Monitor b0zkh9q4w 二次超时。核查 w1/task042:42秒前提交"Session1 接受+fix-forward+v3 batch 开跑",8min前初始化,3min前"envdeps uv 兜底清理 venv 残留"。PR#27 OPEN。outputs/phase3_v3/ 已建 manifest.json+packages+specs(带 golden_status+determinism)→env 生成阶段完成,正跑 gpt-5.5 rollout,rollouts_v3 仍 0(生成中)。
+- 判断:改派 w1 后恢复良好、健康活跃,只是重跑未完(ETA~25-35min,w1 刚起约8min)。无需 nudge。
+- coordinator:重新布置 Monitor bgp0aka73(60min)待 rollouts_v3+report_v3(扩匹配 report_v3/*.md|*.json|rollout_v3_run_summary.json)就绪通知核验。
+- 下步:v3 产物落地后独立核验真实非零正确率+确定性可用集大小+四类别占比+v1→v2→v3,向用户汇报。
