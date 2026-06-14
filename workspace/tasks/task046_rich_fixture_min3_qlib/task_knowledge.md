@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Knowledge Entries
 
@@ -18,3 +18,4 @@
 12. Default batch should not synthesize generic `Path` annotations; required Path params are skipped unless a symbol-specific safe rich policy exists. This avoids running Path writer funcs such as `Path.write_text` during smoke/golden.
 13. Worker_4 confirmed default HTTP side effects still skip via indexer `risk_flags`; no need to broaden the rich unsafe hook to generic `get`.
 14. Queued mailbox/peer checkpoints can arrive stale; verify PR head with `gh pr view <n> --json headRefOid` before assuming GitHub is still at an older bootstrap commit.
+15. Residual validation risks accepted for task046: optional qlib deps are required for the usable `calc_adjusted_price` env; torch is unavailable so torch candidates remain skipped; mock helper trace calls can TypeError before the entrypoint while trace flags and final correctness still pass.

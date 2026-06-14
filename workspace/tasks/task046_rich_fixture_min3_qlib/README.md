@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - Rich fixtures for qlib min-3 semantic-helper envs
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## 背景
 

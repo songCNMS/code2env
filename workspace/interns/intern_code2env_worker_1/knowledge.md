@@ -1,6 +1,6 @@
 # intern_code2env_worker_1 - 个人知识库
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=5 -->
 
 ---
 
@@ -13,3 +13,5 @@
 5. 流程：本仓库默认分支是 `main`(非 playbook 写的 master)；GitHub repo 用 `gh pr merge <n> --squash`(playbook 的 codeup_pr 是 codeup 仓库专用)。
 6. 流程：daemon HTTP API 端口是 ephemeral，记录在 /tmp/feishu_daemon.json 的 http_port；mailbox 汇报 POST http://127.0.0.1:<http_port>/api/intern/mail/to。
 7. 技术事实(task045)：batch 侧需要筛选最终 dedicated semantic helper tools 时应复用 `spec.semantic_helpers_for_candidate`，避免与 `ToolSpec` 里的 `call_<helper>`、side-effect helper partition、`MAX_SEMANTIC_HELPER_TOOLS` 上限语义漂移。
+8. 技术事实(task046)：rich fixture hydration 只能对显式 `__code2env_rich_fixture__` 描述符生效；source_root Path 描述符必须拒绝 absolute path 和 resolved outside-root path，且在任何 `mkdir` 前校验。
+9. 技术事实(task046)：default batch 不应 generic synthesize `Path` required params；否则 Path writer 函数可能在 golden/smoke 阶段写入 source tree，安全做法是默认 unsupported skip，除非 symbol-specific safe policy 显式处理。
