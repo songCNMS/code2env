@@ -1,6 +1,6 @@
 # task023_rollout_summary_report - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -29,3 +29,12 @@
 - 合并序更新：我排在 **PR#11(D2)** 之后（避免与 D2 在 cli.py 并发冲突）。当前 **hold**，等 lead 确认 PR#11 merged 后 ping。
 - 届时动作：`git fetch && git merge origin/main` 解 cli.py(report subparser) 冲突 → `pytest tests/` 全绿 → `gh pr merge 13 --squash` → 标 task Completed/Idle → mailbox 回报。
 - 本 turn 无代码改动，仅记录 hold 状态。
+
+## Session 4 - 2026-06-13 - 合并链轮到我，self-merge PR#13 完结
+
+- lead ping：PR#11(D2) 已 merged(1811e1e,72 passed)，合并链轮到我。
+- `git fetch && git merge origin/main`：解 3 处冲突——code2env/cli.py(import+subparser+dispatch+handler 四段，保留 batch+rollout-export+rollout+report 四能力)、README.md、docs/mvp_usage.md(各保留 D2 rollout + D4 report 两段)。
+- `pytest tests/`=86 passed（72 main + 14 report）；CLI `--help` 列出全部 11 子命令含 report；report 端到端复跑正常。
+- self-merge PR#13（squash, commit **91544a9**, mergedAt 2026-06-14T05:02:16Z），cleanup 分支。Session2 四能力(batch/rollout/rollout-export/report)全部在 main。
+- 因合并前未先翻 Completed/Idle（按 lead 简化流程直接 merge），本次用小型 bookkeeping PR (intern_code2env_worker_4/task023_complete) 补翻 README→Completed + status→Idle，self-merge。
+- 已 mailbox 回报 lead squash commit。
