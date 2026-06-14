@@ -1,6 +1,6 @@
 # task046_rich_fixture_min3_qlib - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -32,3 +32,9 @@
 - Focused verification passed: `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_batch.py` -> 30 passed, 1 skipped.
 - Full verification passed: `python3 -m pytest -q` -> 175 passed, 1 skipped.
 - Endpoint cleanup check found no lingering `code2env rollout` / `gpt-oss-120b` process; `pgrep` matched only the check command itself.
+
+## Session 4 - 2026-06-14 UTC - Queued checkpoint reconciliation
+
+- Received stale queued checkpoint saying PR #32 was still at bootstrap head `7635f52`.
+- Verified with `gh pr view 32 --json headRefOid` and local git that PR #32 is open at product-code head `65db7edb17279c85d5969445ca0ad87813c36a87`, with implementation commits `750a714` and `65db7ed` included.
+- Confirmed local branch is clean and no new blocker is present; sent mailbox progress report with the current PR head, pushed implementation status, validation results, and endpoint cleanup state.

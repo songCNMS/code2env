@@ -10,7 +10,7 @@
 | Team | code2env |
 | Current Task | task046_rich_fixture_min3_qlib |
 | PR | https://github.com/songCNMS/code2env/pull/32 |
-| Session | 3 |
+| Session | 4 |
 
 ## Recent Progress
 
@@ -20,3 +20,4 @@
 - Mock subfunction rollout/export succeeded under `outputs/session15_rich_fixture_min3_qlib/w1_rollouts_envreplay`; endpoint `gpt-oss-120b` was probed reachable but rollout produced no output after multiple minutes and was stopped.
 - Session 3 validation blocker fix: source-root Path descriptors now reject absolute/outside-root paths before mkdir, and default batch no longer synthesizes generic Path annotations; focused `tests/test_rich_fixtures.py tests/test_batch.py` -> 30 passed, 1 skipped; full pytest -> 175 passed, 1 skipped.
 - Endpoint cleanup check found no lingering rollout process; only the `pgrep` check command matched.
+- Session 4 stale queued checkpoint handled: verified PR #32 is no longer bootstrap-only; current product-code head is `65db7ed` with rich fixture implementation, path confinement, and default Path skip included. Mailbox progress report sent again with current head/status.
