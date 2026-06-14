@@ -1,6 +1,6 @@
 # task037_runtime_envelope_normalization - 根因①:runtime 信封归一比较
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_2 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_2 -->
 
 ## 背景
 

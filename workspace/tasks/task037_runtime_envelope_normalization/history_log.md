@@ -1,6 +1,6 @@
 # task037_runtime_envelope_normalization - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -22,3 +22,8 @@
 - 补回归测：函数返回 {ok:true,value:5} 时 agent 提交 bare 5 判 INCORRECT；返回 {kind:json,value:7} 时提交 bare 7 判 INCORRECT；三正确形状仍 correct。
 - 先 `git merge origin/main`（落后 6 commit，含 task030/035；无代码冲突，仅 docs/task 文档自动合并，避免回退）。`python3 -m pytest tests/` → 127 passed。更新 docs/mvp_usage.md 段落。
 - 待 mailbox 回报 lead 复审。
+
+## Session 3 - 2026-06-14 UTC - 复审通过 + self-merge
+
+- lead 复审 APPROVE（不剥 submitted、只枚举 golden 三接受形状）+ tester(w3) 全 PASS（127 passed，E2 对抗确认）。批准合并；本 PR 为 Session4 第一个合并（runtime.py 单文件，0 behind main）。
+- self-merge（squash）待执行，merge 后 mailbox 回报 squash commit；其后 PR#24/PR#26 依次 rebase 合。
