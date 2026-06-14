@@ -65,3 +65,19 @@ python -m code2env materialize /tmp/code2env_specs/spec.json \
   --fixture-json '{"args": ["user", "pass"], "kwargs": {}}' \
   --output /tmp/materialized/spec.json
 ```
+
+### Rollout conversation export (D3)
+
+Persist rollout results (`RolloutResult` records, one JSON object per line) as
+readable per-env conversation JSON plus a merged `rollouts.jsonl`:
+
+```bash
+python -m code2env rollout-export /tmp/results.jsonl --export-dir /tmp/rollouts
+```
+
+`--export-dir` defaults to the coordinator's `outputs/rollouts/` (outside the repo,
+not tracked by git, auto-created). The library API — `write_conversation`,
+`validate_conversation`, `load_conversation`, `iter_jsonl` — is documented in
+[docs/mvp_usage.md](docs/mvp_usage.md); `write → load` round-trips, and
+`validate_conversation` enforces the shared schema (including that `qualified` is
+self-consistent: `num_tool_call_rounds >= 2` and a `submit_answer` present).
