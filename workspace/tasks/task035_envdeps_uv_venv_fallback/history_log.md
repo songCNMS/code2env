@@ -21,3 +21,5 @@
 - PR#22 仍待 tester(w3) 验证 + lead review/merge；本分支无新代码改动。
 - lead 同时分配 task038_determinism_gate，按指示在独立分支并行接受执行(见 task038 文档)。
 - task035 merge 待 lead 批准后按 worker merge 流程收尾。
+- lead APPROVE + tester(w3) PASS(114 passed)，批准合并：先合 PR#22 再在更新 main 上做 task038(都在 envdeps, 先合避免自冲突)。
+- 合并流程：git merge origin/main(仅新增 task 文档, 无代码冲突)→git rm WIP.md→pytest 114 passed→self-merge PR#22(squash)→mailbox 回报 squash commit。
