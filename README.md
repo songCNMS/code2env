@@ -65,3 +65,24 @@ python -m code2env materialize /tmp/code2env_specs/spec.json \
   --fixture-json '{"args": ["user", "pass"], "kwargs": {}}' \
   --output /tmp/materialized/spec.json
 ```
+
+### Batch generation
+
+Generate many EnvPackages across repos in one pass, auto-synthesising a JSON fixture
+for each chosen function from its AST signature:
+
+```bash
+python -m code2env batch https://github.com/psf/requests https://github.com/pallets/flask \
+  --output-dir generated_envs/batch --target 100 --cache-dir .code2env_cache/repos
+```
+
+For each repo the pipeline runs `scan → synth fixture → draft → build` (optionally `smoke`)
+and writes a `manifest.json` under `--output-dir`. Fixture synthesis prefers functions with
+no required parameters (`empty_signature`) or whose required parameters carry simple typed
+annotations (`typed_signature`: `str/int/float/bool`, list/dict containers, `Optional`); a
+candidate is skipped (recorded in `manifest.skipped` with a reason) when it is a method
+(`not_module_level` / `requires_instance`), has a possible side effect (`possible_side_effect`,
+unless `--include-side-effects`), or has an untyped/unsupported required parameter. A build
+counts toward `--target` regardless of whether its smoke run passes (smoke failures are
+recorded with a reason). Cloned repo source and generated packages stay out of git
+(`.code2env_cache/` and `generated_envs/` are gitignored).
