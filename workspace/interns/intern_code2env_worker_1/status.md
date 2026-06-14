@@ -9,5 +9,5 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task030_deps_install_golden_recompute |
-| PR | https://github.com/songCNMS/code2env/pull/18 |
+| PR | https://github.com/songCNMS/code2env/pull/18 (实现完成, 待 tester(w3)/lead review) |
 | Session | 3 |
