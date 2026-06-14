@@ -1,19 +1,22 @@
 # intern_code2env_worker_4 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task044_subfunction_trace_rollout,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_4 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR | N/A |
-| Session | 3 |
+| Current Task | task044_subfunction_trace_rollout |
+| PR | tester reservation; awaiting w2 implementation PR |
+| Session | 4 |
 
-## 最近进展（Session 3）
+## 最近进展（Session 4）
 
+- Reserved as independent tester for task044_subfunction_trace_rollout; read task docs and coordinator handoff.
+- Validation plan: when w2 PR is ready, run focused tests, full `python3 -m pytest -q`, default-mode compatibility, and at least 3 trace-mode rollouts/equivalent fixture evidence using Session 7 artifacts.
+- Current state: no open task044 implementation PR found yet; waiting for w2 PR before validation.
 - Lead approved task043 / PR#29 merge after code review and w2 PASS validation; preparing self-merge.
 - task043_indexer_side_effect_get_filter completion metadata updated to Completed/Idle before squash merge.
 - task043_indexer_side_effect_get_filter / PR#29 已有实现提交 `a092a9e` 并推送：AST-aware side-effect target detection + focused tests。
