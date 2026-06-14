@@ -9,11 +9,14 @@
 | Role | worker |
 | Team | code2env |
 | Current Task | task044_subfunction_trace_rollout |
-| PR | tester reservation; awaiting w2 implementation PR |
-| Session | 4 |
+| PR | https://github.com/songCNMS/code2env/pull/30 |
+| Session | 2 |
 
-## 最近进展（Session 4）
+## 最近进展（Session 2）
 
+- Validated PR#30 at head `a79192f27ea4e282cd6d0dc95c6ae9620148a638`: focused rollout/export tests PASS, full pytest PASS, default-mode compatibility PASS, rollout-export compatibility PASS, and 3 Session 7 trace-mode mock rollouts PASS.
+- Evidence output: `/home/leisong/codes/work-agents/intern_code2env_worker_4/outputs/task044_pr30_validation/`.
+- Residual risk: validation used deterministic `--llm-mode mock` trace rollouts, not a live endpoint; endpoint prompt adherence is covered only by prior Session 7 evidence.
 - Reserved as independent tester for task044_subfunction_trace_rollout; read task docs and coordinator handoff.
 - Validation plan: when w2 PR is ready, run focused tests, full `python3 -m pytest -q`, default-mode compatibility, and at least 3 trace-mode rollouts/equivalent fixture evidence using Session 7 artifacts.
 - Current state: no open task044 implementation PR found yet; waiting for w2 PR before validation.

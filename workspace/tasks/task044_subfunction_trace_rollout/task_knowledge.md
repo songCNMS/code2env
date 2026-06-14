@@ -1,6 +1,6 @@
 # task044_subfunction_trace_rollout - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## 记录规则
 
@@ -15,3 +15,4 @@
 4. Session 7 evidence paths: debug repo `/home/leisong/codes/work-agents/intern_code2env_coordinator/debug/session7_trace_task_repo`; rollout artifacts `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session7_trace_rollouts/`.
 5. Acceptance requires trace mode to preserve default rollout behavior and expose machine-verifiable metadata such as `required_helper_tools`, `observed_tools`, `helper_trace_complete`, `entrypoint_after_helpers`, and skipped helper reasons.
 6. Tester plan when w2 PR is ready: focused tests, full `python3 -m pytest -q`, default-mode compatibility check, rollout-export compatibility check if trace metadata touches conversation schema, and at least 3 trace-mode package runs from Session 7 artifacts or equivalent fixtures.
+7. PR#30 validation at `a79192f`: focused tests 38 passed, full pytest 156 passed, default mock rollout stayed `call_entrypoint -> submit_answer`, three trace mock rollouts completed helper sequence before entrypoint, and trace-only rollout-export wrote 3 validated records.
