@@ -1,6 +1,14 @@
 # task032_qa_session3_fixes - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
+
+## Session 5 - 2026-06-13 UTC - Phase4 验证 PR#22 task035 (envdeps uv venv 兜底)
+
+- lead ping(并行硬化): 验 PR#22 task035。checkout intern_code2env_worker_1/task035 → pytest 114 passed(test_envdeps 19, 新 CreateVenvUvFallbackTest 6)。
+- 逐条 4 项全 PASS: stdlib venv 失败+uv 存在→uv venv --seed 回退; uv 缺失/也失败→上抛→build_repo_venv venv_failed 优雅降级; golden_status 契约与 happy path 零改动(runner/which keyword-only 默认, 向后兼容); 注入式单测无网络。
+- 分支 0 behind main(已含 task030), 无需 merge。非阻塞: 仍跟踪 WIP.md(同 task030), 建议 w1 合前 git rm。
+- 建议 APPROVE; mailbox 回报。
+- 修复: 上轮发现 Stop hook 读共享 repo status.md, 本轮起每 session 同步共享 repo status + push main。
 
 ## Session 4 - 2026-06-13 UTC - Phase3 验证 PR#18 task030 (+030↔033 交叉核对)
 

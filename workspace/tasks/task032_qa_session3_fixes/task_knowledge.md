@@ -1,6 +1,6 @@
 # task032_qa_session3_fixes - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## 记录规则
 
@@ -84,3 +84,16 @@
 - task031(PR#17) PASS / task033(PR#20) PASS / task030(PR#18) PASS — 均建议 APPROVE。
 - 跨 PR golden_status 契约: w1(030 写) ↔ w4(033 读) 已核对一致, 无漂移。
 - 合并卫生: w1 需 git rm WIP.md; task030 实测 merge origin/main 冲突仅 WIP.md(代码文件干净)。
+
+### [Phase4] task035 (PR#22, 分支 ...worker_1/task035_..., fdefa8f) — APPROVE 建议(处理 WIP.md 后), 无代码阻塞
+- pytest tests/=114 passed; test_envdeps=19(新 CreateVenvUvFallbackTest 6); 分支 0 behind main 无需 merge。
+- 1[PASS] stdlib venv 失败+uv 存在→uv venv --seed --python base 回退(_create_venv 捕获 CalledProcessError/OSError→which uv→跑 uv)。
+- 2[PASS] uv 缺失 re-raise 原异常 / uv 也失败 raise uv_exc from venv_exc → build_repo_venv(envdeps:77)catch → deps_status=venv_failed 优雅降级。
+- 3[PASS] 不改 golden_status 契约/既有行为: 仅动 _create_venv; happy path 不变; runner/which keyword-only 默认→build_repo_venv positional 调用向后兼容。
+- 4[PASS] 注入式单测无网络(runner/which mock)。
+- 非阻塞: 同 task030 的 WIP.md(分支 new file vs main), 建议合前 git rm。
+
+### [流程修复] Stop hook 读共享 repo status.md (重要)
+- Stop hook 校验的 Session 号来自**共享 repo** /home/leisong/codes/work-agents/code2env/workspace/interns/intern_code2env_worker_3/status.md(在 main), 不是我 task 分支 worktree 的副本。
+- tester/不 merge 的 task 里, 分支上改 status 到不了 main, 共享副本停在上次合并态→hook 报 Session 不符。
+- 规避: 每 session 直接编辑共享 repo 的 status.md(Session=本轮预期)+ git push origin main(workspace 协调文件直推 main 是被允许的, 同 create-task 流程)。已写入 Claude memory。
