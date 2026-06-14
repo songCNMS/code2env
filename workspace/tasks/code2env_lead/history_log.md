@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - Created with team lead
 
@@ -82,3 +82,9 @@
 - w3 PR#23 验证暂停待修订版;PR#22 uv 兜底 w3 PASS,w1 先合再 rebase task038。
 - 回 coordinator session9 跟进:037 review中/038待审/039待审/041 blocked;ETA~50-70min;卡点仅 037 过度剥壳(已处理)。
 - 教训:信封归一不能贪婪剥(会过度剥到函数自身 wrapper 形状返回值),要按 golden 已知固定结构定深、和确定形状集比对。
+
+## Session 5 - v3 三修复合并完成 + w5 卡住改派 w1
+- Session4 三 PR 全 merged:信封①(#23 7c0a82c)/report_v3(#26 ba7dbf7)/确定性②(#24 716b62d),main 148 passed。lead review 全 APPROVE(PR#23 抓过度剥壳 REQUEST_CHANGES 后修订)+ tester(w3)全 PASS + 037↔039/038↔039 交叉核对一致。Deliverable① 完成。
+- v3 重跑关键路径事故:原 runner w5(task041)疑似 session 卡住——lead ping 启动后 w5 status 仍"待 ping"、无 rerun 进程、outputs/rollouts_v3 无产物。coordinator roll-call 告警并授权改派。
+- 处置:核实(0 产物/0 进程/status 未动)确认 w5 卡住→改派 v3 执行给空闲 w1(task042,深谙 envdeps/determinism;uv 兜底已折进 envdeps 无需 wrapper)→令 w5 stand down 避免双跑 outputs/rollouts_v3→回 coordinator。
+- 教训:peer send "delivered" 只到 transport,不保证 worker session 消费;关键路径单点 runner 卡住要靠客观信号(产物/进程/status)核实,不能只看 delivered;coordinator roll-call 用客观活跃度(git+PR+产物)发现卡点很有效。worker 卡住时果断改派给空闲 worker,别让关键路径空等。
