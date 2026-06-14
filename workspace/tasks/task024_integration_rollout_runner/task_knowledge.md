@@ -14,6 +14,9 @@
 - [PR#14 D1 task020, HEAD f3e7ab7] **PASS**：pytest=44；manifest 严格契约、empty/typed fixture 策略、跳过记 reason、generated_envs/+.code2env_cache/ 已 gitignore。CLI：`code2env batch <repos> --output-dir(默认 generated_envs/batch) --target --per-repo-limit --no-smoke`。
 - [PR#13 D4 task023, HEAD 462bfff] **PASS（带 finding）**：pytest=42；report.md+json、成功率/by_repo/合格率/平均score/聚类全产出、契约未改名。CLI：`code2env report --manifest --rollouts --output-dir`。
   - ⚠️ **跨模块 finding（Phase3 前必查）**：report.py `_TAG_KEYWORDS["fixture_unsynthesizable"]` 不含 D1 实际 reason 子串（untyped_required_param/unsupported_param_type/requires_instance/possible_side_effect/not_module_level/function_node_not_found）→ 这些 fixture/skip 失败聚成 `other`，"fixture无法合成"簇恒 0。出最终报告前确认 w4 已修；数值指标不受影响。
+- [PR#11 D2 task021, HEAD 01c6152] **PASS**：pytest=46；chat() 新增、多轮 loop、parse 多格式+malformed 重试、回退、RolloutResult 契约、qualified 全 PASS。CLI：`code2env rollout <env_pkg> --max-rounds --llm-mode endpoint|mock --llm-model gpt-5.5 --fallback-model --endpoint-file`。
+  - 放量协议要点：tools 走 JSON-in-content（写进 system prompt），**不发 OpenAI 原生 tools 字段**（网关会拒）；mock 用 ScriptedSolveChat/MockChatLLM；live 可用本地 127.0.0.1:39000 gpt-oss-120b。
+- **Phase1 完成**：D1/D2/D3/D4 四 PR 全 PASS（仅 D4 带 1 个 fixture_unsynthesizable 聚类 finding）。等 lead 确认 D1/D2/D3 merged 启动 Phase3。
 
 ## Knowledge Entries
 

@@ -12,4 +12,4 @@
 | PR | https://github.com/songCNMS/code2env/pull/15 |
 | Session | 6 |
 
-最近进展：Phase1 验证 PR#12(D3)/PR#14(D1)/PR#13(D4) 完成 — 均 PASS（PR#13 带 1 个跨模块聚类 finding：report 关键词表与 D1 reason 串不匹配，已回报）。各 PR 已 mail lead。下一步验 PR#11(D2 rollout driver)。
+最近进展：Phase1 四个 PR 全部验证完毕 — PR#12(D3)/PR#14(D1)/PR#13(D4)/PR#11(D2) 均 PASS（仅 D4 带 1 个 fixture_unsynthesizable 聚类 finding，已回报）。各 PR 逐一 mail lead。等 lead 确认 D1/D2/D3 merged 启动 Phase3（格式门→≥100 env 放量→导出→报告）。
