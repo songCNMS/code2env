@@ -10,9 +10,10 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | N/A |
-| Session | 8 |
+| Session | 9 |
 
 ## 最近进展
+- Session 9：v2 产物就绪并核验。真实 correct=0/75(剔除25 weak_oracle后)，qualified 75/75=100%，mean 0.35。定位 0% 两根因(均 env/oracle 设计非模型)：①提交契约错位——golden 存完整信封{ok,value}，agent 提交里层 value，确定性函数其实算对只差信封；②非确定性 golden(内存地址repr/绝对路径/hash)永不可 match,可用集被高估。已向用户报告并请定修复方向(契约归一+确定性过滤再重跑 / 仅prompt / 接受诊断收尾)。监控 bh69g15xf 已结束。
 - Session 8：lead 回报修正任务进度——task030(装依赖+golden重算)PR#18 已APPROVE待合、task033(真实率报告)PR#20 双签可合、task031(prompt)已合#17；合并序 PR#20→#18→启动 w5 task034 重跑，ETA~30-45min，产物去 outputs/rollouts_v2/ + outputs/report_v2/。修正了上轮写错路径的监控(旧 bb8rgwfg1 停，新 bh69g15xf 监视 rollouts_v2+report_v2)，产物就绪自动核验真实正确率。
 - Session 7：核查修正任务进度——lead 活跃推进，prompt修正(#17)/集成runner(#15)已合并，核心 task030(装依赖重算golden)/033(报告)/034(重跑v2)已建但未完成，outputs/rollouts_v2 尚无产物。已 peer(next)向 lead 要 ETA+确认关键路径，并布置后台监控(task bb8rgwfg1)待 v2 产物就绪自动通知核验。
 - Session 6：用户令执行下一步。已下发 pressing goal(code2env-fix-oracle-rerun-session6) 给 lead：①装齐运行依赖(werkzeug等)重算 golden 清除 flask error-match 假阳性、weak_oracle 剔除；②修 rollout prompt 让 agent 用环境 provided fixture(根因B);③对可用子集 gpt-5.5 重跑存 outputs/rollouts_v2/；④报告给真实 correct 率。等 lead 回报。

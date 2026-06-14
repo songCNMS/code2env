@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=8 -->
+<!-- METADATA:SESSION=9 -->
 
 ## Session 0 - Created with coordinator
 
@@ -69,3 +69,13 @@
 - 细节：①依赖装 per-repo venv+pip,装不动跳过记 reason,host 缺 python3-venv 则 deps_status=venv_failed 优雅降级;具体哪些库装不动要等 w5 实跑 task034 才有名单。②可用集=非 weak_oracle(golden 真实值);flask 多数 error→real 转好、少数仍剔除;rich/requests 多数本就 real;精确可用数待实跑。③ETA~30-45min。产物:conversation→outputs/rollouts_v2/(不覆盖)、报告→outputs/report_v2/(采纳 coordinator 命名)。
 - coordinator 纠错：上轮监控 bb8rgwfg1 路径写错(查 outputs/report/*v2*,实际报告在 outputs/report_v2/ 目录)→已 TaskStop 旧的，新起 Monitor bh69g15xf 监视 rollouts_v2/*.json>0 且 (report_v2/ | *v2*.json) 就绪→自动通知核验。
 - 下步：产物落地后独立核验真实 correct 率(剔除 weak_oracle 后分母)+装依赖前后对比，向用户汇报。
+
+## Session 9 - 核验 v2 真实正确率 + 定位 0% 根因
+
+- Monitor bh69g15xf 触发：rollouts_v2=75 份 + outputs/rollout_v2_run_summary.json。
+- v2 summary：build_ok=100, usable_real_value=75, weak_oracle_skipped=25, rollouts 75/75 qualified=100%, correct=0, true_correct_rate=0.0, mean_score 0.35, fallback 0(全 gpt-5.5)。report_v2 目录当时空(报告.md未落,summary 在 outputs/rollout_v2_run_summary.json)。
+- coordinator 独立核验装依赖后 v2 spec(phase3_v2/envs/specs，golden_status 全 None)对比 agent 提交，定位 0% 两根因(均 env/oracle 设计,非模型能力)：
+  ①提交契约错位：golden=完整信封 {"ok":true,"value":{kind,value}}，agent 提交里层 value(如 flask.json.dumps golden value="\"x\"" agent 提交 {kind:json,value:"\"x\""})→差一层信封判错；确定性纯函数(json.dumps/_path_is_ancestor→false)其实算对。
+  ②非确定性/机器相关 golden：内存地址 repr(@0x..)、worker_5 绝对路径、sha1 HASH 对象→每次跑不同,永不可 match;weak_oracle_skipped=25 只剔了仍报错的,剩 75 仍混非确定性,可用集高估。
+- 诚实结论给用户：管线/多轮/依赖修复成立；0% 是 oracle 契约+非确定性,exact-match 对这类函数太脆,可修。已 AskUserQuestion 请定方向：A 契约归一比较+确定性过滤再重跑(推荐) / B 仅 prompt 指示提交完整信封再重跑 / C 接受诊断转 backlog 差分oracle。
+- 下步：按用户选择下发 lead 或收尾。
