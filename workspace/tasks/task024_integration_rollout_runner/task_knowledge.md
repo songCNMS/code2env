@@ -11,6 +11,9 @@
 
 - [PR#12 D3 task022, HEAD 2758a97] **PASS**：pytest=44 passed；write/append/auto-mkdir、validate qualified 自洽、loader 往返、坏数据不落盘、契约字段未改名 全 PASS。
 - 运行注意（D3 给我 runner 用）：`rollout_export.DEFAULT_EXPORT_DIR` 在 **import 期**读 `CODE2ENV_ROLLOUT_EXPORT_DIR`，默认已=coordinator outputs/rollouts/。放量重定向输出须**进程启动前设环境变量**或对 write_conversation 显式传 out_dir，不能运行中改。CLI 有 `rollout-export` 子命令（读 JSONL 批量落盘）。
+- [PR#14 D1 task020, HEAD f3e7ab7] **PASS**：pytest=44；manifest 严格契约、empty/typed fixture 策略、跳过记 reason、generated_envs/+.code2env_cache/ 已 gitignore。CLI：`code2env batch <repos> --output-dir(默认 generated_envs/batch) --target --per-repo-limit --no-smoke`。
+- [PR#13 D4 task023, HEAD 462bfff] **PASS（带 finding）**：pytest=42；report.md+json、成功率/by_repo/合格率/平均score/聚类全产出、契约未改名。CLI：`code2env report --manifest --rollouts --output-dir`。
+  - ⚠️ **跨模块 finding（Phase3 前必查）**：report.py `_TAG_KEYWORDS["fixture_unsynthesizable"]` 不含 D1 实际 reason 子串（untyped_required_param/unsupported_param_type/requires_instance/possible_side_effect/not_module_level/function_node_not_found）→ 这些 fixture/skip 失败聚成 `other`，"fixture无法合成"簇恒 0。出最终报告前确认 w4 已修；数值指标不受影响。
 
 ## Knowledge Entries
 

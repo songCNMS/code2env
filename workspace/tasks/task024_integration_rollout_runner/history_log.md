@@ -28,3 +28,17 @@
   - 契约字段未改名（env_id/model/endpoint_source/.../final{submitted_answer,correct,score,score_breakdown,steps}/num_tool_call_rounds/qualified/termination_reason/retries/errors）。
 - 附注（非缺陷）：diff vs main 显示 task023/task024 文档"被删"，实为 worker_3 分支基线早于这两 task 创建的 base-skew，merge against main 不会真删；CLI 另含 `rollout-export` 子命令（加分）。
 - 结论：PR#12 全部验收 **PASS**，已 mailbox 回报 lead。
+
+### PR#14 task020 批量pipeline (D1) — PASS
+
+- 分支 intern_code2env_worker_1/task020_batch_generation_pipeline（HEAD f3e7ab7），pytest=**44 passed**（+test_batch.py）。
+- 合成本地 repo 独立跑 generate_batch + synthesize_fixture：manifest 严格契约（top/summary/envs/fixture/skipped 字段精确）、empty_signature+typed_signature 两策略、跳过记 reason、build_ok 计数正确、EnvPackage 含 env_spec.json 均 PASS。
+- generated_envs/ 与 .code2env_cache/ 均已 gitignore（外部源码/产物不入 git）；spec.py 改动向后兼容（draft_env_spec 加可选 candidates）。
+- 结论 **PASS**，已 mailbox 回报。
+
+### PR#13 task023 报告 (D4) — PASS（带 1 个跨模块聚类 finding）
+
+- 分支 intern_code2env_worker_4/task023_rollout_summary_report（HEAD 462bfff），pytest=**42 passed**（+test_report.py）。
+- 合成 D1 manifest + D3 conversation（按已验证契约）跑 write_report：report.md+report.json 产出；生成成功率/by_repo/合格率(2/3)/平均 score/by_model 全部数值正确；契约字段未改名；md 含 Qualified/Mean score/By Repo。
+- ⚠️ **Finding（非阻塞，medium）**：report.py 失败聚类关键词表与 D1 batch.py 实际 reason 串不匹配——`untyped_required_param:*`、`unsupported_param_type:*`（fixture 合成失败主因）、`requires_instance`/`possible_side_effect`/`not_module_level`/`function_node_not_found` 全落入 `other` 而非 `fixture_unsynthesizable`。w4 单测用含 "fixture"/"synthes" 的合成串故未暴露。建议 w4 在 `_TAG_KEYWORDS["fixture_unsynthesizable"]` 增补这些子串，否则 Phase3 最终报告"fixture无法合成"簇恒为 0、可解释性打折。数值指标不受影响。
+- 结论：功能/指标 **PASS**，1 finding 已回报 lead（由 lead/w4 决定 fix-forward 或合并前修）。

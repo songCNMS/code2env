@@ -12,4 +12,4 @@
 | PR | https://github.com/songCNMS/code2env/pull/15 |
 | Session | 6 |
 
-最近进展：Phase1 验证 PR#12(D3 task022 conversation 导出) 完成 — pytest=44 passed，独立验证 write/append/auto-mkdir、validate qualified 自洽、loader 往返、坏数据不落盘、契约未改名 全 PASS，已 mail lead。等下一个 PR 分支 ping。
+最近进展：Phase1 验证 PR#12(D3)/PR#14(D1)/PR#13(D4) 完成 — 均 PASS（PR#13 带 1 个跨模块聚类 finding：report 关键词表与 D1 reason 串不匹配，已回报）。各 PR 已 mail lead。下一步验 PR#11(D2 rollout driver)。
