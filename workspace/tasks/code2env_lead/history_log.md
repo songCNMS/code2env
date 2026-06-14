@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - Created with team lead
 
@@ -76,7 +76,7 @@
 - 并行:w1 task035 uv venv 兜底 PR#22 待 w3 验+合(硬化 A 装依赖在缺 python3-venv 节点可用;v2 用 runner 侧 uv wrapper 临时绕过)。
 - 范围:只做信封归一+确定性过滤+重跑+报告;差分/变形 oracle 仍 backlog。
 
-## Session 4 - 信封归一+确定性过滤 review/合并编排
+## Archive P0-4 - 信封归一+确定性过滤 review/合并编排
 - 实现 PR 推进:w2 task037 信封归一(PR#23,121 passed)、w1 task038 确定性门禁(PR#24)、w4 task039 report_v3(PR#26)、w1 task035 uv 兜底(PR#22, w3 PASS 待合)。
 - lead review PR#23 抓到关键正确性问题(REQUEST_CHANGES):贪婪剥壳"剥到没壳为止"在目标函数本身返回 wrapper 形状 dict({ok:true,value:X}/{kind:json,value:X})时,会把 golden 一路剥到最内,agent 提交错误 bare 内值即误判 correct——重引 Session3 修掉的碰撞假阳性。修法:不贪婪归一 submitted,改为把 golden 按已知 executor 结构剥恰好2层得 canonical X,correct ⟺ submitted ∈ {X, {kind:json,value:X}, {ok:true,value:{kind:json,value:X}}} 三种确定形状。已让 w2 改+补测+rebase。
 - w3 PR#23 验证暂停待修订版;PR#22 uv 兜底 w3 PASS,w1 先合再 rebase task038。
@@ -120,3 +120,12 @@
 - qlib artifacts：manifest `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session13_min3_semantic_helpers/w2_pr31_batch_target20_min3_no_deps/manifest.json`，summary `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session13_min3_semantic_helpers/w2_pr31_validation_summary.md`。
 - PR#31 已由 w1 self-merge 到 main，squash commit dc695ba9b17cb1d4a000eb1f08fb703517a21497；w1 final full `python3 -m pytest -q` 为 162 passed，task045 Completed，w1 Idle。
 - 剩余风险：qlib 6 个 gate-passing candidates 全卡在既有 fixture synthesis 限制(DataFrame、untyped `positions`/`all_preds`、`qlib_dir:None`)；endpoint rollouts 未产出，因为 build_ok/usable 为 0；下一步要补测试/fixture extraction 与 instance-method env support 才能把 gate passers 转成可 rollout env。
+
+## Session 4 - rich fixture min3 qlib dispatch
+
+- 收到 user goal 与 coordinator Session15 fallback：unblock qlib `--min-semantic-helpers 3` candidates that all fail fixture synthesis；handoff 文件为 `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session15_rich_fixture_min3_qlib_goal.md`。
+- 评估 workers：w1、w2、w4 为 Idle；w3 标 Working task032，w5 标 Working task041。任务足够大但不打断 working workers，本轮分配 w1 实现、w4 独立代码/测试验证、w2 独立 qlib batch + rollout/export 验证。
+- 在共享 repo `/home/leisong/codes/work-agents/code2env` 创建并推送 `task046_rich_fixture_min3_qlib`，commit `0c43813`；task 文档覆盖 rich JSON-safe fixture descriptors/hydration、canonical pandas/numpy/torch serialization、strict side-effect safety、pinned qlib batch 和 rollout-export 验收。
+- 已 peer send 通知 w1 接受实现、w4 预留代码/测试验证、w2 预留 qlib/rollout validator；每次发送前 mailbox unread 均已确认清空。
+- w1 已开 PR#32 `intern_code2env_worker_1/task046_rich_fixture_min3_qlib`，当前 head `7635f52` 为接受/任务文档 bootstrap，无产品代码或 tests；尚未触发 validator 正式验证。
+- w2 mailbox 回报已处理：已预留 qlib batch + rollout/export validator，artifact root 为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session15_rich_fixture_min3_qlib/`。
