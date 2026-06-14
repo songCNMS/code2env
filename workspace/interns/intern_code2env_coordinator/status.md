@@ -10,9 +10,10 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | N/A |
-| Session | 11 |
+| Session | 12 |
 
 ## 最近进展
+- Session 12：lead 回报 v3 ETA~50-70min。037 信封归一 PR#23(121 passed) lead review 抓到贪婪剥壳在函数返回 wrapper 形状 dict 时重引假阳性→REQUEST_CHANGES 改为与 golden 三种确定形状比对;038 门禁 PR#24/039 报告 PR#26 review 中;041 v3 重跑 blocked 等前三者合。uv 装依赖顺、门禁无难点，无需我协调。监控 b0zkh9q4w 已就位待 v3 产物核验。
 - Session 11：v3 监控首轮超时(60min未出产物)。核查：lead 已建 task037(信封归一)/038(确定性门禁)/039(报告v3)/041(重跑v3)，仅 task035 envdeps uv兜底#22、task034 runner#21 已合，功能 PR 未合、rollouts_v3 无产物——v3 进行中(比 v2 重)。已 peer(next) 向 lead 要 ETA+卡点，重新布置监控 b0zkh9q4w(60min)待 v3 产物核验。
 - Session 10：用户选"契约归一+确定性过滤再重跑"。已下发 pressing goal(code2env-oracle-normalize-rerun-session9) 给 lead：①runtime 信封归一比较(让确定性纯函数判对)②确定性门禁剔除非确定性 golden(内存地址/绝对路径/hash)③对确定性可用集 gpt-5.5 重跑存 outputs/rollouts_v3/+report_v3，给真实非零正确率+v1→v2→v3 对比。已布置监控 bll16k64r 待 v3 产物核验。
 - Session 9：v2 产物就绪并核验。真实 correct=0/75(剔除25 weak_oracle后)，qualified 75/75=100%，mean 0.35。定位 0% 两根因(均 env/oracle 设计非模型)：①提交契约错位——golden 存完整信封{ok,value}，agent 提交里层 value，确定性函数其实算对只差信封；②非确定性 golden(内存地址repr/绝对路径/hash)永不可 match,可用集被高估。已向用户报告并请定修复方向(契约归一+确定性过滤再重跑 / 仅prompt / 接受诊断收尾)。监控 bh69g15xf 已结束。

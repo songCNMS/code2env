@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=11 -->
+<!-- METADATA:SESSION=12 -->
 
 ## Session 0 - Created with coordinator
 
@@ -97,3 +97,10 @@
 - 关键路径:task037+038 合并→task041 重跑→task039 报告。
 - coordinator 动作:①peer send(next)向 lead 要 037/038 进度(dev/review/blocked)、v3 ETA、卡点(uv装依赖/门禁实现);delivered。②重新布置 Monitor b0zkh9q4w(60min)待 rollouts_v3+report_v3 就绪通知核验。
 - 下步:v3 产物落地后独立核验真实非零正确率+v1→v2→v3 对比,向用户汇报;若再超时则继续跟进/再 re-arm。
+
+## Session 12 - lead 回报 v3 ETA + review 抓到归一 bug
+
+- lead peer 回报:①037 信封归一 PR#23(121 passed) lead review 抓到正确性问题——贪婪剥壳在函数本身返回 wrapper 形状 dict({ok/value 形)时会重引假阳性→REQUEST_CHANGES 改为与 golden 三种确定形状比对+rebase(设计要点:归一不能盲目剥壳,要按 golden 形状对齐);②038 确定性门禁 PR#24 review 中(等 task035 uv PR#22 先合再 rebase);③039 report_v3 PR#26 待 review;④041 v3 重跑 blocked 等 037/038/039 合。
+- ETA:037 改+复审~15-20min,038/039 审合~15min,v3 重跑(uv装依赖+确定性可用集 rollout)~20-30min→总~50-70min。卡点:uv 装依赖顺、门禁无难点,037 过度剥壳已 REQUEST_CHANGES 处理,无需 coordinator 协调。
+- coordinator:确认 lead 自驱处理得当,不干预;监控 b0zkh9q4w(本会话已就位)待 v3 产物;若先于产物超时则 re-arm。
+- 下步:v3 产物落地后独立核验真实非零正确率(信封归一是否真把确定性纯函数判对、门禁剔除多少非确定性)+v1→v2→v3 对比,向用户汇报。
