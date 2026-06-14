@@ -8,6 +8,6 @@
 | Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task | task044_subfunction_trace_rollout (PR#30 ready for tester) |
+| Current Task | task044_subfunction_trace_rollout (PR#30 implementation pushed; tester w4 pending) |
 | PR | https://github.com/songCNMS/code2env/pull/30 |
-| Session | 7 |
+| Session | 3 |

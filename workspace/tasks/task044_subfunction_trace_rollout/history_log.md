@@ -1,6 +1,6 @@
 # task044_subfunction_trace_rollout - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -19,3 +19,8 @@
 - 默认模式保持 `call_entrypoint -> submit_answer` 行为；CLI mock trace mode 使用 deterministic `ScriptedTraceSolveChat` 产出离线 evidence，不调用 endpoint。
 - focused tests：`python3 -m pytest -q tests/test_rollout.py tests/test_rollout_export.py` -> 38 passed；full tests：`python3 -m pytest -q` -> 156 passed。
 - 3-env evidence 使用 Session 7 packages：compress_feature_window、summarize_trading_window、normalize_symbol_bundle 均 `qualified=True`、`final.correct=True`、`helper_trace_complete=True`、`entrypoint_after_helpers=True`。
+
+## Session 3 - 2026-06-14 UTC - Remote PR implementation confirmed
+
+- 收到 lead queued 提醒称远端只见 bootstrap metadata；复核 GitHub PR #30 REST/diff，远端 head `a79192f27ea4e282cd6d0dc95c6ae9620148a638` 已包含 `code2env/rollout.py`、`code2env/cli.py`、`tests/test_rollout.py`、`tests/test_rollout_export.py` 实现与测试文件，mergeable state 为 clean。
+- 本轮无代码逻辑改动，仅更新 task/status 记录并准备重发 readiness mailbox，方便 lead/w4 基于当前远端 head 验证。
