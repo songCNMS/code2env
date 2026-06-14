@@ -16,3 +16,12 @@
 - 连通性：github clone rc=0；gpt-5.5 endpoint 200。v2 产物在 coordinator outputs/rollouts_v2、report_v2、w5 phase3_v2。
 - v3 Step1 batch 后台开跑(PID 195370)：requests/flask/rich/click/jinja --target 100 --determinism-runs 3 → coordinator outputs/phase3_v3/；Monitor 守候完成。
 - 待 Step1 完成后跑 Step2(gpt-5.5 rollouts→rollouts_v3) + Step3(report_v3, --prev-rollouts rollouts_v2)。
+
+### v3 结果(全部完成)
+
+- **Step1 batch**: 100 build_ok(candidates 1458, repos requests/flask/rich), deps 全 installed(uv fix 生效)。real_value 75 / weak_oracle 25；确定性门禁剔 nondeterministic 12 → **确定性可用集 63**(real_value AND deterministic)。by_repo usable: requests 29 / rich 26 / flask 8。
+- **Step2 rollouts**: 63 可用集 gpt-5.5(fallback gpt-oss-120b)→ 63 conversation JSON。qualified 63/63, correct 59, mean score 0.9587。
+- **Step3 report_v3**: 真实非零 correct **59/63 = 93.7%**。四类别: deterministic_usable 63 / envelope_flipped_to_correct 59 / nondeterministic_excluded 0(rollout 前已剔 12) / weak_oracle_excluded 0(rollout 前已剔 25) / still_wrong 4。
+- **v1→v2→v3**: v1 100→3(3.0%); v2 75→0(0.0% 假阴性); **v3 63→59(93.7%)**。三项修复(①信封 +②确定性 + 依赖/golden)闭环验证成功。
+- 产物(coordinator outputs, 并存不覆盖 v1/v2): phase3_v3/manifest.json、rollouts_v3/(63)、report_v3/report.md+json。
+- mailbox 已报数(msg c47bef2b)。PR#27 含 envdeps uv fix-forward + task042 文档；按 lead 指示稍后 review+w3 验+合，**不自合**，待 lead 指示。
