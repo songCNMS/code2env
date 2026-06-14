@@ -12,4 +12,4 @@
 | PR | https://github.com/songCNMS/code2env/pull/21 |
 | Session | 8 |
 
-最近进展：接受 task034（v2 重跑 runner）。已读三依赖 task(030/031/033) + 写重跑计划到 task_knowledge（装依赖重算 golden→标 weak_oracle→非 weak 子集 gpt-5.5 重跑→rollouts_v2/→真实率报告）。等三 PR merged 后 lead ping 启动。注：task024 文档 PR#15 仍 open 待 lead merge 授权。
+最近进展：task024 PR#15 已 self-merge（MERGED，task024→Completed）；当前 Working task034（v2 重跑 runner），重跑计划就绪（PR#21）。注意：merge 收尾清理删了 outputs/phase3 但可由 .code2env_cache 确定性重 batch 复现 env 集。待 lead 确认 task030/031/033 三 PR merged 后 ping 启动。
