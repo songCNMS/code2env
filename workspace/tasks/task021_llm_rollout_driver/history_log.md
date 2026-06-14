@@ -1,6 +1,6 @@
 # task021_llm_rollout_driver - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-14 UTC - Task created by team lead
 
@@ -23,3 +23,10 @@
 - Phase3 放量合并序：PR#14(D1) → 本 PR#11(D2) → PR#13(D4)。
 - 等 lead 确认 PR#14 merged 并 ping 后：`git fetch origin && git merge origin/main` 解 `cli.py` 冲突（batch + rollout-export + rollout 多个 subparser 及各自 dispatch 全部保留）→ `python3 -m pytest tests/` 全绿 → self-merge。
 - 当前：先不动，等待 ping。
+
+## Session 3 - 2026-06-14 UTC - 合并 origin/main + self-merge
+
+- lead ping PR#14(D1) 已 merged(3c247c1)。执行 `git fetch origin && git merge origin/main`。
+- `code2env/cli.py` 四处冲突全部解决：imports(rollout + rollout_export 两个 import 都留)、subparser 块(rollout + batch + rollout-export 三个 subparser 都留)、dispatch 块(三条 dispatch 都留)、handler 函数块(_rollout + _batch + _rollout_export 都留)。README/docs 自动合并。
+- `python3 -m pytest tests/` → 72 passed；`code2env -h` 列出 10 个子命令(含 rollout/batch/rollout-export)，`import code2env.cli` OK。
+- self-merge 待执行；merge 后 mailbox 立即回报 squash commit。
