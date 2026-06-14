@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - Created with coordinator
 
@@ -34,3 +34,9 @@
 - 验证结果：debug harness `PYTHONPATH=. python3 -m pytest -q` 为 `4 passed in 0.02s`；EnvPackage `python3 -m code2env smoke ... --json` score 1.0；主项目 `origin/main` `python3 -m pytest -q` 为 `150 passed in 15.61s`。
 - Endpoint rollout：使用 `/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt`，primary `gpt-5.5` 成功，无 fallback；`qualified=true`、`num_tool_call_rounds=2`、`termination_reason=submitted`、`correct=true`、`score=1.0`。
 - 交互数据已写入并 schema-export：`../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`（1 line, 9,459 bytes）和 `../outputs/session4_qlib_rollout/exported/code2env.qlib_task.minute_alignment.align_calendar_minute.9e166be1.v1.json`。
+
+## Session 5 - JSONL file delivered to Feishu
+
+- 按用户要求确认 rollout JSONL 已落盘：`../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`，大小 9,459 bytes，内容为 1 条多轮 endpoint 交互记录。
+- 通过本机飞书 daemon 复用 `FeishuAPI.upload_file` / `send_file` 将该 JSONL 作为文件发送到 `intern_code2env_coordinator` 飞书会话（chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`）。
+- 飞书返回：file_key `file_v3_0012l_9b21b507-ed88-4bc7-9ba0-6892b242d45g`，文件消息 ID `om_x100b6dddcf5934a4b3ce025b39ac988`，确认文本消息 ID `om_x100b6dddcf53eca4b21f6b9a3a00c2a`。
