@@ -1,6 +1,6 @@
 # task041_rerun_rollouts_v3 - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=1 -->
 
 ## 记录规则
 
