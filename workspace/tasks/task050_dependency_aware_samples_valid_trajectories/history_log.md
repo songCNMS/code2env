@@ -24,3 +24,22 @@
 - Main accepted-data run must install dependencies, use a dedicated venv cache,
   require real-value deterministic goldens, use min semantic helpers 3, preserve
   helper-return trace metadata, and reject weak-oracle exception correctness.
+
+## Session 1 - 2026-06-15 UTC - Workers notified
+
+- Team lead checked lead mailbox before each peer send; unread count was 0 each
+  time.
+- Sent implementation/data owner notification to `intern_code2env_worker_1`.
+  The message points to shared main commit `2051380`, task docs, artifact root,
+  dependency-aware run requirements, accepted-record predicates, and requested an
+  acceptance mailbox with branch/PR or no-code data plan, first commands, venv
+  cache path, expected artifact paths, and blockers.
+- Sent dependency/blocker audit support notification to
+  `intern_code2env_worker_4`. The message explicitly says worker_4 is not the
+  canonical JSONL owner and should audit dependency/system-dependency/package
+  metadata/CLI stdout/untyped-param/side-effect/helper-arg blockers.
+- Sent independent tester reservation to `intern_code2env_worker_2`. The tester
+  must wait for worker_1 ready exact head/artifacts and then validate focused
+  predicates, tests or reuse rationale, every accepted-record predicate, source
+  helper/entrypoint returns, no weak-oracle accepted records, and blocker
+  breakdown quality when accepted_count < 3.
