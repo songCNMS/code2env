@@ -255,15 +255,21 @@ class SubfunctionTraceModeTest(unittest.TestCase):
             complete = build_subfunction_trace_metadata(
                 plan,
                 [
-                    {"action": {"tool": "call_split_words"}},
-                    {"action": {"tool": "call_join_words"}},
+                    {"step": 1, "action": {"tool": "call_split_words", "arguments": {}}, "tool_result": {"ok": True}},
+                    {"step": 2, "action": {"tool": "call_join_words", "arguments": {}}, "tool_result": {"ok": True}},
                     {"action": {"tool": "call_entrypoint"}},
                     {"action": {"tool": "submit_answer"}},
                 ],
             )
             self.assertTrue(complete["helper_trace_complete"])
+            self.assertTrue(complete["helper_calls_successful"])
+            self.assertTrue(complete["helper_trace_valid"])
             self.assertTrue(complete["entrypoint_after_helpers"])
             self.assertEqual(complete["observed_tools"], ["call_split_words", "call_join_words", "call_entrypoint", "submit_answer"])
+            self.assertEqual(
+                [item["argument_status"] for item in complete["helper_call_results"]],
+                ["ok", "ok"],
+            )
 
             incomplete = build_subfunction_trace_metadata(
                 plan,
@@ -274,8 +280,47 @@ class SubfunctionTraceModeTest(unittest.TestCase):
                 ],
             )
             self.assertFalse(incomplete["helper_trace_complete"])
+            self.assertFalse(incomplete["helper_calls_successful"])
+            self.assertFalse(incomplete["helper_trace_valid"])
             self.assertFalse(incomplete["entrypoint_after_helpers"])
             self.assertEqual(incomplete["missing_helper_tools"], ["call_split_words", "call_join_words"])
+            self.assertEqual(incomplete["helper_call_results"][0]["argument_status"], "not_called")
+
+    def test_trace_metadata_exposes_failed_helper_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_env(Path(temp))
+            plan = build_subfunction_trace_plan(env)
+            trace = build_subfunction_trace_metadata(
+                plan,
+                [
+                    {
+                        "step": 1,
+                        "action": {"tool": "call_split_words", "arguments": {}},
+                        "tool_result": {
+                            "ok": False,
+                            "error_type": "TypeError",
+                            "error_message": "split_words() missing 1 required positional argument: 'text'",
+                        },
+                    },
+                    {
+                        "step": 2,
+                        "action": {"tool": "call_join_words", "arguments": {}},
+                        "tool_result": {"ok": True},
+                    },
+                    {"step": 3, "action": {"tool": "call_entrypoint", "arguments": {}}, "tool_result": {"ok": True}},
+                ],
+            )
+
+            self.assertTrue(trace["helper_trace_complete"])
+            self.assertTrue(trace["entrypoint_after_helpers"])
+            self.assertFalse(trace["helper_calls_successful"])
+            self.assertFalse(trace["helper_trace_valid"])
+            self.assertEqual(trace["failed_helper_tools"], ["call_split_words"])
+            first = trace["helper_call_results"][0]
+            self.assertEqual(first["tool"], "call_split_words")
+            self.assertFalse(first["success"])
+            self.assertEqual(first["argument_status"], "argument_unavailable")
+            self.assertEqual(first["error_type"], "TypeError")
 
     def test_trace_mock_rollout_calls_helpers_then_entrypoint_then_submit(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -295,6 +340,8 @@ class SubfunctionTraceModeTest(unittest.TestCase):
             )
             self.assertEqual(trace["required_helper_tools"], ["call_split_words", "call_join_words"])
             self.assertTrue(trace["helper_trace_complete"])
+            self.assertTrue(trace["helper_calls_successful"])
+            self.assertTrue(trace["helper_trace_valid"])
             self.assertTrue(trace["entrypoint_after_helpers"])
             self.assertTrue(result["qualified"])
             self.assertTrue(result["final"]["correct"])

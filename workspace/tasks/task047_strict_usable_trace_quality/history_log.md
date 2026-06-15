@@ -15,3 +15,5 @@
 - Worker `intern_code2env_worker_1` accepted task047 on branch `intern_code2env_worker_1/task047_strict_usable_trace_quality`.
 - Opened PR https://github.com/songCNMS/code2env/pull/33 against `main`.
 - Initial implementation plan: add explicit strict real-value batch gating/counters, add helper call success/strict trace quality metadata, then validate with focused tests, full pytest, and Session17 top-N sample evidence.
+- Implemented first product slice: explicit `--require-real-value` batch mode/counters/rejection audit metadata and subfunction trace helper-call success metadata (`helper_calls_successful`, `helper_trace_valid`, per-helper results).
+- Focused verification passed: `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` -> 48 passed.

@@ -156,9 +156,12 @@ class BatchPipelineTest(unittest.TestCase):
                     "smoke_ok",
                     "skipped_no_fixture",
                     "real_value",
+                    "deterministic",
+                    "strict_usable",
                     "weak_oracle",
                     "usable",
                     "nondeterministic",
+                    "require_real_value",
                     "min_semantic_helpers",
                     "semantic_gate_passed",
                     "skipped_insufficient_semantic_helpers",
@@ -172,9 +175,12 @@ class BatchPipelineTest(unittest.TestCase):
             self.assertEqual(summary["skipped_no_fixture"], 3)
             # No third-party deps in the synthetic repo → all golden answers are real & deterministic.
             self.assertEqual(summary["real_value"], 3)
+            self.assertEqual(summary["deterministic"], 3)
+            self.assertEqual(summary["strict_usable"], 3)
             self.assertEqual(summary["weak_oracle"], 0)
             self.assertEqual(summary["usable"], 3)
             self.assertEqual(summary["nondeterministic"], 0)
+            self.assertFalse(summary["require_real_value"])
             self.assertEqual(summary["min_semantic_helpers"], 0)
             self.assertEqual(summary["semantic_gate_passed"], 4)
             self.assertEqual(summary["skipped_insufficient_semantic_helpers"], 0)
@@ -184,6 +190,8 @@ class BatchPipelineTest(unittest.TestCase):
                     "build_ok": 3,
                     "smoke_ok": 3,
                     "real_value": 3,
+                    "deterministic": 3,
+                    "strict_usable": 3,
                     "weak_oracle": 0,
                     "usable": 3,
                     "nondeterministic": 0,
@@ -219,6 +227,10 @@ class BatchPipelineTest(unittest.TestCase):
                 "smoke_fail_reason",
                 "golden_status",
                 "determinism",
+                "strict_usable",
+                "strict_rejection_reason",
+                "golden_error_type",
+                "golden_error_message",
                 "semantic_helper_count",
                 "semantic_helpers",
                 "deps_status",
@@ -234,6 +246,8 @@ class BatchPipelineTest(unittest.TestCase):
                 self.assertEqual(set(env["fixture"]["value"].keys()), {"args", "kwargs"})
                 self.assertEqual(env["golden_status"], "real_value")
                 self.assertEqual(env["determinism"], "deterministic")
+                self.assertTrue(env["strict_usable"])
+                self.assertIsNone(env["strict_rejection_reason"])
                 self.assertIsInstance(env["semantic_helper_count"], int)
                 self.assertIsInstance(env["semantic_helpers"], list)
                 self.assertIsInstance(env["fixture_rich_params"], list)
@@ -293,6 +307,56 @@ def persist(p: Path):
             self.assertFalse((repo / "code2env_created.txt").exists())
             skipped = next(entry for entry in manifest["skipped"] if entry["symbol"] == "m:persist")
             self.assertEqual(skipped["reason"], "unsupported_param_type:p:Path")
+
+    def test_require_real_value_audits_weak_oracle_without_counting_strict(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = Path(temp_dir) / "lib"
+            repo.mkdir()
+            (repo / "m.py").write_text(
+                """
+def good(x: int) -> int:
+    return x + 1
+
+
+def weak(x: int) -> int:
+    import totally_missing_pkg_for_code2env
+    return totally_missing_pkg_for_code2env.go(x)
+""".lstrip(),
+                encoding="utf-8",
+            )
+
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                target_count=10,
+                require_real_value=True,
+                generated_at="2026-06-14T00:00:00Z",
+            )
+
+            by_symbol = {env["symbol"]: env for env in manifest["envs"]}
+            self.assertTrue(by_symbol["m:good"]["strict_usable"])
+            self.assertFalse(by_symbol["m:weak"]["strict_usable"])
+            self.assertEqual(
+                by_symbol["m:weak"]["golden_error_type"], "ModuleNotFoundError"
+            )
+            self.assertIn(
+                "totally_missing_pkg_for_code2env",
+                by_symbol["m:weak"]["golden_error_message"],
+            )
+            self.assertEqual(manifest["summary"]["build_ok"], 2)
+            self.assertEqual(manifest["summary"]["real_value"], 1)
+            self.assertEqual(manifest["summary"]["deterministic"], 1)
+            self.assertEqual(manifest["summary"]["weak_oracle"], 1)
+            self.assertEqual(manifest["summary"]["strict_usable"], 1)
+            self.assertTrue(manifest["summary"]["require_real_value"])
+            strict_skip = next(
+                entry for entry in manifest["skipped"] if entry["symbol"] == "m:weak"
+            )
+            self.assertEqual(
+                strict_skip["reason"],
+                "strict_unusable:weak_oracle:golden_exception:ModuleNotFoundError",
+            )
+            self.assertEqual(strict_skip["error_type"], "ModuleNotFoundError")
 
 
 class SemanticHelperGateTest(unittest.TestCase):
@@ -459,6 +523,22 @@ def entry_two(value: int) -> int:
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(mocked.call_args.kwargs["min_semantic_helpers"], 2)
+
+    def test_cli_wires_require_real_value_into_generate_batch(self) -> None:
+        with patch("code2env.cli.generate_batch", return_value={"summary": {}}) as mocked:
+            with patch("code2env.cli._print_json"):
+                exit_code = cli.main(
+                    [
+                        "batch",
+                        "repo",
+                        "--output-dir",
+                        "out",
+                        "--require-real-value",
+                    ]
+                )
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(mocked.call_args.kwargs["require_real_value"])
 
     def test_invalid_min_semantic_helpers_above_max_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

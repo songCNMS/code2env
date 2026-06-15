@@ -23,3 +23,4 @@
 - Session 4 stale queued checkpoint handled: verified PR #32 is no longer bootstrap-only; current product-code head is `65db7ed` with rich fixture implementation, path confinement, and default Path skip included. Mailbox progress report sent again with current head/status.
 - Session 5 merge authorization received; completion metadata prepared for PR #32 squash merge after worker_4 and worker_2 validations passed.
 - Session 1 accepted task047_strict_usable_trace_quality; PR #33 opened for strict usable filtering and helper trace quality implementation.
+- Task047 product slice implemented locally: `--require-real-value` strict usable batch mode/counters plus helper-call success trace metadata; focused `tests/test_batch.py tests/test_rollout.py` -> 48 passed.

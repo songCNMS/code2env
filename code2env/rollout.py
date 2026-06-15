@@ -283,13 +283,26 @@ def build_subfunction_trace_metadata(trace_plan: dict[str, Any], steps: list[dic
 
     positions: list[int] = []
     missing: list[str] = []
+    helper_results: list[dict[str, Any]] = []
     cursor = 0
     for helper_tool in required:
         found = _find_from(observed, helper_tool, cursor, helper_search_limit)
         if found is None:
             missing.append(helper_tool)
+            helper_results.append(
+                {
+                    "tool": helper_tool,
+                    "called": False,
+                    "success": False,
+                    "argument_status": "not_called",
+                    "step": None,
+                    "error_type": None,
+                    "error_message": None,
+                }
+            )
             continue
         positions.append(found)
+        helper_results.append(_helper_call_result(helper_tool, found, steps[found]))
         cursor = found + 1
 
     helper_trace_complete = not missing
@@ -299,16 +312,57 @@ def build_subfunction_trace_metadata(trace_plan: dict[str, Any], steps: list[dic
         )
     else:
         entrypoint_after_helpers = entrypoint_index is not None
+    helper_calls_successful = all(item["success"] for item in helper_results) if required else True
+    helper_trace_valid = helper_trace_complete and entrypoint_after_helpers and helper_calls_successful
 
     return {
         "trace_mode": trace_plan.get("trace_mode", TRACE_MODE_SUBFUNCTIONS),
         "required_helper_tools": required,
         "observed_tools": observed,
         "helper_trace_complete": helper_trace_complete,
+        "helper_calls_successful": helper_calls_successful,
+        "helper_trace_valid": helper_trace_valid,
+        "helper_call_results": helper_results,
+        "failed_helper_tools": [item["tool"] for item in helper_results if not item["success"]],
         "entrypoint_after_helpers": entrypoint_after_helpers,
         "skipped_helpers": list(trace_plan.get("skipped_helpers", [])),
         "missing_helper_tools": missing,
     }
+
+
+def _helper_call_result(tool_name: str, step_index: int, step: dict[str, Any]) -> dict[str, Any]:
+    tool_result = step.get("tool_result")
+    success = isinstance(tool_result, dict) and tool_result.get("ok") is True
+    error_type = tool_result.get("error_type") if isinstance(tool_result, dict) else None
+    error_message = tool_result.get("error_message") if isinstance(tool_result, dict) else None
+    return {
+        "tool": tool_name,
+        "called": True,
+        "success": success,
+        "argument_status": _helper_argument_status(step, tool_result, success),
+        "step": step.get("step", step_index + 1),
+        "error_type": error_type if isinstance(error_type, str) else None,
+        "error_message": error_message if isinstance(error_message, str) else None,
+    }
+
+
+def _helper_argument_status(step: dict[str, Any], tool_result: Any, success: bool) -> str:
+    if success:
+        return "ok"
+    action = step.get("action") if isinstance(step.get("action"), dict) else {}
+    arguments = action.get("arguments", {}) if isinstance(action, dict) else {}
+    error_type = tool_result.get("error_type") if isinstance(tool_result, dict) else None
+    error_message = tool_result.get("error_message") if isinstance(tool_result, dict) else ""
+    if (
+        error_type == "TypeError"
+        and isinstance(arguments, dict)
+        and not arguments
+        and isinstance(error_message, str)
+        and "missing" in error_message
+        and "argument" in error_message
+    ):
+        return "argument_unavailable"
+    return "call_failed"
 
 
 def _semantic_helper_tools(env: Code2Env) -> dict[str, str]:
