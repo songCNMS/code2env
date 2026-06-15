@@ -425,3 +425,27 @@
 - Current task049 gate: worker_1, the canonical JSONL owner, has not yet sent an
   acceptance/progress mailbox; worker_2 remains reserved for later independent
   validation.
+- Received and mark-read worker_1 mailbox `w1-task049-checkpoint-331831d`.
+  Worker_1 accepted canonical JSONL ownership and opened PR #36
+  `https://github.com/songCNMS/code2env/pull/36` at head
+  `331831d243b6395b4469db0d45b299318747d604`. PR #36 currently contains
+  metadata only and is in progress; worker_1 plans a no-product-code data run
+  under the task049 artifact root with expected outputs
+  `accepted_valid_helper_trajectories.jsonl`, `summary.json`, `summary.md`,
+  `rollouts/rollouts.jsonl`, `rollout_exports/`,
+  `batch_no_install_audit/manifest.json`, and `validate_task049_outputs.py`.
+  Worker_1 reported no immediate blocker and expects likely fewer than five
+  valid records, with blocker breakdown included if so.
+- Received and mark-read worker_4 mailbox
+  `task049-w4-candidate-blocker-audit-3522114-v2`. Worker_4 completed the
+  support-only candidate/blocker audit and wrote
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/worker4_audit/worker4_candidate_blocker_audit.json`
+  and `.md`.
+- Worker_4 audit counts: Session20 semantic_gate_passed=83, built envs=30,
+  strict usable=1, old built envs accepted-like under current probe=0; blockers
+  include built weak-oracle=29, strict-real helper-return rejected=1, untyped
+  required param=44, unsupported annotation/type=8, unsafe
+  side-effect/network/filesystem=1. SIMPA rotation remains the strongest anchor.
+- After mailbox pre-check, lead peer-sent worker_1 the worker_4 audit artifact
+  paths and key counts for incorporation into the canonical summary/blocker
+  breakdown. Worker_2 remains gated on worker_1 ready artifacts.

@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 14 |
 
-最近进展：Session14 收到 coordinator 对 task049 分工的确认：认可 w1 canonical JSONL owner、w4 blocker audit support、w2 independent tester。task049 标准文档已在 shared main commits `4f45731`、`3522114`；w2 已 mailbox 确认 tester reservation。复查时 artifact root 仍为空，已分别 peer send w1/w4 checkpoint follow-up。w4 已 mailbox 接受 audit-support role，计划基于 head `3522114` 审计 Session20/24/task048 artifacts 并给 blocker taxonomy；无 immediate blocker。当前等待 w1 canonical owner 接受/进展或 ready artifacts；manage task 保持 Working。
+最近进展：Session14 继续推进 task049。w1 mailbox `w1-task049-checkpoint-331831d` 已 mark-read：w1 已接受 canonical JSONL owner，开 PR#36 head `331831d243b6395b4469db0d45b299318747d604`，当前仅 metadata/in-progress，计划 no-product-code data run 并产出 `accepted_valid_helper_trajectories.jsonl`、summary 和 validation script。w4 mailbox `task049-w4-candidate-blocker-audit-3522114-v2` 已 mark-read：w4 audit artifacts 已在 worker4_audit/，给出 blocker counts 和 SIMPA anchor。已把 w4 audit paths 转给 w1 纳入 canonical summary。当前等待 w1 ready artifacts；manage task 保持 Working。
