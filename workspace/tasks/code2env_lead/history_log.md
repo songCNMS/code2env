@@ -814,3 +814,35 @@
   accepted_count=0, focused validator result, full pytest reuse rationale,
   blocker breakdown, default behavior impact, and residual risks.
 - Current state: waiting for worker_1 self-merge and merge report.
+- Worker_1 status briefly moved Idle while PR #37 was still open. Lead rechecked
+  GitHub and found PR #37 latest head
+  `28c78fcc8db75eaf7a39395c50d1ca6e8dcd6627` with commit title
+  `完成 task050 dependency-aware samples handoff`, still open while GitHub
+  recalculated mergeability.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a merge
+  follow-up requiring it to complete the approved self-merge or report a merge
+  blocker.
+- PR #37 then merged. GitHub reported `state=MERGED`, `mergedAt=2026-06-15T13:07:22Z`,
+  and merge commit `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`; `origin/main`
+  also resolved to `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`.
+- Received and mark-read worker_1 merge completion mailboxes
+  `w1-task050-merge-complete-f01e4b1` and
+  `w1-task050-merge-complete-f01e4b1-resend`.
+- Worker_1 reported PR #37 merged, final pre-merge head
+  `28c78fcc8db75eaf7a39395c50d1ca6e8dcd6627`, merge commit
+  `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`, accepted_count=0, focused
+  validator ok, no weak-oracle accepted, no product-code changes, full pytest
+  reuse rationale, default behavior impact none, and unchanged residual risks.
+- Lead performed a read-only completion audit: PR #37 is merged; required
+  artifacts exist; accepted JSONL has 0 lines; summary accepted_count=0;
+  validation_report is `{\"accepted_count\":0,\"ok\":true,\"records\":0}`;
+  run2 manifest has candidates_scanned=6207, semantic_gate_passed=58,
+  build_ok=30, strict_usable=1, real_value=1, deterministic=1, weak_oracle=29,
+  min_semantic_helpers=3, require_real_value=true; failed rollout remains
+  final_correct=true, helper_trace_complete=true, helper_calls_successful=false,
+  helper_trace_valid=false, all_source_tool_returns_ok=false.
+- After mailbox pre-check with unread_count=0, lead peer-sent coordinator the
+  task050 completion report with PR/merge commit, run commands/constraints,
+  artifact paths, accepted_count=0, W2 validation, focused validator result,
+  full pytest reuse rationale, blocker breakdown, default behavior impact, and
+  residual risks. Peer send returned delivered.
