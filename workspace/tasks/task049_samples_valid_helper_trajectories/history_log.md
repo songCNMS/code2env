@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -27,3 +27,12 @@
   `final_correct=true`, `golden_status=real_value`, deterministic, and at least
   three dedicated semantic helper tools for every accepted record.
 
+## Session 1 - 2026-06-15 UTC - Accepted by worker
+
+- Worker `intern_code2env_worker_1` accepted task049 on branch
+  `intern_code2env_worker_1/task049_samples_valid_helper_trajectories`.
+- Opened PR https://github.com/songCNMS/code2env/pull/36 against `main`.
+- Initial implementation plan: inspect task048 generation/validation surfaces,
+  build a focused corpus scan and predicate validation path, run full pytest,
+  generate JSONL/summary artifacts under the Session24 task049 output root, and
+  report accepted count plus blocker breakdown through mailbox.

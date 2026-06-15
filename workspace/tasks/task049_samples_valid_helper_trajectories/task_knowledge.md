@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Knowledge Entries
 
@@ -14,3 +14,5 @@
 4. The task may use prior Session20 archive extraction and Session24 dependency
    context, but any dependency on coordinator-only paths must be documented in
    the summary.
+5. PR opened at https://github.com/songCNMS/code2env/pull/36 from branch
+   `intern_code2env_worker_1/task049_samples_valid_helper_trajectories` to `main`.

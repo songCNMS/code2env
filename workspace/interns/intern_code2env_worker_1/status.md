@@ -1,19 +1,20 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task049_samples_valid_helper_trajectories,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR |  |
-| Session | 3 |
+| Current Task | task049_samples_valid_helper_trajectories |
+| PR | https://github.com/songCNMS/code2env/pull/36 |
+| Session | 1 |
 
 ## Recent Progress
 
+- Session 1 accepted task049_samples_valid_helper_trajectories; PR #36 opened for sample corpus valid helper-return trajectory generation.
 - Session 3 task047 merge authorization received after W2 validation PASS; completion metadata prepared for PR #33 squash merge with no product-code changes after validated head `e48507e`.
 - Session 2 task047 implementation/evidence is pushed to PR #33: explicit `--require-real-value` strict usable batch mode plus helper-call success/strict trace-quality metadata.
 - Task047 focused verification: `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` -> 48 passed; full `python3 -m pytest -q` -> 178 passed, 1 skipped.
