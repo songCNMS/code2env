@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -53,3 +53,31 @@
   `accepted_valid_helper_trajectories.jsonl`, `summary.json`, `summary.md`,
   `rollouts/rollouts.jsonl`, `rollout_exports/`, and
   `validate_task049_outputs.py`.
+
+## Session 3 - 2026-06-15 UTC - Canonical artifacts ready for validation
+
+- Generated task049 canonical artifacts under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`.
+- Broad current-code no-install strict batch audit over sample-derived Session20
+  worktrees scanned 12063 candidates, with semantic_gate_passed 83, build_ok 30,
+  smoke_ok 1, real_value 1, strict_usable 1, weak_oracle 29, and
+  skipped_insufficient_semantic_helpers 2825.
+- Accepted JSONL contains one record: `code2env.simpa.utils.calculate.rotation.2b54724b.v1`
+  / `simpa.utils.calculate:rotation`, with 3 semantic helpers
+  `rotation_x`, `rotation_y`, `rotation_z`.
+- Accepted record predicates all pass: `helper_trace_complete=true`,
+  `helper_calls_successful=true`, `helper_trace_valid=true`,
+  `all_source_tool_returns_ok=true`, `final_correct=true`,
+  `golden_status=real_value`, and `determinism=deterministic`.
+- SIMPA anchor generation initially timed out when golden computation used the
+  default 3 second subprocess timeout. Artifact generation now records the
+  Session24 dependency venv and computes SIMPA golden/determinism with a 30 second
+  timeout before building the package, matching task048 evidence.
+- Incorporated worker4 audit-support blocker counts in canonical summary:
+  semantic_gate_passed 83, built envs 30, strict usable 1, old accepted-like 0,
+  built weak-oracle 29, strict-real helper-return rejected 1, untyped required
+  parameter 44, unsupported annotation/type 8, unsafe side-effect/network/filesystem 1.
+- Focused predicate passed:
+  `PYTHONPATH=/home/leisong/codes/work-agents/intern_code2env_worker_1/code2env python3 .../validate_task049_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`
+  -> ok, records=1.
+- Full verification passed: `python3 -m pytest -q` -> 182 passed, 1 skipped.

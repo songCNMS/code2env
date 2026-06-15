@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -22,3 +22,10 @@
    `/home/leisong/data/samples` for the broad blocker audit, plus a current-code
    SIMPA rebuild/trace rollout using the Session24 dependency venv for an
    accepted real-value helper-return trajectory.
+8. SIMPA `simpa.utils.calculate:rotation` needs a 30 second subprocess timeout
+   for cold dependency imports when recomputing the real-value golden; the
+   default 3 second timeout produces a weak-oracle `TimeoutExpired` and must not
+   be accepted.
+9. Worker4 audit-support JSON stores the full blocker counts under
+   `session20_gate_summary` and `blocker_taxonomy.raw_session20_ge3_rejections`,
+   not as flat top-level fields.

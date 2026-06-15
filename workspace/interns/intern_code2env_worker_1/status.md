@@ -10,10 +10,22 @@
 | Team | code2env |
 | Current Task | task049_samples_valid_helper_trajectories |
 | PR | https://github.com/songCNMS/code2env/pull/36 |
-| Session | 2 |
+| Session | 3 |
 
 ## Recent Progress
 
+- Session 3 task049 canonical artifacts generated under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`;
+  accepted count is 1, with SIMPA `simpa.utils.calculate:rotation` passing
+  helper trace complete/successful/valid, all source returns ok, final correct,
+  real_value, and deterministic.
+- Task049 focused predicate:
+  `python3 .../validate_task049_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`
+  -> ok, records=1, env `code2env.simpa.utils.calculate.rotation.2b54724b.v1`.
+- Task049 full verification: `python3 -m pytest -q` -> 182 passed, 1 skipped.
+- Task049 blocker summary incorporates w4 audit counts: semantic_gate_passed 83,
+  built envs 30, strict usable 1, old accepted-like 0, weak-oracle built 29,
+  strict-real helper-return rejected 1, untyped 44, unsupported type 8, unsafe 1.
 - Session 2 task049 checkpoint: fetched and merged latest `origin/main` at
   `3522114`; PR #36 remains the canonical JSONL branch for
   `task049_samples_valid_helper_trajectories`.
