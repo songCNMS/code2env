@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=10 -->
+<!-- METADATA:SESSION=11 -->
 
 ## Knowledge Entries
 
@@ -39,3 +39,4 @@
 30. typed helper return 验收要同时覆盖值类型和参数来源：`helper_trace_complete=true` 只说明顺序覆盖，不说明 helper 成功；SIMPA 的 `torch.cos(float)` 复现表明 executor hydration、canonical typed serialization、helper argument synthesis/provenance 和 real-value golden correctness 必须一起看，不能只看最终 `call_entrypoint` correct。
 31. bootstrap PR 不等于 ready head：worker 打开 PR/提交接受任务 metadata 后，team_lead 只能记录进度；触发 tester 必须等 implementation worker 通过 mailbox 明确给出 exact ready head、focused/full test results、rollout JSONL/artifacts 和默认行为影响说明。
 32. 连续 goal turn 复查仍停在 bootstrap-only PR 时，不应继续空等；先核 worker 客观状态和可用替代人选，再更新标准 task 文档、明确 stood-down owner、新 owner、tester 不变或变更，并分别 peer send 防止两个 worker 并行改同一 schema-heavy 任务。
+33. 改派后原 owner PR 即使后来出现产品代码，也不能自动恢复为验收目标；没有 owner-ready mailbox、测试/artifact report 且 PR dirty 时，只能作为新 owner 可参考的材料，tester 仍按 lead 明确的 current owner exact head 验证。

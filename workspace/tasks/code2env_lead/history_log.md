@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=10 -->
+<!-- METADATA:SESSION=11 -->
 
 ## Session 0 - Created with team lead
 
@@ -190,4 +190,13 @@
 - 检查 worker 状态：w1 共享 status 仍为 Idle 且无 task048 实现进展；w2 Idle 并已预留 tester；w3/w5 仍标 Working 老任务；w4 共享 status 为 Idle。
 - 为避免 task048 acceptance 路径继续被 bootstrap PR 阻塞，更新共享 task docs `workspace/tasks/task048_typed_fixture_helper_args/`：implementation owner 从 w1 改派为 w4，w2 保持 independent tester，w1 stand down；共享 main commit `c365a60` 已 push。
 - 按流程在每次 peer send 前检查 lead mailbox，均为 unread_count=0；随后 peer send w4 接手 implementation、peer send w2 更新验证目标为 w4 exact head、peer send w1 从 task048 implementation stand down，三次 API 均返回 `{"status":"delivered"}`。
+- 已向 `intern_code2env_coordinator` 发送 task048 改派进度汇报，API 返回 `{"status":"delivered"}`；汇报包含 w1 bootstrap-only PR#34、共享 task docs commit `c365a60`、w4/w2/w1 分工变更、lead records commit `44bf071` 和当前等待 w4 PR/ready head。
 - 当前状态：等待 w4 从 latest origin/main 开新实现 PR/ready head；w2 等待 w4 exact head 后验证 focused/full tests、rollout JSONL 和 helper/source/final correctness flags。team_lead 未写产品代码、未跑产品测试、未 merge。
+
+## Session 11 - task048 reassignment acknowledged and validation target clarified
+
+- 收到 `intern_code2env_coordinator` peer：认可 w1 stand down、w4 接手 implementation、w2 按 w4 exact head 独立验证；完成态回报仍必须包含 w4 PR/head、focused/full tests、rollout JSONL 路径、`helper_trace_complete`/`helper_calls_successful`/`helper_trace_valid`/source returns/final real-value correctness，以及 merge 状态；PR#34 如无产品代码不要作为验收依据。
+- 检查 lead mailbox，收到 w2 `worker2-task048-validator-update-20260615-01`：w2 已刷新到 shared main `c365a60f36dc4f4d8d54057ca3a92597ad82c80e`，确认 task docs 现由 w4 实现、w2 验证，并明确不验证 w1 PR#34 的旧 bootstrap head。已 mark-read，marked_count=1，随后 unread_count=0。
+- 复查 PR 列表发现 PR#34 后续 head 更新到 `fea34ec04f9ce93f93c0ca9527e9f21ac31285f0`，包含 `code2env/batch.py`、`code2env/rollout.py` 和测试文件改动，但没有 w1 ready mailbox、测试结果或 rollout artifacts，且 mergeStateStatus=DIRTY。该 PR 不作为当前验收目标。
+- 按流程在 peer send 前检查 lead mailbox，均为 unread_count=0；已 peer send w4 clarification：w4 仍是 implementation owner，可自行参考 PR#34 思路，但最终验收必须来自 w4 负责的 PR/exact head；已 peer send w2 validation clarification：只等待/验证 w4 ready exact head。两次 API 均返回 `{"status":"delivered"}`。
+- 当前状态：等待 w4 PR/ready head；w2 等待 w4 exact head 后验证。team_lead 未写产品代码、未跑产品测试、未 merge。
