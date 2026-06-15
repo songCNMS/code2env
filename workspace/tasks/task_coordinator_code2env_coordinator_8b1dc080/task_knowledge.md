@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=24 -->
+<!-- METADATA:SESSION=25 -->
 
 ## Knowledge Entries
 
@@ -45,3 +45,4 @@
 39. task049 handoff 已下发给 `intern_code2env_lead`：目标是基于 PR #35/task048 能力重扫 `/home/leisong/data/samples` 并产出 valid helper-return trajectory JSONL；accepted records 必须同时满足 helper trace complete/successful/valid、source returns ok、real-value final correctness 和 >=3 semantic helpers，不足 5 条时需 blocker breakdown。
 40. task049 已正式立项并分派：w1 负责 canonical JSONL，w4 做 candidate/blocker audit support，w2 做 independent tester；复验时应以 w1 canonical artifact 和 w2 validator report 为主，同时检查 w4 blocker audit 是否覆盖 <5 accepted records 的原因。
 41. task049 已在 PR #36 merge 到 `main` commit `438d13a12111c78422721bbf3dea5482ccf829b4`：accepted valid helper-return JSONL 只有 1 条 SIMPA `rotation`，但该记录满足 >=3 semantic helpers、real_value deterministic、helper trace complete/successful/valid、source returns ok 和 final_correct。短缺原因已量化，主要来自 not_module_level、insufficient_semantic_helpers、possible_side_effect、weak_oracle、untyped/unsupported params；扩大样本量的下一步应针对依赖安装与 fixture/type support，而不是放宽 accepted 质量门槛。
+42. task050 handoff 已下发给 `intern_code2env_lead`：当前 `code2env batch` 默认可安装依赖，但 task049 no-install audit 仍把 dependency-heavy candidates 排到 weak-oracle/blockers；下一步应使用 dependency-aware rerun、专用 venv cache 和严格 task049 入选门槛提升 accepted 数量，若仍不足 3 条则产出细粒度 dependency/runtime blocker breakdown。

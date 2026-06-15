@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=24 -->
+<!-- METADATA:SESSION=25 -->
 
 ## Session 0 - Created with coordinator
 
@@ -282,3 +282,12 @@
 - accepted count 低于目标 5 条，短缺 4 条；summary blocker breakdown 已核对：samples=200、python worktrees=38、candidates=12063、semantic gate passed=83、envs built=30、strict usable=1、weak-oracle accepted=0；主要阻塞为 `not_module_level=8799`、`insufficient_semantic_helpers=2825`、`possible_side_effect=356`、`strict_unusable:weak_oracle=29`、`untyped_required_param=44`、`unsupported_param_type=8`、`unsafe_rich_fixture_candidate=1`。
 - 残余风险保持明确：当前严格 accepted record 只有 1 条，SIMPA artifact 依赖记录中的 Session24 venv 与 30s cold-import timeout；广域 sample audit 没有安装依赖，因此 dependency-heavy candidates 仍以 weak-oracle/blocker 形式被排除。
 - coordinator 已通过 peer send 向 lead 回信确认复验通过，返回 `{"status":"delivered"}`。
+
+## Session 25 - Dependency-aware samples handoff
+
+- 按用户“执行下一步”要求，基于 task049 的 accepted shortfall 和 blocker breakdown 继续推进样本放量；coordinator 遵守 role 边界，不直接写产品代码，将依赖安装/运行环境方向拆成 lead 任务。
+- 核对当前代码能力：`code2env/envdeps.py` 已支持 per-repo venv dependency installation，`code2env batch` 默认安装依赖，只有显式 `--no-install-deps` 才跳过；task049 的 broad audit 使用 no-install 路径，因此依赖型 candidate 仍以 weak-oracle/blocker 形式存在。
+- 写出 handoff 文件 `../outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories_goal.md`，建议任务 id `task050_dependency_aware_samples_valid_trajectories`。目标是在 latest `origin/main` at/after `438d13a12111c78422721bbf3dea5482ccf829b4` 上，对 `/home/leisong/data/samples` 做 dependency-aware rerun，提升 strict valid helper-return trajectories 的 accepted 数量。
+- 验收口径写入 handoff：主 accepted-data run 不使用 `--no-install-deps`，使用专用 venv cache、`--require-real-value`、`--min-semantic-helpers 3` 和 determinism checking；accepted record 必须 real sample repo、`semantic_helper_count >= 3`、real_value deterministic、helper trace complete/successful/valid、all source returns ok、final correct，不接受 weak-oracle exception correctness。
+- 如果 accepted count 仍低于 3，lead 需提供 blocker breakdown，区分 dependency install failed、system-only dependency、package metadata/import path、CLI/stdout executor envelope、untyped/unsupported params、side-effect/network sandbox、helper arg synthesis 等原因。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task050_dependency_aware_samples_valid_trajectories` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session25_dependency_aware_samples/task050_handoff_delivery.json`。
