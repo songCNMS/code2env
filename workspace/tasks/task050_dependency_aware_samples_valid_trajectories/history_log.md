@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -74,31 +74,58 @@
   dedicated venv cache path, expected JSONL/summary paths, and immediate
   blockers.
 
-## Session 3 - 2026-06-15 UTC - Worker acceptance and branch sync
+## Session 3 - 2026-06-15 UTC - Implementation owner accepted and branch synced
 
-- Worker `intern_code2env_worker_1` accepted task050 on branch
-  `intern_code2env_worker_1/task050_dependency_aware_samples_valid_trajectories`.
-- Opened PR https://github.com/songCNMS/code2env/pull/37 against `main`.
-- Base synced to shared `origin/main` commit
-  `20513803e2c8462c9699feeb22415d062c8d6f17` before branching, then merged
-  `origin/main` commits `486adb463d5fc68ccc73cb3c2eed0bc800dad930` and
-  `94238103db7def62facd0e2827a719b9e6b95200` containing lead task050 history.
-- Sent formal acceptance/progress mailbox `w1-task050-acceptance-63c9b06`.
-- Planned artifact root:
-  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/`.
-- Planned venv cache:
-  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/venv_cache/`.
-- Initial data-run plan: derive targeted dependency-likely repos from task049
-  weak-oracle/ge3-helper blockers, run dependency-aware `code2env batch` with
-  dependency installation enabled, `--require-real-value`,
-  `--min-semantic-helpers 3`, `--determinism-runs 2`, and the dedicated venv
-  cache, then run trace-mode subfunction rollouts for strict usable envs.
-- Expected outputs include `accepted_valid_helper_trajectories.jsonl`,
-  `summary.json`, `summary.md`, `rollouts/rollouts.jsonl`, `rollout_exports/`,
-  `dependency_batch/manifest.json`, dependency install/status evidence, and a
-  focused validation script.
-- Product-code changes are not expected initially; if dependency-aware reruns
-  expose a product bug, worker will scope changes narrowly and run focused/full
-  tests before ready report.
-- Immediate blockers: none; known risks are dependency install cost/flakiness and
-  system-only packages such as Blender `bpy`.
+- Worker_1 sent mailbox `w1-task050-acceptance-63c9b06`, which team lead marked
+  read. Worker_1 accepted implementation/data ownership for PR #37:
+  `https://github.com/songCNMS/code2env/pull/37`, branch
+  `intern_code2env_worker_1/task050_dependency_aware_samples_valid_trajectories`,
+  head `63c9b068264a633408822fe76d33cb45829bf960`.
+- Worker_1 stated product-code changes are not expected initially and this is
+  primarily data/artifact generation; product code will only change if the
+  dependency-aware rerun exposes a narrow product bug.
+- Worker_1's planned accepted-data run will use dedicated venv cache
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/venv_cache`
+  and will not pass `--no-install-deps`. No-install mode, if used, will be
+  audit-only.
+- Worker_1's planned first batch command includes `--min-semantic-helpers 3`,
+  `--require-real-value`, `--determinism-runs 2`, and an output directory under
+  the task050 artifact root.
+- Expected owner outputs are
+  `accepted_valid_helper_trajectories.jsonl`, `summary.json`, `summary.md`,
+  `rollouts/rollouts.jsonl`, `rollout_exports/`,
+  `dependency_batch/manifest.json`, dependency install/status evidence, and
+  `validate_task050_outputs.py`.
+- Immediate owner blockers: none reported. Known risks remain dependency
+  installation cost/flakiness, system-only dependencies, package metadata/import
+  path failures, CLI/stdout envelope failures, untyped or unsupported params,
+  side-effect/network sandbox blockers, and helper-argument synthesis gaps.
+- PR #37 currently reports `mergeStateStatus=DIRTY` against `main`. After a
+  mailbox pre-check with unread_count=0, team lead peer-sent worker_1 a
+  checkpoint requiring sync with latest `origin/main` before declaring a
+  ready-for-test exact head. Worker_2 must not validate until worker_1 sends a
+  clean ready mailbox with exact head and artifact report.
+- After confirming lead mailbox had unread_count=0, team lead peer-sent
+  coordinator a progress report, explicitly marked not completion. The report
+  included shared main `f8fad5b`, worker assignments, PR #37 head
+  `63c9b068264a633408822fe76d33cb45829bf960`, accepted-data run constraints,
+  artifact root, and current wait state for a synced worker_1 ready head.
+- Worker_1 merged `origin/main` commits
+  `486adb463d5fc68ccc73cb3c2eed0bc800dad930`,
+  `94238103db7def62facd0e2827a719b9e6b95200`, and
+  `b08774bdcefa02127251e84eefc6a64ad368fb83` into PR #37, resolving task
+  history metadata without product-code changes.
+
+## Session 4 - 2026-06-15 UTC - Main sync and dependency-aware run continued
+
+- Team lead checkpoint confirmed PR #37 head
+  `7cc126949fd2415f9273f6e5bff03e0901ba74ff` was still dirty because shared
+  `main` had advanced through `b08774bdcefa02127251e84eefc6a64ad368fb83`.
+- Worker_1 merged latest `origin/main` again, resolved the task history metadata
+  conflict by keeping the lead acceptance/checkpoint record and the worker sync
+  evidence in one Session 3 entry, and made no product-code changes.
+- Lead also confirmed the task050 artifact root still contained only prepared
+  directories. Worker_1 continued the dependency-aware accepted-data path with
+  installs enabled, the dedicated `venv_cache`, `--min-semantic-helpers 3`,
+  `--require-real-value`, and determinism checking. No ready-for-validation
+  mailbox is due until JSONL/summary artifacts and predicate evidence exist.

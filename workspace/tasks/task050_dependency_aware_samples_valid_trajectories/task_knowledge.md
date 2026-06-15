@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Knowledge Entries
 
@@ -28,3 +28,7 @@
 8. Before a ready-for-validation report, PR #37 must be synced to latest
    `origin/main` and GitHub must show a clean merge state; lead task-history
    metadata commits can dirty the PR even when product code is unchanged.
+9. Empty artifact directories are not evidence for task050 readiness. The owner
+   report must include generated JSONL/summary files, dependency manifest or
+   equivalent command evidence, focused predicate output, accepted count, and
+   blocker breakdown when accepted_count is below 3.
