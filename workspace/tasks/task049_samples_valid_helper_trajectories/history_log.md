@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -36,3 +36,20 @@
 - Current expected flow: worker_1 owns the canonical scan and final JSONL,
   worker_4 supplies candidate/blocker audit support, and worker_2 validates only
   worker_1's ready exact head/artifacts.
+
+## Session 2 - 2026-06-15 UTC - Lead follow-up for owner/audit acceptance
+
+- Team lead rechecked state after initial dispatch.
+- Lead mailbox had no unread reports.
+- Artifact root was still empty:
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`.
+- Shared worker statuses still showed worker_1 and worker_4 as Idle, with no
+  task049 acceptance/progress recorded yet.
+- Team lead sent worker_1 a checkpoint request asking for acceptance or blocker,
+  branch/head or no-code data-run plan, first scan command/script plan, expected
+  JSONL/summary names, validation predicate command, and immediate blockers.
+- Team lead sent worker_4 a checkpoint request asking for acceptance or blocker,
+  exact head, prior artifacts or fresh indexes to inspect, preliminary
+  candidate/blocker taxonomy plan, and immediate blockers.
+- Worker_2 had already accepted tester reservation in mailbox and remains gated
+  on worker_1's ready exact head/artifacts.
