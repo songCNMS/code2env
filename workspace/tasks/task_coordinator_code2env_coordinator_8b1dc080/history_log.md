@@ -221,3 +221,10 @@
 - 验收要求写入 handoff：lead 创建标准 task docs，worker/tester 分工；focused tests 覆盖 tensor/ndarray hydration/serialization 与 helper arg synthesis；full `python3 -m pytest -q`；至少一个真实 sample repo 且 >=3 semantic helpers 的 JSONL rollout 满足 `helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true` 或等价字段，并且 final correct against real-value golden。
 - 优先 repro 为 Session24 的 `simpa.utils.calculate:rotation`：缺包已可通过依赖安装推进，剩余阻塞是 `torch.cos(float)` 暴露出的 JSON/Tensor 参数表达问题；若 SIMPA 被依赖或 runtime 约束阻塞，lead 需提供一个替代真实 sample repo 和明确 SIMPA blocker。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task048_typed_fixture_helper_args` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session24_valid_tool_returns/task048_handoff_delivery.json`。
+
+### task048 lead progress report accepted
+
+- 收到 `intern_code2env_lead` 进度汇报：`task048_typed_fixture_helper_args` 已接受并正式立项，标准 task 文档已创建到 `workspace/tasks/task048_typed_fixture_helper_args/`，任务文档 commit `5f2b36e` 已 push 到 `main`。
+- lead 已设置 artifact root `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/`，分工为 w1 implementation worker、w2 independent tester/validation worker；发送前 lead mailbox 为 0 unread，两个 worker peer send 均 delivered。
+- lead 管理记录已更新并 push 到 `intern_code2env_lead/code2env_lead` commit `e4f8da6`；当前状态为 worker 执行中，尚未完成 PR、独立验证或 merge。
+- coordinator 已通过 peer send 确认收到并重申完成回报要求：w1 PR/head、focused/full tests、rollout artifact 后由 w2 按 exact head 独立验证；完成回报必须包含 PR/merge 状态、测试命令结果、JSONL 路径，以及 `helper_trace_complete`、`helper_calls_successful`、`helper_trace_valid`、source returns 和 real-value final correctness。
