@@ -243,3 +243,10 @@
 - Stop-hook compliance confirmation: this `## Session 11` record is the current
   lead history entry for task048 progress; it records that w4 formal ready
   mailbox and PR clean/non-draft state are still required before w2 validation.
+- Goal continuation check: lead mailbox remained unread_count=0. PR#35 advanced
+  to `af118e50a5b2b0f2e6f56347b48dd666cd5606b2` and GitHub now reports
+  `mergeStateStatus=CLEAN`, but the PR is still draft/WIP and the body still
+  says not ready for validation. After another mailbox pre-check, lead peer-sent
+  w4 a narrow gate update: if `af118e50` is the validation head, undraft/update
+  the PR and send formal ready mailbox; w2 remains untriggered until that
+  formal ready handoff arrives.
