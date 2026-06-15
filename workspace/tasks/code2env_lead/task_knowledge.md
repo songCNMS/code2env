@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Knowledge Entries
 
@@ -32,3 +32,5 @@
 23. `source_root` path descriptor hydration 必须在 `mkdir` 前拒绝 absolute raw path，并在 resolve 后用 `relative_to(source_root)` 校验 containment；`../escape` 和 absolute escape 都要 fail closed，`tmpdir` base 可继续用于隔离临时路径。
 24. qlib min3 fixture validation 的可用 env 目前依赖 optional deps (`yahooquery`/`baostock`/`plotly`)；严格 declared deps 下 build 可见但 usable=0。报告中要区分 strict-run 与 optional-deps evidence，避免把环境缺口误判为 fixture 失败。
 25. mock subfunction trace metadata 可以证明 required helper tools 的调用顺序和 entrypoint_after_helpers，但 helper tools 用 empty args 时可能先返回 TypeError；final correctness 仍来自 `call_entrypoint`，因此 artifact/report 要同时写 trace flags 与 helper-call residual risk。
+26. strict usable 的产品口径要比 `build_ok/smoke_ok/rollout_correct` 更窄：必须是 `golden_status=real_value` 且 deterministic；weak-oracle exception env 即使 rollout exact-match 正确，也只能算 weak-oracle/blocked，不能进入 strict runnable 数据分母。
+27. trace 质量要拆成 coverage/order 与 helper-call success 两层；`helper_trace_complete=true` 只能说明 required helper tools 被覆盖且 entrypoint 在 helper 后，不能说明 helper 调用有效。rank5 Session17 的 3 个 empty-args TypeError 是 task047 的回归靶点。

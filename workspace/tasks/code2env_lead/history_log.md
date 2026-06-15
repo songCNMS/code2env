@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - Created with team lead
 
@@ -83,7 +83,7 @@
 - 回 coordinator session9 跟进:037 review中/038待审/039待审/041 blocked;ETA~50-70min;卡点仅 037 过度剥壳(已处理)。
 - 教训:信封归一不能贪婪剥(会过度剥到函数自身 wrapper 形状返回值),要按 golden 已知固定结构定深、和确定形状集比对。
 
-## Session 5 - v3 三修复合并完成 + w5 卡住改派 w1
+## Archive P0-5 - v3 三修复合并完成 + w5 卡住改派 w1
 - Session4 三 PR 全 merged:信封①(#23 7c0a82c)/report_v3(#26 ba7dbf7)/确定性②(#24 716b62d),main 148 passed。lead review 全 APPROVE(PR#23 抓过度剥壳 REQUEST_CHANGES 后修订)+ tester(w3)全 PASS + 037↔039/038↔039 交叉核对一致。Deliverable① 完成。
 - v3 重跑关键路径事故:原 runner w5(task041)疑似 session 卡住——lead ping 启动后 w5 status 仍"待 ping"、无 rerun 进程、outputs/rollouts_v3 无产物。coordinator roll-call 告警并授权改派。
 - 处置:核实(0 产物/0 进程/status 未动)确认 w5 卡住→改派 v3 执行给空闲 w1(task042,深谙 envdeps/determinism;uv 兜底已折进 envdeps 无需 wrapper)→令 w5 stand down 避免双跑 outputs/rollouts_v3→回 coordinator。
@@ -134,3 +134,12 @@
 - lead 在 w4/w2 PASS 后授权 w1 self-merge。w1 按 playbook 追加 workspace-only completion metadata head `355142d11a8fdd94f0330e0777659b7bf6cf52f1`，squash-merge PR#32 到 main，merge commit `32e37a247bdc6f9ebf19c2189d69f6c77d09f323`，mergedAt `2026-06-14T16:26:33Z`。
 - w1 post-merge verification on main：`python3 -m pytest -q tests/test_rich_fixtures.py tests/test_batch.py` 为 30 passed, 1 skipped；full pytest 未在 merge 后重跑，独立 full validation 已在 product head 通过，final merge delta 仅 workspace metadata。
 - 剩余风险：usable qlib env 依赖 optional deps `yahooquery`/`baostock`/`plotly`；torch unavailable，torch candidates 仍以 missing optional dependency skip；mock helper calls 可在 entrypoint 前因 empty args 返回 TypeError，但 trace metadata 与 final correctness pass；`get_position_data` build_ok 但 weak_oracle TimeoutExpired。
+
+## Session 5 - strict usable trace quality dispatch
+
+- 收到 user goal 与 coordinator Session18 fallback：创建并执行 `task047_strict_usable_trace_quality`；handoff 文件为 `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session18_strict_usable_trace_quality/task047_strict_usable_trace_quality_goal.md`。
+- 需求拆解为两个产品 workstream：A strict usable/weak-oracle 区分（weak-oracle exception 不计 runnable strict usable，manifest/summary 增加 build/smoke/real_value/deterministic/strict_usable/weak_oracle counters 与 audit reason）；B subfunction trace helper-call success/arg quality（在 `subfunction_trace` 记录 required helper call 是否 `ok=true`，增加 `helper_calls_successful`/strict trace metric，并暴露 rank5 三个 helper 参数失败或用安全参数合成消除失败）。
+- 评估 workers：w1、w2 Idle；w3、w5 仍标 Working；w4 自身 workspace 仍标 task046 validator Working。任务触及 batch/rollout shared schemas，分配 w1 实现、w2 独立 tester/sample validation；未用满 5 人的原因是 w3/w5/w4 状态不适合且多实现 worker 会增加 schema/CLI 冲突。
+- 在共享 repo `/home/leisong/codes/work-agents/code2env` fast-forward 到 task046 merge commit `32e37a2` 后创建标准 task docs `workspace/tasks/task047_strict_usable_trace_quality/`，commit `67ccebf` 已 push 到 `main`。artifact root：`/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/`。
+- 已 peer send 通知 w1 接受实现/PR、w2 预留独立 tester/sample rerun；发送前 mailbox unread 已确认清空。w1 hook 显示已开始接受 task047 并准备从 current main 建分支；w2 mailbox `worker2-task047-reserved-20260614-01` 已处理并 mark-read，确认 artifact root 和 Session17/sample inputs 均存在，等待 w1 PR 后按 exact head 独立验证。
+- 验收要求已写入 task docs：focused tests、full `python3 -m pytest -q`、Session17 top10 或等价 `/home/leisong/data/samples` top-N 复跑、summary JSON、rollout JSONL、rollout-export、PR/commit/tests/artifact report。
