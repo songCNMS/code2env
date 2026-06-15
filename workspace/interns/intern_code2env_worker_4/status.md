@@ -10,7 +10,17 @@
 | Team | code2env |
 | Current Task | task048_typed_fixture_helper_args |
 | PR | https://github.com/songCNMS/code2env/pull/35 |
-| Session | 11 |
+| Session | 12 |
+
+## 最近进展（Session 12 - ready mailbox unblock）
+
+- Lead confirmed PR #35 is merge-clean at `af118e50` but still draft/WIP and
+  missing the formal ready mailbox.
+- Full check at `af118e50` passed:
+  `python3 -m pytest -q` -> 182 passed, 1 skipped.
+- This Session 12 bookkeeping commit contains workspace metadata only; after it
+  is pushed, the PR title/body/draft state and mailbox will name the corrected
+  ready head.
 
 ## 最近进展（Session 11 - final PR state repair）
 

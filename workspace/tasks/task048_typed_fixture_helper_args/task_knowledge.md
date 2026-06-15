@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=11 -->
+<!-- METADATA:SESSION=12 -->
 
 ## Knowledge Entries
 
@@ -42,3 +42,5 @@
     is preparing handoff; resolve task history by preserving lead-authored
     sessions and appending the worker repair/ready session, then report the
     final pushed PR head.
+13. Session 12 added only workspace metadata after `af118e50`; product code and
+    tests are unchanged from the head where full pytest passed.
