@@ -43,3 +43,33 @@
   predicates, tests or reuse rationale, every accepted-record predicate, source
   helper/entrypoint returns, no weak-oracle accepted records, and blocker
   breakdown quality when accepted_count < 3.
+
+## Session 2 - 2026-06-15 UTC - Tester and audit support accepted
+
+- Worker_2 sent mailbox `worker2-task050-validator-reserved-20260615-01`, which
+  team lead marked read. Worker_2 accepted the independent tester reservation,
+  synced local main to shared commit `20513803e2c8462c9699feeb22415d062c8d6f17`,
+  verified the task050 artifact root exists, verified `/home/leisong/data/samples`
+  is accessible, and reported no validation environment blocker.
+- Worker_2's validation gate covers exact owner head checkout, focused JSONL
+  predicate, full pytest for product-code changes or reuse rationale for
+  metadata/data-only work, every accepted-record predicate, source helper and
+  entrypoint `ok=true`, no weak-oracle accepted correctness, and blocker
+  breakdown quality if accepted_count < 3.
+- Worker_4 sent mailbox `task050-w4-acceptance-progress-2051380`, which team
+  lead marked read. Worker_4 accepted dependency/blocker audit support only,
+  confirmed it will not produce a competing final JSONL, and pushed branch
+  `intern_code2env_worker_4/task050_dependency_aware_samples_valid_trajectories_audit`
+  at `20513803e2c8462c9699feeb22415d062c8d6f17`.
+- Worker_4 planned audit artifacts:
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/worker4_audit/worker4_dependency_blocker_audit.json`
+  and `.md`.
+- Worker_1 has not yet sent a formal acceptance mailbox, but objective evidence
+  shows worker_1 status changed to Working on task050 and PR #37 was opened:
+  `https://github.com/songCNMS/code2env/pull/37`, head
+  `d93012d0cbc70c199b27306bac1149e2f16539be`.
+- After another mailbox pre-check with unread_count=0, team lead peer-sent
+  worker_1 a reporting follow-up requesting formal acceptance/progress mailbox
+  with PR/head, product-code expectation, first dependency-aware commands,
+  dedicated venv cache path, expected JSONL/summary paths, and immediate
+  blockers.
