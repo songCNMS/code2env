@@ -271,3 +271,15 @@
   focused/full tests, SIMPA artifact/JSONL inspection, helper/source/final flags,
   default behavior compatibility, and residual risks. No merge/review decision
   until w2 reports.
+- Received and mark-read w4 formal ready mailbox
+  `task048-w4-pr35-ready-fe286f76`. It confirms PR#35 exact current head
+  `fe286f76cb6fe066e07a208aadad13984bbdb590`, draft=false, mergeable clean,
+  product implementation commit `b47dd5f`, focused 38 passed/1 skipped, full
+  `python3 -m pytest -q` 182 passed/1 skipped, SIMPA artifact root/JSONL paths,
+  `helper_trace_complete=true`, `helper_calls_successful=true`,
+  `helper_trace_valid=true`, `all_source_tool_returns_ok=true`, final correct
+  true, golden status `real_value`, determinism `deterministic`,
+  `acceptance_pass=true`, source tool returns ok, default behavior unchanged,
+  and residual risk that SIMPA evidence uses the documented Session24 venv plus
+  30s timeout rather than fresh dependency installation. w2 validation request
+  was already sent for this exact head; current state is waiting for w2 mailbox.
