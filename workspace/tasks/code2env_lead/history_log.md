@@ -676,3 +676,23 @@
   SIMPA indexing warnings, and one spec file exists at
   `dependency_batch/install_enabled_targeted_run2/specs/code2env.simpa.utils.calculate.rotation.2b54724b.v1.json`.
   Manifest, accepted JSONL, summary, and ready-for-test report are still absent.
+- Later continuation check found run2 had completed with exit_code=0 and written
+  `dependency_batch/install_enabled_targeted_run2/manifest.json`.
+- Lead-side manifest inspection found summary counts:
+  candidates_scanned=6207, semantic_gate_passed=58, build_ok=30, smoke_ok=1,
+  strict_usable=1, usable=1, real_value=1, deterministic=1, weak_oracle=29,
+  min_semantic_helpers=3, and require_real_value=true.
+- The single strict usable env in run2 is
+  `code2env.scripts.check-versions.check_language_version.21a74cc9.v1` from
+  `niklas-heer/speed-comparison`. This is not accepted yet because task049
+  evidence previously showed this target can fail helper-return predicates; it
+  must pass fresh trace-mode helper/source/final correctness checks before it can
+  enter the canonical JSONL.
+- Accepted JSONL, summary JSON/MD, rollout JSONL/export, validator output, and a
+  ready/blocked mailbox were still absent.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a run2
+  completion checkpoint requiring either trace-mode rollout/validation and
+  canonical accepted artifacts, or a categorized accepted_count<3 blocker
+  breakdown incorporating run2 dependency evidence and worker_4 audit.
+- Current state: waiting for worker_1 ready-for-test or blocked-data mailbox;
+  worker_2 remains reserved for exact-head validation.
