@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=10 -->
 
 ## Knowledge Entries
 
@@ -35,3 +35,6 @@
     `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/worker4_pr35_simpa/`
     with `validation_summary.json`, `validation_summary.md`, and
     `rollouts/rollouts.jsonl`.
+11. PR #35 needed a current `origin/main` merge to clear GitHub's DIRTY merge
+    state; the merge-clean validation head is newer than the earlier `9704b92`
+    ready-evidence checkpoint but does not change product code.
