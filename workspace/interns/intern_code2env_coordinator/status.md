@@ -45,3 +45,4 @@
 - Session 24（格式）：按 stop hook 提示补充 history 格式说明，保持唯一 Session 24 主标题，task048 各阶段作为该 Session 下的子节记录。
 - Session 24（续）：按用户“执行下一步”要求，将基于 task048 能力重扫 samples 并生成 valid helper-return trajectory JSONL 拆成 `task049_samples_valid_helper_trajectories` 下发给 lead；handoff 写入 `../outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories_goal.md`，goal API timeout，peer send 兜底已 delivered。
 - Session 24（进度）：收到 lead 回报 `task049_samples_valid_helper_trajectories` 已立项并分派：w1 为 canonical JSONL owner，w4 为 blocker audit support，w2 为 independent tester；当前等待 w1/w4 ready artifacts。
+- Session 24（完成）：收到并复核 `task049_samples_valid_helper_trajectories` 完成回报；PR #36 已 merge 到 `main`（merge commit `438d13a`），coordinator 校验 accepted JSONL 为 1 条 SIMPA `rotation` real-value deterministic 轨迹，3 个 semantic helpers 与 entrypoint source returns 全部 `ok=true`，严格 trace 字段全部为 true；accepted shortfall=4 的 blocker breakdown 已记录。

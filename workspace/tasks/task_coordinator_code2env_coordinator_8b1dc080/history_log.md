@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=23 -->
+<!-- METADATA:SESSION=24 -->
 
 ## Session 0 - Created with coordinator
 
@@ -270,3 +270,15 @@
 - lead 决策记录：canonical JSONL 只设一个 owner，w4 做 parallel audit support 而不是 competing generator，w2 保持 independent tester；w2 已通过 mailbox 接受 tester reservation。
 - task docs 验收门槛与 handoff 一致：latest `origin/main` at/after `d3a5af36`，按 Session16/20 最新分支 archive extraction 规则扫描 `/home/leisong/data/samples`；accepted records 必须 >=3 dedicated semantic helpers、strict real_value+deterministic、trace-mode subfunctions、helper trace complete/successful/valid、all source returns ok、final correct。
 - coordinator 已通过 peer send 确认收到并重申完成回报要求：最终回报需包含 JSONL+summary 路径、accepted count、blocker breakdown（若 <5）、focused validation predicates、full pytest 和 w2 独立验证结论；当前等待 w1/w4 progress/ready artifacts。
+
+### task049 completion verified
+
+- 收到 `intern_code2env_lead` 完成回报：`task049_samples_valid_helper_trajectories` 已完成并 merge；PR #36 `https://github.com/songCNMS/code2env/pull/36` merge 到 `main`，merge commit `438d13a12111c78422721bbf3dea5482ccf829b4`，mergedAt `2026-06-15T11:02:50Z`。final PR head before merge 为 `ba040a26685fde972316b5207d22afee0b5d06cc`。
+- coordinator 复验 merge 状态：`git fetch origin main` 后确认 `origin/main` 为 `438d13a12111c78422721bbf3dea5482ccf829b4`；`git show --name-only` 显示本次 merge 只修改 `workspace/interns/intern_code2env_worker_1/` 与 `workspace/tasks/task049_samples_valid_helper_trajectories/` 下的管理文档，没有产品代码或 tests 变更。
+- artifact 复核路径：accepted JSONL 为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/accepted_valid_helper_trajectories.jsonl`；summary 为同目录 `summary.json` / `summary.md`；rollout JSONL 为同目录 `rollouts/rollouts.jsonl`；batch manifest 为同目录 `batch_no_install_audit/manifest.json`。
+- coordinator 本地谓词校验通过：accepted JSONL 为 1 条，record id `code2env.simpa.utils.calculate.rotation.2b54724b.v1`，目标 `simpa.utils.calculate:rotation`，semantic helper count 为 3（`rotation_x`、`rotation_y`、`rotation_z`），`helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`、`final_correct=true`、`golden_status=real_value`、`determinism=deterministic`。
+- source return 抽查通过：`call_rotation_x`、`call_rotation_y`、`call_rotation_z`、`call_entrypoint` 均 `ok=true`，满足 task049 对 valid helper-return trajectory 的入选口径。
+- lead/w1/w2 报告的验证结果：w1 focused predicate PASS、full pytest `182 passed, 1 skipped`；w2 independent validation PASS at `0b9a519`，post-merge sanity PASS at `438d13a`；w2 post-merge focused predicate exit 0，`ok=true`、records=1；full pytest 复用 `befdea6` 结果，且证明 `0b9a519..ba040a2/438d13a` 对 `code2env/` 与 tests 无 diff。
+- accepted count 低于目标 5 条，短缺 4 条；summary blocker breakdown 已核对：samples=200、python worktrees=38、candidates=12063、semantic gate passed=83、envs built=30、strict usable=1、weak-oracle accepted=0；主要阻塞为 `not_module_level=8799`、`insufficient_semantic_helpers=2825`、`possible_side_effect=356`、`strict_unusable:weak_oracle=29`、`untyped_required_param=44`、`unsupported_param_type=8`、`unsafe_rich_fixture_candidate=1`。
+- 残余风险保持明确：当前严格 accepted record 只有 1 条，SIMPA artifact 依赖记录中的 Session24 venv 与 30s cold-import timeout；广域 sample audit 没有安装依赖，因此 dependency-heavy candidates 仍以 weak-oracle/blocker 形式被排除。
+- coordinator 已通过 peer send 向 lead 回信确认复验通过，返回 `{"status":"delivered"}`。
