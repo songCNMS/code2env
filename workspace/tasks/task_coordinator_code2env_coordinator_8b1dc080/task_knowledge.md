@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=23 -->
+<!-- METADATA:SESSION=24 -->
 
 ## Knowledge Entries
 
@@ -33,3 +33,6 @@
 27. 如果目标转为“完整多轮 trajectory 数据”而非 strict runnable correctness，则 weak-oracle EnvPackage 可以纳入：`rollout --llm-mode mock --trace-mode subfunctions` 能生成 helper -> entrypoint -> submit 的完整轨迹。数据标签必须区分 `trajectory_complete/correct_against_stored_oracle` 与 `functional_correctness_trusted`；weak-oracle 的 `final_correct=true` 只表示提交答案匹配捕获异常。
 28. Session22 样例说明现有 mock trace 足以生成多轮轨迹，但 `helper_trace_valid=false` 很常见；如果训练目标只需要工具调用序列可接受，若训练目标需要真实子函数执行质量，则仍需 helper argument synthesis 和 helper success gate。
 29. Session23 relaxed trajectory JSONL 飞书发送记录：本地文件 `../outputs/session23_relaxed_trajectory_feishu/relaxed_trajectory_examples.jsonl`，飞书文件消息 ID `om_x100b6dce0be00cacb32ddea660ad7b6`。以后复查该批数据时应同时查看 `review.md` 和 JSONL 中的 weak-oracle 标签。
+30. relaxed trajectory 中大量 `ModuleNotFoundError` 的直接原因是 package 构建时跳过依赖安装（`--no-install-deps`，`deps_status=skipped/no_deps`）并允许 weak-oracle exception 成为 golden；这类数据可用于轨迹结构展示，但不应被标成“有效 tool 返回”或可信功能正确。
+31. 安装依赖只能解决 import 层错误，不能解决 JSON fixture 无法表达真实参数类型的问题。Session24 的 simpa probe 在补齐 `matplotlib/torch/scipy/.../k-wave-python` 后仍失败于 `torch.cos(float)`，说明 tensor/ndarray/class instance 等 typed fixture 需要 hydration/canonical serialization，而不是继续扩展 relaxed rollout。
+32. 在当前样本包中，若要求所有被调用 tool 都 `ok=true`，应优先选择 JSON-only helper 和不触发 sandbox 的 entrypoint 分支；Session24 生成的 `scripts.check-versions:check_language_version` 三条派生 test case 均满足 `final_correct=true`、`all_tool_returns_ok=true`、`all_source_tool_returns_ok=true`，文件位于 `../outputs/session24_valid_tool_returns/valid_tool_return_trajectories.jsonl`。

@@ -198,3 +198,16 @@
 - JSONL 内容概要：5/5 `qualified=true`、5/5 `final_correct=true`、5/5 `helper_trace_complete=true`，每条为 5 轮 helper -> entrypoint -> submit trajectory；样例包含 4 条 weak-oracle env 和 1 条 real_value baseline。
 - 通过 FeishuAPI `upload_file` + `send_file` 发送到 `intern_code2env_coordinator` 飞书会话 chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`；file_key `file_v3_0012m_6f3f9a18-5a2a-43bc-a6db-b4e19a7b054g`，文件消息 ID `om_x100b6dce0be00cacb32ddea660ad7b6`。
 - 发送确认文本到同一会话，文本消息 ID `om_x100b6dce0bf1d4a4b3c930f4b8336aa`；文本中明确 weak-oracle `final_correct` 仅表示匹配捕获 oracle，不代表真实功能正确。
+
+## Session 24 - Valid tool-return relaxed trajectories
+
+<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->
+
+- 回应用户问题“为什么 relaxed trajectory 包含大量报错 missing packages? 安装必要的包，在多轮交互中收集有效的 tool 返回”；本次未修改产品代码，重点做数据质量诊断和本地 JSONL artifact 生成。
+- 根因确认：Session23 relaxed JSONL 复用了 Session20 以 `--no-install-deps` 生成的 packages，`env_spec.runtime.deps_status` 多为 `skipped`/`no_deps`；同时 mock subfunction trace 用空 `{}` 参数调用 helper，导致 helper 参数错误和缺包错误都会进入 trajectory。weak-oracle 的 `final_correct=true` 只表示匹配捕获的异常 envelope，不表示真实函数执行成功。
+- 创建隔离 venv：`../outputs/session24_valid_tool_returns/venv`；为 `simpa.utils.calculate:rotation` 逐步安装 `matplotlib`、`torch`、`scipy`、`python-dotenv`、`scikit-learn`、`scikit-image`、`h5py`、SIMPA 常规依赖和 `k-wave-python==0.4.0`，确认原始 `ModuleNotFoundError` 链可以通过依赖安装推进。
+- simpa 诊断结论：补齐 imports 后，`rotation_x/y/z` 仍无法产生 valid JSON tool return，因为函数内部调用 `torch.cos(theta)`/`torch.sin(theta)`，而当前 tool schema 只能传 JSON float，运行时报 `TypeError: cos(): argument 'input' (position 1) must be Tensor, not float`；这是 typed fixture/hydration 问题，不是继续安装包能解决。
+- 扫描已有 Session20 sample packages 后，唯一 `golden_answer.ok=true` 且拥有 3 个 semantic helper 的 env 是 `scripts.check-versions:check_language_version`。该 env 的 runtime sandbox 为 `network=false`，所以 Docker/GitHub/Alpine 网络 helper 不适合作为 valid tool-return 样本；本轮使用不走网络的 `get_current_version_from_csv` helper 与 `apt`/unknown-source entrypoint 分支生成有效轨迹。
+- 写出并运行脚本 `../outputs/session24_valid_tool_returns/generate_valid_tool_return_trajectories.py`，基于原 package 派生 3 个 JSON-only test case：`python_apt_current`、`go_unknown_source`、`ruby_missing_current`；每条真实执行 `inspect_task -> call_get_current_version_from_csv -> call_entrypoint -> submit_answer`。
+- 生成结果：`../outputs/session24_valid_tool_returns/valid_tool_return_trajectories.jsonl` 共 3 lines、约 27K；summary `../outputs/session24_valid_tool_returns/valid_tool_return_summary.json` 显示 `records=3`、`final_correct=3`、`all_tool_returns_ok=3`、`all_source_tool_returns_ok=3`。每个 step 保留完整 `tool_return` 对象，便于 review。
+- 写出诊断报告 `../outputs/session24_valid_tool_returns/session24_report.md`，说明旧 relaxed missing packages 的根因、依赖安装 probe、simpa JSON/Tensor 参数阻塞，以及本轮 valid trajectory 的质量口径。
