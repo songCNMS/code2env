@@ -216,4 +216,7 @@
 - 已更新共享 task048 history，记录 w4 branch progress，并推送 main commit `4883417`。
 - 再次检查时 lead mailbox unread_count=0，GitHub 仍无 w4 open PR；w4 branch 仍在 pushed head `679fcae`，但 worker_4 local diff 已扩展为 `code2env/rich_fixtures.py` 与 `code2env/rollout.py`，diff stat 为 314 insertions/10 deletions。artifact root 仍无 task048 validation files，未收到 focused/full tests 或 rollout JSONL。
 - 已更新共享 task048 history，记录 worker_4 local implementation progress，并推送 main commit `68654c3`。
+- 再次检查时 mailbox 仍无 unread，GitHub 仍无 w4 open PR；w4 local diff 进一步扩展到 `code2env/batch.py`、`code2env/rich_fixtures.py`、`code2env/rollout.py`、`tests/test_rich_fixtures.py`、`tests/test_rollout.py`，diff stat 为 466 insertions/10 deletions。artifact root仍为空，未收到 test/artifact report。
+- 已 peer send w4 WIP checkpoint request，API 返回 `{"status":"delivered"}`；要求 w4 在 slice coherent 后尽快推 WIP commit/PR，并说明 ready-for-validation 仍需要 exact head、focused/full tests、rollout artifacts 和 real-sample correctness flags。
+- 已更新共享 task048 history，记录 worker_4 expanded local diff，并推送 main commit `6fa8359`。
 - 当前状态：等待 w4 implementation PR/ready head；w2 validation 仍只针对 w4 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
