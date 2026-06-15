@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=9 -->
+<!-- METADATA:SESSION=10 -->
 
 ## Knowledge Entries
 
@@ -38,3 +38,4 @@
 29. coordinator-origin 任务完成后，除了用户 final 和 lead 记录归档，还要显式 peer send 给 `intern_code2env_coordinator` 汇报完成态；发送前仍必须先清空 lead mailbox。最终交付清单应包含 PR、merge commit、测试结果、artifact paths、默认行为影响和 residual risks。
 30. typed helper return 验收要同时覆盖值类型和参数来源：`helper_trace_complete=true` 只说明顺序覆盖，不说明 helper 成功；SIMPA 的 `torch.cos(float)` 复现表明 executor hydration、canonical typed serialization、helper argument synthesis/provenance 和 real-value golden correctness 必须一起看，不能只看最终 `call_entrypoint` correct。
 31. bootstrap PR 不等于 ready head：worker 打开 PR/提交接受任务 metadata 后，team_lead 只能记录进度；触发 tester 必须等 implementation worker 通过 mailbox 明确给出 exact ready head、focused/full test results、rollout JSONL/artifacts 和默认行为影响说明。
+32. 连续 goal turn 复查仍停在 bootstrap-only PR 时，不应继续空等；先核 worker 客观状态和可用替代人选，再更新标准 task 文档、明确 stood-down owner、新 owner、tester 不变或变更，并分别 peer send 防止两个 worker 并行改同一 schema-heavy 任务。
