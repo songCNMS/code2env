@@ -15,11 +15,15 @@ from __future__ import annotations
 
 import copy
 import datetime
+import ast
 import json
+from pathlib import Path
 from typing import Any, Protocol
 
 from code2env.llm import parse_llm_json
+from code2env.rich_fixtures import fixture_component_descriptor
 from code2env.runtime import Code2Env
+from code2env.spec import source_root_for_spec
 
 TRACE_MODE_DEFAULT = "default"
 TRACE_MODE_SUBFUNCTIONS = "subfunctions"
@@ -335,11 +339,21 @@ def _helper_call_result(tool_name: str, step_index: int, step: dict[str, Any]) -
     success = isinstance(tool_result, dict) and tool_result.get("ok") is True
     error_type = tool_result.get("error_type") if isinstance(tool_result, dict) else None
     error_message = tool_result.get("error_message") if isinstance(tool_result, dict) else None
+    argument_provenance = (
+        step.get("argument_provenance") if isinstance(step.get("argument_provenance"), dict) else None
+    )
+    argument_source = (
+        argument_provenance.get("source")
+        if isinstance(argument_provenance, dict) and isinstance(argument_provenance.get("source"), str)
+        else "model_supplied"
+    )
     return {
         "tool": tool_name,
         "called": True,
         "success": success,
         "argument_status": _helper_argument_status(step, tool_result, success),
+        "argument_source": argument_source,
+        "argument_provenance": copy.deepcopy(argument_provenance),
         "step": step.get("step", step_index + 1),
         "error_type": error_type if isinstance(error_type, str) else None,
         "error_message": error_message if isinstance(error_message, str) else None,
@@ -363,6 +377,38 @@ def _helper_argument_status(step: dict[str, Any], tool_result: Any, success: boo
     ):
         return "argument_unavailable"
     return "call_failed"
+
+
+def _source_tool_return_metadata(steps: list[dict[str, Any]]) -> dict[str, Any]:
+    results: list[dict[str, Any]] = []
+    for index, step in enumerate(steps):
+        action = step.get("action") if isinstance(step.get("action"), dict) else {}
+        tool_name = action.get("tool") if isinstance(action, dict) else None
+        if not isinstance(tool_name, str) or not _is_source_tool(tool_name):
+            continue
+        tool_result = step.get("tool_result")
+        ok = isinstance(tool_result, dict) and tool_result.get("ok") is True
+        item = {
+            "tool": tool_name,
+            "step": step.get("step", index + 1),
+            "ok": ok,
+        }
+        if isinstance(tool_result, dict) and not ok:
+            error_type = tool_result.get("error_type")
+            error_message = tool_result.get("error_message")
+            item["error_type"] = error_type if isinstance(error_type, str) else None
+            item["error_message"] = error_message if isinstance(error_message, str) else None
+        results.append(item)
+    return {
+        "source_tool_return_results": results,
+        "all_source_tool_returns_ok": bool(results) and all(item["ok"] for item in results),
+    }
+
+
+def _is_source_tool(tool_name: str) -> bool:
+    if tool_name in {CALL_ENTRYPOINT_TOOL, CALL_HELPER_TOOL}:
+        return True
+    return tool_name.startswith(HELPER_TOOL_PREFIX)
 
 
 def _semantic_helper_tools(env: Code2Env) -> dict[str, str]:
@@ -518,6 +564,270 @@ def _normalize_action(tool: str, arguments: Any) -> dict[str, Any]:
     return {"type": "tool_call", "tool": str(tool), "arguments": arguments}
 
 
+def synthesize_trace_helper_arguments(
+    env: Code2Env,
+    trace_plan: dict[str, Any],
+    action: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Fill dedicated trace helper args from the pinned fixture when safe.
+
+    The LLM-visible protocol still asks models to omit helper args unless they
+    know what they are doing. In trace mode this adapter can provide deterministic
+    args for required helper parameters, and it records provenance so exported
+    rollouts can distinguish synthesized values from model-supplied values.
+    """
+
+    tool_name = action.get("tool")
+    required_tools = list(trace_plan.get("required_helper_tools", []))
+    if not isinstance(tool_name, str) or tool_name not in required_tools:
+        return action, None
+
+    arguments = action.get("arguments", {})
+    if not isinstance(arguments, dict):
+        return action, None
+
+    args = arguments.get("args", [])
+    kwargs = arguments.get("kwargs", {})
+    extra_keys = set(arguments) - {"args", "kwargs"}
+    if (isinstance(args, list) and args) or (isinstance(kwargs, dict) and kwargs) or extra_keys:
+        return action, _argument_provenance(tool_name, "model_supplied")
+
+    helper_index = required_tools.index(tool_name)
+    payload, provenance = _synthesize_helper_payload(env, tool_name, helper_index)
+    if payload is None:
+        return action, provenance
+
+    rewritten = copy.deepcopy(action)
+    rewritten["arguments"] = payload
+    return rewritten, provenance
+
+
+def _synthesize_helper_payload(
+    env: Code2Env,
+    tool_name: str,
+    helper_index: int,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    symbol = env.semantic_tools.get(tool_name)
+    if symbol is None:
+        return None, _argument_provenance(
+            tool_name,
+            "unavailable",
+            reason="semantic_helper_symbol_unavailable",
+        )
+    helper_signature = _function_signature(env, symbol)
+    if helper_signature is None:
+        return None, _argument_provenance(
+            tool_name,
+            "unavailable",
+            reason=f"helper_signature_unavailable:{symbol}",
+        )
+
+    required_positional = list(helper_signature["required_positional"])
+    required_kwonly = list(helper_signature["required_kwonly"])
+    if not required_positional and not required_kwonly:
+        return None, None
+
+    fixture = env.spec.fixture if isinstance(env.spec.fixture, dict) else {}
+    fixture_args = fixture.get("args", [])
+    fixture_kwargs = fixture.get("kwargs", {})
+    fixture_args = fixture_args if isinstance(fixture_args, list) else []
+    fixture_kwargs = fixture_kwargs if isinstance(fixture_kwargs, dict) else {}
+    entrypoint_signature = _function_signature(env, env.spec.source["entrypoint"])
+    entrypoint_positional = (
+        list(entrypoint_signature["positional"]) if entrypoint_signature is not None else []
+    )
+
+    synthesized_args: list[Any] = []
+    arg_records: list[dict[str, Any]] = []
+    for param in required_positional:
+        found, value, record = _fixture_value_for_param(
+            param,
+            fixture_args,
+            fixture_kwargs,
+            entrypoint_positional,
+        )
+        if not found and len(required_positional) == 1 and not required_kwonly:
+            found, value, record = _fixture_value_for_helper_index(
+                helper_index,
+                fixture_args,
+                param,
+            )
+        if not found:
+            return None, _argument_provenance(
+                tool_name,
+                "unavailable",
+                reason=f"fixture_mapping_unavailable:{param}",
+            )
+        synthesized_args.append(value)
+        arg_records.append(record)
+
+    synthesized_kwargs: dict[str, Any] = {}
+    kwarg_records: list[dict[str, Any]] = []
+    for param in required_kwonly:
+        found, value, record = _fixture_value_for_param(
+            param,
+            fixture_args,
+            fixture_kwargs,
+            entrypoint_positional,
+        )
+        if not found:
+            return None, _argument_provenance(
+                tool_name,
+                "unavailable",
+                reason=f"fixture_mapping_unavailable:{param}",
+            )
+        synthesized_kwargs[param] = value
+        kwarg_records.append(record)
+
+    provenance = _argument_provenance(
+        tool_name,
+        "synthesized",
+        args=arg_records,
+        kwargs=kwarg_records,
+    )
+    return {"args": synthesized_args, "kwargs": synthesized_kwargs}, provenance
+
+
+def _argument_provenance(
+    tool_name: str,
+    source: str,
+    *,
+    reason: str | None = None,
+    args: list[dict[str, Any]] | None = None,
+    kwargs: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    return {
+        "tool": tool_name,
+        "source": source,
+        "reason": reason,
+        "args": args or [],
+        "kwargs": kwargs or [],
+    }
+
+
+def _fixture_value_for_param(
+    param: str,
+    fixture_args: list[Any],
+    fixture_kwargs: dict[str, Any],
+    entrypoint_positional: list[str],
+) -> tuple[bool, Any, dict[str, Any]]:
+    if param in fixture_kwargs:
+        return True, fixture_kwargs[param], {
+            "param": param,
+            "strategy": "fixture_kwarg",
+            "fixture_path": f"fixture.kwargs.{param}",
+        }
+    if param in entrypoint_positional:
+        index = entrypoint_positional.index(param)
+        if index < len(fixture_args):
+            return True, fixture_args[index], {
+                "param": param,
+                "strategy": "entrypoint_param",
+                "fixture_path": f"fixture.args[{index}]",
+            }
+    return False, None, {}
+
+
+def _fixture_value_for_helper_index(
+    helper_index: int,
+    fixture_args: list[Any],
+    param: str,
+) -> tuple[bool, Any, dict[str, Any]]:
+    if len(fixture_args) > 1 and helper_index < len(fixture_args):
+        return True, fixture_args[helper_index], {
+            "param": param,
+            "strategy": "helper_index_arg",
+            "fixture_path": f"fixture.args[{helper_index}]",
+        }
+    if len(fixture_args) != 1:
+        return False, None, {}
+
+    found, value, component_path = fixture_component_descriptor(fixture_args[0], helper_index)
+    if not found:
+        return False, None, {}
+    path = _join_fixture_component_path("fixture.args[0]", component_path)
+    return True, value, {
+        "param": param,
+        "strategy": "fixture_sequence_component",
+        "fixture_path": path,
+    }
+
+
+def _join_fixture_component_path(base: str, component_path: str | None) -> str:
+    if not component_path:
+        return base
+    if component_path.startswith("["):
+        return f"{base}{component_path}"
+    return f"{base}.{component_path}"
+
+
+def _function_signature(env: Code2Env, symbol: str) -> dict[str, list[str]] | None:
+    if ":" not in symbol:
+        return None
+    module_name, qualname = symbol.split(":", 1)
+    source_root = source_root_for_spec(env.spec, env.package_root)
+    module_path = _module_path(source_root, module_name)
+    if module_path is None:
+        return None
+    try:
+        tree = ast.parse(module_path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return None
+    node = _find_function_node(tree, qualname)
+    if node is None:
+        return None
+
+    args = node.args
+    positional = [arg.arg for arg in list(args.posonlyargs) + list(args.args)]
+    required_positional = (
+        positional[: len(positional) - len(args.defaults)] if args.defaults else positional
+    )
+    required_kwonly = [
+        arg.arg for arg, default in zip(args.kwonlyargs, args.kw_defaults) if default is None
+    ]
+    return {
+        "positional": positional,
+        "required_positional": required_positional,
+        "required_kwonly": required_kwonly,
+    }
+
+
+def _module_path(source_root: Path, module_name: str) -> Path | None:
+    relative = Path(*module_name.split("."))
+    py_path = source_root / relative.with_suffix(".py")
+    if py_path.exists():
+        return py_path
+    package_init = source_root / relative / "__init__.py"
+    if package_init.exists():
+        return package_init
+    return None
+
+
+def _find_function_node(
+    tree: ast.Module,
+    qualname: str,
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    target = qualname.split(".")
+    found: ast.FunctionDef | ast.AsyncFunctionDef | None = None
+
+    def visit_body(body: list[ast.stmt], prefix: list[str]) -> None:
+        nonlocal found
+        if found is not None:
+            return
+        for child in body:
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                current = prefix + [child.name]
+                if current == target:
+                    found = child
+                    return
+                visit_body(child.body, current)
+            elif isinstance(child, ast.ClassDef):
+                visit_body(child.body, prefix + [child.name])
+
+    visit_body(tree.body, [])
+    return found
+
+
 class _FallbackChat:
     """Wraps a primary chat model with an optional fallback and per-call retries."""
 
@@ -646,19 +956,24 @@ def run_rollout(
             termination_reason = "error"
             break
 
+        argument_provenance: dict[str, Any] | None = None
+        if trace_plan is not None:
+            action, argument_provenance = synthesize_trace_helper_arguments(env, trace_plan, action)
+
         observation, reward, done, info = env.step(action)
         rounds += 1
         num_tool_call_rounds += 1
         tool_result = copy.deepcopy(env.state.get("last_tool_result"))
-        steps.append(
-            {
-                "step": env.state.get("step", rounds),
-                "action": action,
-                "tool_result": tool_result,
-                "reward": reward,
-                "parse_error": parse_error,
-            }
-        )
+        step_record = {
+            "step": env.state.get("step", rounds),
+            "action": action,
+            "tool_result": tool_result,
+            "reward": reward,
+            "parse_error": parse_error,
+        }
+        if argument_provenance is not None:
+            step_record["argument_provenance"] = argument_provenance
+        steps.append(step_record)
         tool_content = json.dumps(tool_result, ensure_ascii=False, default=str)
         transcript.append({"role": "tool", "name": action["tool"], "content": tool_content})
         api_messages.append(
@@ -701,7 +1016,9 @@ def run_rollout(
         "errors": errors,
     }
     if trace_plan is not None:
-        result["subfunction_trace"] = build_subfunction_trace_metadata(trace_plan, steps)
+        trace_metadata = build_subfunction_trace_metadata(trace_plan, steps)
+        trace_metadata.update(_source_tool_return_metadata(steps))
+        result["subfunction_trace"] = trace_metadata
     return result
 
 

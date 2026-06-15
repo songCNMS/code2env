@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ from code2env.builder import build_env_package
 from code2env.ingest import ingest_repo
 from code2env.jsonio import write_json
 from code2env.llm import assistant_message_from_response
+from code2env.rich_fixtures import DESCRIPTOR_KEY, numpy_array_descriptor
 from code2env.rollout import (
     CALL_ENTRYPOINT_FIXTURE_GUIDANCE,
     MockChatLLM,
@@ -57,6 +59,30 @@ def format_bundle(text=None):
 """
 
 
+TYPED_TRACE_SAMPLE = """
+def rotation_x(theta):
+    return {"axis": "x", "value": round(float(theta) + 1.0, 6)}
+
+
+def rotation_y(theta):
+    return {"axis": "y", "value": round(float(theta) + 2.0, 6)}
+
+
+def rotation_z(theta):
+    return {"axis": "z", "value": round(float(theta) + 3.0, 6)}
+
+
+def rotation(angles):
+    x = rotation_x(angles[0])
+    y = rotation_y(angles[1])
+    z = rotation_z(angles[2])
+    return {
+        "axes": [x["axis"], y["axis"], z["axis"]],
+        "total": round(x["value"] + y["value"] + z["value"], 6),
+    }
+"""
+
+
 def _build_env(temp_dir: Path) -> Code2Env:
     repo = temp_dir / "repo"
     repo.mkdir(parents=True, exist_ok=True)
@@ -86,6 +112,25 @@ def _build_trace_env(temp_dir: Path) -> Code2Env:
     spec_path = temp_dir / "trace_env_spec.json"
     write_json(spec_path, spec.to_dict())
     package_root = build_env_package(spec_path, temp_dir / "trace_generated")
+    return Code2Env(package_root / "env_spec.json")
+
+
+def _build_typed_trace_env(temp_dir: Path) -> Code2Env:
+    repo = temp_dir / "typed_trace_repo"
+    repo.mkdir(parents=True, exist_ok=True)
+    (repo / "typed_trace_sample.py").write_text(TYPED_TRACE_SAMPLE.lstrip(), encoding="utf-8")
+    snapshot = ingest_repo(str(repo))
+    spec = draft_env_spec(
+        snapshot,
+        symbol="typed_trace_sample:rotation",
+        fixture={
+            "args": [numpy_array_descriptor([0.1, 0.2, 0.3], dtype="float64")],
+            "kwargs": {},
+        },
+    )
+    spec_path = temp_dir / "typed_trace_env_spec.json"
+    write_json(spec_path, spec.to_dict())
+    package_root = build_env_package(spec_path, temp_dir / "typed_trace_generated")
     return Code2Env(package_root / "env_spec.json")
 
 
@@ -345,6 +390,59 @@ class SubfunctionTraceModeTest(unittest.TestCase):
             self.assertTrue(trace["entrypoint_after_helpers"])
             self.assertTrue(result["qualified"])
             self.assertTrue(result["final"]["correct"])
+
+    def test_trace_rollout_synthesizes_typed_fixture_helper_args(self) -> None:
+        if importlib.util.find_spec("numpy") is None:
+            self.skipTest("numpy is not installed")
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_typed_trace_env(Path(temp))
+            result = run_rollout(
+                env,
+                ScriptedTraceSolveChat(env),
+                primary_source="mock",
+                max_rounds=8,
+                trace_mode="subfunctions",
+            )
+
+            helper_steps = result["steps"][:3]
+            self.assertEqual(
+                [step["action"]["tool"] for step in helper_steps],
+                ["call_rotation_x", "call_rotation_y", "call_rotation_z"],
+            )
+            for index, step in enumerate(helper_steps):
+                provenance = step["argument_provenance"]
+                self.assertEqual(provenance["source"], "synthesized")
+                self.assertEqual(provenance["args"][0]["strategy"], "fixture_sequence_component")
+                self.assertEqual(provenance["args"][0]["fixture_path"], f"fixture.args[0].data[{index}]")
+                arg = step["action"]["arguments"]["args"][0]
+                self.assertEqual(arg[DESCRIPTOR_KEY], "numpy.ndarray")
+                self.assertTrue(step["tool_result"]["ok"])
+
+            trace = result["subfunction_trace"]
+            self.assertTrue(trace["helper_trace_complete"])
+            self.assertTrue(trace["helper_calls_successful"])
+            self.assertTrue(trace["helper_trace_valid"])
+            self.assertTrue(trace["all_source_tool_returns_ok"])
+            self.assertTrue(result["qualified"])
+            self.assertTrue(result["final"]["correct"])
+            self.assertEqual(
+                [item["argument_source"] for item in trace["helper_call_results"]],
+                ["synthesized", "synthesized", "synthesized"],
+            )
+
+    def test_default_rollout_does_not_synthesize_typed_helper_args(self) -> None:
+        if importlib.util.find_spec("numpy") is None:
+            self.skipTest("numpy is not installed")
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_typed_trace_env(Path(temp))
+            result = run_rollout(env, ScriptedSolveChat(env), primary_source="mock", max_rounds=8)
+
+            self.assertNotIn("subfunction_trace", result)
+            self.assertEqual(
+                [step["action"]["tool"] for step in result["steps"]],
+                ["call_entrypoint", "submit_answer"],
+            )
+            self.assertNotIn("argument_provenance", result["steps"][0])
 
     def test_default_mode_remains_black_box_without_trace_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

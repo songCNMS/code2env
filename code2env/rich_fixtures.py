@@ -52,6 +52,10 @@ def numpy_array_descriptor(data: Any, *, dtype: str | None = None) -> dict[str, 
     return descriptor("numpy.ndarray", data=data, dtype=dtype)
 
 
+def numpy_scalar_descriptor(value: Any, *, dtype: str | None = None) -> dict[str, Any]:
+    return descriptor("numpy.scalar", value=value, dtype=dtype)
+
+
 def torch_tensor_descriptor(data: Any, *, dtype: str | None = None) -> dict[str, Any]:
     return descriptor("torch.Tensor", data=data, dtype=dtype)
 
@@ -93,6 +97,31 @@ def rich_fixture_audit(value: Any, *, path: str = "fixture") -> list[dict[str, s
         for key, item in value.items():
             entries.extend(rich_fixture_audit(item, path=f"{path}.{key}"))
     return entries
+
+
+def fixture_component_descriptor(value: Any, index: int) -> tuple[bool, Any, str | None]:
+    """Return a JSON-safe component of a fixture value without hydrating it.
+
+    This is used by trace-mode helper argument synthesis. It preserves typed
+    descriptors when slicing array/tensor-like entrypoint fixtures so helper
+    subprocesses receive the same hydrated runtime type as the entrypoint.
+    """
+
+    if index < 0:
+        return False, None, None
+    if is_descriptor(value):
+        kind = value[DESCRIPTOR_KEY]
+        data = value.get("data")
+        if kind in {"torch.Tensor", "numpy.ndarray"} and isinstance(data, list) and index < len(data):
+            item = data[index]
+            dtype = value.get("dtype")
+            if kind == "torch.Tensor":
+                return True, torch_tensor_descriptor(item, dtype=dtype if isinstance(dtype, str) else None), f"data[{index}]"
+            return True, numpy_array_descriptor(item, dtype=dtype if isinstance(dtype, str) else None), f"data[{index}]"
+        return False, None, None
+    if isinstance(value, (list, tuple)) and index < len(value):
+        return True, value[index], f"[{index}]"
+    return False, None, None
 
 
 def serialize_rich_value(value: Any) -> dict[str, Any] | None:

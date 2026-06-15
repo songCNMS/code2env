@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from code2env.batch import generate_batch
 from code2env.executor import serialize_value
 from code2env.rich_fixtures import (
     dataframe_descriptor,
+    fixture_component_descriptor,
     hydrate_value,
     numpy_array_descriptor,
     path_descriptor,
@@ -136,6 +140,56 @@ class RichSerializationTest(unittest.TestCase):
         self.assertEqual(payload["shape"], [1, 2])
         self.assertEqual(payload["dtype"], "float32")
         self.assertEqual(payload["data"], [[1.0, 2.0]])
+
+    def test_torch_tensor_descriptor_hydrates_and_serializes_with_fake_torch(self) -> None:
+        class FakeTensor:
+            def __init__(self, data, dtype=None):
+                self._data = data
+                self.dtype = f"torch.{dtype or 'float32'}"
+                self.shape = self._shape(data)
+
+            def detach(self):
+                return self
+
+            def cpu(self):
+                return self
+
+            def tolist(self):
+                return self._data
+
+            @classmethod
+            def _shape(cls, data):
+                if isinstance(data, list):
+                    if data and isinstance(data[0], list):
+                        return (len(data), len(data[0]))
+                    return (len(data),)
+                return ()
+
+        fake_torch = types.SimpleNamespace(
+            Tensor=FakeTensor,
+            float32="float32",
+            tensor=lambda data, dtype=None: FakeTensor(data, dtype=dtype),
+        )
+
+        with patch.dict(sys.modules, {"torch": fake_torch}):
+            tensor = hydrate_value(torch_tensor_descriptor(0.25, dtype="float32"))
+            payload = serialize_value(tensor)
+
+        self.assertIsInstance(tensor, FakeTensor)
+        self.assertEqual(payload["kind"], "torch.Tensor")
+        self.assertEqual(payload["shape"], [])
+        self.assertEqual(payload["dtype"], "float32")
+        self.assertEqual(payload["data"], 0.25)
+
+    def test_fixture_component_descriptor_preserves_typed_tensor_component(self) -> None:
+        found, component, path = fixture_component_descriptor(
+            torch_tensor_descriptor([0.1, 0.2, 0.3], dtype="float32"),
+            1,
+        )
+
+        self.assertTrue(found)
+        self.assertEqual(component, torch_tensor_descriptor(0.2, dtype="float32"))
+        self.assertEqual(path, "data[1]")
 
 
 class RichFixtureBatchTraceTest(unittest.TestCase):
