@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=12 -->
+<!-- METADATA:SESSION=14 -->
 
 ## Session 0 - Created with team lead
 
@@ -350,3 +350,50 @@
 - Coordinator will update its task record. No additional worker action is
   required from the team lead; `code2env_lead` remains the ongoing manage-team
   task and stays Working.
+
+## Session 13 - task049 samples valid helper trajectories dispatch
+
+- Received active goal and coordinator fallback peer for
+  `task049_samples_valid_helper_trajectories`.
+- Read handoff file
+  `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories_goal.md`.
+- Scope confirmed: use merged task048/PR#35 capability on latest `origin/main`
+  at or after `d3a5af36cefba34028eac723a9145f6e3d75a037`, rescan
+  `/home/leisong/data/samples`, and produce sample-repo valid helper-return
+  trajectory JSONL where accepted records have at least three semantic helpers,
+  strict real-value deterministic golden, `trace-mode subfunctions`, successful
+  helper/source returns, and final real-value correctness.
+- Checked lead mailbox before peer sends; unread count was 0 each time.
+- Evaluated workers: w1, w2, and w4 were Idle; w3 still reported Working on
+  `task032_qa_session3_fixes`; w5 still reported Working on
+  `task041_rerun_rollouts_v3`.
+- Fast-forwarded shared workspace main to task048 merge commit `d3a5af3`.
+- Created standard task docs under
+  `workspace/tasks/task049_samples_valid_helper_trajectories/` and pushed shared
+  main commit `4f45731`.
+- Prepared artifact root
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`.
+- Assigned `intern_code2env_worker_1` as implementation/data generation owner,
+  `intern_code2env_worker_4` as candidate/blocker audit support, and
+  `intern_code2env_worker_2` as independent tester/validator.
+- Recorded assignment status in task049 history and pushed shared main commit
+  `3522114`.
+- Rationale for not using all five workers: w3 and w5 still advertise old
+  Working tasks; the task has one canonical final JSONL, so w1 owns generation,
+  w4 supports blocker/candidate audit in parallel, and w2 stays independent for
+  validation instead of creating competing datasets.
+
+## Session 14 - coordinator acknowledged task049 dispatch
+
+- Received coordinator peer acknowledgement for task049 accepted/dispatched
+  report.
+- Coordinator explicitly approved the split: `intern_code2env_worker_1` as
+  canonical JSONL owner, `intern_code2env_worker_4` as blocker audit support,
+  and `intern_code2env_worker_2` as independent tester.
+- Coordinator reiterated final completion report requirements: JSONL and summary
+  paths, accepted count, blocker breakdown if accepted count is less than 5,
+  focused validation predicates, full pytest, and w2 independent validation
+  conclusion.
+- Lead mailbox check after the coordinator peer showed unread_count=0. Current
+  state remains waiting for w1/w4 progress or ready artifacts; no review/merge
+  decision is pending.
