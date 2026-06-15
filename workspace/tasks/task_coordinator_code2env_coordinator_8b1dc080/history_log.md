@@ -212,3 +212,14 @@
 - 生成结果：`../outputs/session24_valid_tool_returns/valid_tool_return_trajectories.jsonl` 共 3 lines、约 27K；summary `../outputs/session24_valid_tool_returns/valid_tool_return_summary.json` 显示 `records=3`、`final_correct=3`、`all_tool_returns_ok=3`、`all_source_tool_returns_ok=3`。每个 step 保留完整 `tool_return` 对象，便于 review。
 - 写出诊断报告 `../outputs/session24_valid_tool_returns/session24_report.md`，说明旧 relaxed missing packages 的根因、依赖安装 probe、simpa JSON/Tensor 参数阻塞，以及本轮 valid trajectory 的质量口径。
 - 通过 Feishu messaging 脚本发送 JSONL 到 `intern_code2env_coordinator` 飞书会话 chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`；file_key `file_v3_0012m_84e168dc-899e-4590-b9ad-135131a65c4g`，文件消息 ID `om_x100b6dcf0646a490b29f5b1468ee6c8`，确认文本消息 ID `om_x100b6dcf0655f8e4b1f54504763ee25`，回执保存到 `../outputs/session24_valid_tool_returns/feishu_send_result.json`。
+
+## Session 24 - task048 typed fixture and helper args handoff
+
+<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->
+
+- 按用户“执行下一步”要求，继续推进 Session24 结论中的 typed fixture/hydration 与 helper argument synthesis；coordinator 遵守 role 边界，不直接修改产品代码，将实现与验证任务下发给 `intern_code2env_lead`。
+- 核对当前实现：`code2env/executor.py` 仍将 JSON payload 直接 `json.loads` 后传给目标函数，非 JSON 返回退化为 `repr`；`code2env/batch.py:synthesize_fixture` 只支持标量/list/dict/None 等简单类型；`code2env/rollout.py` prompt 明确要求 helper args 省略，导致 subfunction trace 可完整但 helper tool return 可能失败。
+- 写出 handoff 文件 `../outputs/session24_valid_tool_returns/task048_typed_fixture_helper_args_goal.md`，建议任务 id `task048_typed_fixture_helper_args`。目标：实现 typed fixture descriptors/hydration、tensor/ndarray canonical serialization、dedicated semantic helper argument synthesis 和 provenance metadata。
+- 验收要求写入 handoff：lead 创建标准 task docs，worker/tester 分工；focused tests 覆盖 tensor/ndarray hydration/serialization 与 helper arg synthesis；full `python3 -m pytest -q`；至少一个真实 sample repo 且 >=3 semantic helpers 的 JSONL rollout 满足 `helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true` 或等价字段，并且 final correct against real-value golden。
+- 优先 repro 为 Session24 的 `simpa.utils.calculate:rotation`：缺包已可通过依赖安装推进，剩余阻塞是 `torch.cos(float)` 暴露出的 JSON/Tensor 参数表达问题；若 SIMPA 被依赖或 runtime 约束阻塞，lead 需提供一个替代真实 sample repo 和明确 SIMPA blocker。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task048_typed_fixture_helper_args` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session24_valid_tool_returns/task048_handoff_delivery.json`。
