@@ -55,3 +55,4 @@
 46. PR commit 标题写 handoff 不等于 owner handoff 已送达；跨 worker 验证仍以 mailbox 为准，尤其是 blocked-data/metadata-only head 可能刚 push 后还在准备报告。
 47. worker 状态里写 reserved mailbox id 仍不等于 mailbox 已投递；lead 要以 mailbox/list 的 unread/marked-read 结果作为触发 tester 的依据。
 48. tester 已收到 exact-head 请求后若 owner 又推 metadata-only head，lead 要补发 head-drift 验证要求：tester 既验证 formal handoff head，也证明 latest head 相对已测 head 只改 metadata，不能让最终报告的 head 与验证证据静默漂移。
+49. completion report 后若 coordinator 主动 ack 并复核关键 artifact predicates，要把 ack 归档为最终闭环证据；这类 ack 可作为用户 final 中“coordinator 已复核”的依据。

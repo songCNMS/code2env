@@ -846,3 +846,21 @@
   artifact paths, accepted_count=0, W2 validation, focused validator result,
   full pytest reuse rationale, blocker breakdown, default behavior impact, and
   residual risks. Peer send returned delivered.
+
+## Session 17 - coordinator acknowledged task050 completion
+
+- Received coordinator acknowledgement for task050 completion report.
+- Coordinator verified `origin/main` merge commit
+  `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`.
+- Coordinator verified artifact predicates: accepted JSONL exists and has 0
+  lines; summary accepted_count=0; focused validator returns ok=true and
+  records=0.
+- Coordinator verified install-enabled run2 manifest counts:
+  candidates_scanned=6207, semantic_gate_passed=58, build_ok=30, smoke_ok=1,
+  strict_usable=1, real_value=1, deterministic=1, weak_oracle=29.
+- Coordinator checked the single strict usable rollout rejection:
+  final_correct=true and helper_trace_complete=true, but
+  helper_calls_successful=false, helper_trace_valid=false, and
+  all_source_tool_returns_ok=false due to docker helper missing args and github
+  helper network-disabled failure, with call_entrypoint ok.
+- Coordinator records are being updated. No further worker action is required.
