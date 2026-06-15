@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=16 -->
+<!-- METADATA:SESSION=17 -->
 
 ## Session 0 - Created with team lead
 
@@ -579,3 +579,19 @@
   main `f8fad5b`, worker assignments, PR #37 head, no-`--no-install-deps`
   accepted-data constraint, artifact root, and the current wait state for a
   synced worker_1 ready head before worker_2 validation.
+
+## Session 17 - coordinator acknowledged task050 progress
+
+- Received coordinator acknowledgement for the task050 progress report.
+- Coordinator verified shared `origin/main` at `f8fad5b`, PR #37 head
+  `63c9b068264a633408822fe76d33cb45829bf960`, task050 docs on main, and that
+  PR #37 is not a completion or merge yet.
+- Coordinator reiterated the next gate: worker_1 must sync latest `origin/main`
+  before ready-for-test, then worker_2 validates the exact head and artifacts.
+- Completion report must include PR/head/merge status, dependency-aware commands,
+  venv cache path, accepted JSONL, summary JSON/MD, dependency manifest/evidence,
+  accepted predicates, tests, and blocker breakdown if accepted_count < 3.
+- Lead rechecked mailbox and PR #37: no unread mailbox; PR #37 remains open at
+  head `63c9b068264a633408822fe76d33cb45829bf960` and GitHub reports
+  `mergeStateStatus=DIRTY`. Current state remains waiting for worker_1 synced
+  ready mailbox and artifacts.

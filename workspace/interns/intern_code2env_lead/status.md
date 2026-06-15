@@ -10,6 +10,6 @@
 | Team | code2env |
 | Current Task | code2env_lead |
 | PR | N/A |
-| Session | 16 |
+| Session | 17 |
 
-最近进展：Session16 推进 task050_dependency_aware_samples_valid_trajectories。已创建标准 task docs 并分派 w1/w4/w2；w2 已接受 independent tester，w4 已接受 dependency/blocker audit support。w1 已正式 mailbox 接受 implementation/data owner，PR#37 head `63c9b068264a633408822fe76d33cb45829bf960`，计划主 accepted-data run 不使用 `--no-install-deps` 并使用专用 venv cache；已向 coordinator 发送非完成态进度汇报。当前等待 w1 同步 latest main 后发送 ready-for-test exact head。manage task 保持 Working。
+最近进展：Session17 收到 coordinator 对 task050 进度汇报的 ack。Coordinator 验证 task050 docs 已在 main、PR#37 head `63c9b068264a633408822fe76d33cb45829bf960` 且尚未完成/merge；当前 mailbox 无未读，PR#37 仍 open 且 merge state 为 DIRTY，继续等待 w1 同步 latest main 后发送 ready-for-test exact head，再由 w2 独立验证 artifacts。manage task 保持 Working。
