@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -71,3 +71,34 @@
   network/filesystem side effects, source helper return failures,
   nondeterministic/non-real golden, and framework/runtime context missing.
 - No immediate blocker was reported by worker_4.
+
+## Session 4 - 2026-06-15 UTC - Worker_1 checkpoint and worker_4 audit artifact
+
+- Worker_1 sent mailbox `w1-task049-checkpoint-331831d`, which team lead marked
+  read.
+- Worker_1 accepted canonical JSONL ownership and opened PR #36:
+  `https://github.com/songCNMS/code2env/pull/36`.
+- Current pushed PR head is
+  `331831d243b6395b4469db0d45b299318747d604`; PR #36 currently contains
+  workspace/task metadata only and is still in progress.
+- Worker_1 plans a no-product-code data run under the task049 artifact root with
+  expected outputs `accepted_valid_helper_trajectories.jsonl`, `summary.json`,
+  `summary.md`, `rollouts/rollouts.jsonl`, `rollout_exports/`,
+  `batch_no_install_audit/manifest.json`, and `validate_task049_outputs.py`.
+- Worker_1 expects the focused validation predicate command to be
+  `python3 .../validate_task049_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`.
+- Worker_1 reported no immediate blocker but expects likely fewer than five
+  accepted records and will provide blocker breakdown if so.
+- Worker_4 sent mailbox
+  `task049-w4-candidate-blocker-audit-3522114-v2`, which team lead marked read.
+- Worker_4 completed a support-only candidate/blocker audit and wrote artifacts:
+  `worker4_audit/worker4_candidate_blocker_audit.json` and `.md` under the
+  task049 artifact root.
+- Worker_4 audit summary: Session20 semantic_gate_passed=83, built envs=30,
+  strict usable=1, old built envs accepted-like under current probe=0; blockers
+  include built weak-oracle=29, strict-real helper-return rejected=1, untyped
+  required param=44, unsupported annotation/type=8, unsafe
+  side-effect/network/filesystem=1. SIMPA rotation remains the strongest anchor.
+- After mailbox pre-check, team lead forwarded worker_4 audit artifact paths and
+  key blocker counts to worker_1 for incorporation into the canonical
+  summary/blocker breakdown. Worker_2 remains gated on worker_1 ready artifacts.
