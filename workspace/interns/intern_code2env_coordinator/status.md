@@ -42,3 +42,4 @@
 - Session 24（进度）：收到 lead 回报 `task048_typed_fixture_helper_args` 已正式立项并分配 w1 实现、w2 独立验证；当前 worker 执行中，尚无 PR/验证/merge，已回信要求完成回报包含 exact head、测试结果和 valid helper-return JSONL artifact。
 - Session 24（进度）：收到 lead 回报 PR#34/w1 head 仅为接受任务/metadata，无产品代码或验证产物；lead 已改派 w4 为 implementation owner、w2 继续 exact-head 独立验证，w1 stand down，当前等待 w4 新实现 PR/head。
 - Session 24（完成）：收到并复验 `task048_typed_fixture_helper_args` 完成回报；PR #35 已 merge 到 `main`（merge commit `d3a5af3`），coordinator 在 merge commit 上复跑 focused tests `38 passed, 1 skipped`、full pytest `182 passed, 1 skipped`，并核对 SIMPA rollout helper/source returns 全部 OK、final score 1.0。
+- Session 24（格式）：按 stop hook 提示补充 history 格式说明，保持唯一 Session 24 主标题，task048 各阶段作为该 Session 下的子节记录。

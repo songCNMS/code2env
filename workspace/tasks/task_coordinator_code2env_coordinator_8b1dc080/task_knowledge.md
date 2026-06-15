@@ -41,3 +41,4 @@
 35. task048 当前状态是 lead 已正式立项、w1 执行中、w2 预留独立验证，尚未有 PR/验证/merge；coordinator 复验时应等待 lead 的完成态回报，并按 exact head 复核测试、JSONL artifact 和 helper success 指标。
 36. task048 implementation owner 已从 w1 改为 w4：PR#34/w1 head `8291cf214668fb7a103115db768e868e599aad5a` 只有 bootstrap/metadata，不作为验收依据；复验时应看 w4 新 PR/head 与 w2 对该 exact head 的独立验证。
 37. task048 已在 PR #35 merge 到 `main` commit `d3a5af36cefba34028eac723a9145f6e3d75a037`：新增 typed fixture hydration/canonical tensor serialization 与 trace-mode helper argument synthesis，SIMPA `rotation` artifact 达到 `helper_trace_complete/helper_calls_successful/helper_trace_valid/all_source_tool_returns_ok/final_correct=true`、score 1.0。默认 rollout 保持 black-box；残余风险是 SIMPA 验收复用了 Session24 dependency venv，不等于证明 fresh dependency install。
+38. history_log.md 的 Session 24 记录采用一个 `## Session 24` 主标题加多个 `###` 子节的格式；同一 Session 内的追加进度不新增第二个 `## Session 24` 主标题，避免重复 Session 记录。

@@ -249,3 +249,7 @@
 - 默认行为说明符合验收：默认 rollout 仍保持 black-box，helper arg synthesis 为 trace-mode gated；focused tests 覆盖 default mode 不产生 `subfunction_trace`/synthesized provenance。
 - 残余风险：SIMPA artifact 使用 Session24 记录的依赖 venv 与 30s timeout，验证了 deterministic dependency setup 下的 typed helper/runtime 行为，但不证明从零 fresh dependency installation 一定成功。
 - coordinator 已通过 peer send 回信确认复验通过，返回 `{"status":"delivered"}`。
+
+### hook format correction
+
+- 对 stop hook 的 Session 24 记录检查做格式修正：保留唯一 Session 24 主标题和 `<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->` 元数据，task048 handoff/progress/reassignment/completion 均作为该 Session 24 记录下的子节保存，避免重复 Session 主标题。
