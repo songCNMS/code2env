@@ -250,3 +250,9 @@
   w4 a narrow gate update: if `af118e50` is the validation head, undraft/update
   the PR and send formal ready mailbox; w2 remains untriggered until that
   formal ready handoff arrives.
+- PR#35 then advanced to metadata-only
+  `fe286f76cb6fe066e07a208aadad13984bbdb590`, still
+  `mergeStateStatus=CLEAN`, still draft/WIP, and still with no formal ready
+  mailbox. Worker_4 branch status says PR title/body/draft-state repair and
+  formal ready mailbox are still being prepared. Lead waited and rechecked
+  mailbox/PR; unread_count remained 0, so w2 validation remains untriggered.
