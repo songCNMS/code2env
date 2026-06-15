@@ -199,4 +199,6 @@
 - 检查 lead mailbox，收到 w2 `worker2-task048-validator-update-20260615-01`：w2 已刷新到 shared main `c365a60f36dc4f4d8d54057ca3a92597ad82c80e`，确认 task docs 现由 w4 实现、w2 验证，并明确不验证 w1 PR#34 的旧 bootstrap head。已 mark-read，marked_count=1，随后 unread_count=0。
 - 复查 PR 列表发现 PR#34 后续 head 更新到 `fea34ec04f9ce93f93c0ca9527e9f21ac31285f0`，包含 `code2env/batch.py`、`code2env/rollout.py` 和测试文件改动，但没有 w1 ready mailbox、测试结果或 rollout artifacts，且 mergeStateStatus=DIRTY。该 PR 不作为当前验收目标。
 - 按流程在 peer send 前检查 lead mailbox，均为 unread_count=0；已 peer send w4 clarification：w4 仍是 implementation owner，可自行参考 PR#34 思路，但最终验收必须来自 w4 负责的 PR/exact head；已 peer send w2 validation clarification：只等待/验证 w4 ready exact head。两次 API 均返回 `{"status":"delivered"}`。
+- 随后收到并 mark-read 两封 mailbox：w2 `worker2-task048-validation-gate-clarified-20260615-01` 确认只等待/验证 w4 ready exact head；w1 `task048-w1-stand-down-cb8ff1a-20260615` 确认 stand down，未 merge/close PR#34，full pytest 已终止，无 rollout artifacts 或 ready-for-validation report。
+- 复查 PR#34：title 已改为 `[SUPERSEDED - DO NOT MERGE] task048 typed fixture helper args`，head `cb8ff1a5db050312a8896c4ce1b801a140f6ae22`，body 明确 implementation ownership moved to w4 and PR must not be merged or used for validation unless lead explicitly reauthorizes.
 - 当前状态：等待 w4 PR/ready head；w2 等待 w4 exact head 后验证。team_lead 未写产品代码、未跑产品测试、未 merge。
