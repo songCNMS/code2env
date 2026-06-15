@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=10 -->
+<!-- METADATA:SESSION=11 -->
 
 ## Knowledge Entries
 
@@ -38,3 +38,7 @@
 11. PR #35 needed a current `origin/main` merge to clear GitHub's DIRTY merge
     state; the merge-clean validation head is newer than the earlier `9704b92`
     ready-evidence checkpoint but does not change product code.
+12. Lead checkpoint traffic can advance task docs on `origin/main` while worker_4
+    is preparing handoff; resolve task history by preserving lead-authored
+    sessions and appending the worker repair/ready session, then report the
+    final pushed PR head.
