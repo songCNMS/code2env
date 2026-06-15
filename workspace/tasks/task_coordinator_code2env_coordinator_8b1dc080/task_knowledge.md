@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=20 -->
+<!-- METADATA:SESSION=21 -->
 
 ## Knowledge Entries
 
@@ -29,3 +29,4 @@
 23. task047 后 subfunction trace 同时有兼容字段 `helper_trace_complete` 和严格字段 `helper_calls_successful` / `helper_trace_valid` / per-helper results。评估 trace 质量时应优先看严格字段；`helper_trace_complete=true` 只说明 required helper 覆盖和顺序完整，不说明 helper 调用成功。
 24. Session 20 fresh strict scan 说明 `/home/leisong/data/samples` 当前 38 个 Python repo 在 `--require-real-value --min-semantic-helpers 3 --no-install-deps` 下只有 1 个 strict usable env，29 个 build 为 weak-oracle；因此后续扩大真实数据量应优先处理安全依赖安装、typed fixture/hydration 或测试派生 fixture，而不是依赖静态 semantic helper gate。
 25. fresh strict rollout 的唯一可用 env 仍然 `helper_trace_complete=true` 但 `helper_trace_valid=false`，原因是 helper 参数无法从当前 fixture 自动提供。后续若目标是高质量 subfunction trajectory，应推进 helper argument synthesis 或把 `helper_trace_valid=true` 作为数据入选门槛。
+26. Session 21 对 Session20 的 29 个 non-strict built env 归因：全部因为 golden 执行落到 weak-oracle exception，主因是缺依赖/运行环境（`bpy`、`torch`、`matplotlib`、`django`、`languages`）、缺 package metadata、缺输入文件或 CLI/stdout 干扰 executor JSON；没有 nondeterministic 导致的 non-strict built env。后续提升 strict usable 数量应优先做 dependency/runtime fixture/CLI-output 隔离。

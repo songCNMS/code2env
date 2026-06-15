@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=20 -->
+<!-- METADATA:SESSION=21 -->
 
 ## Session 0 - Created with coordinator
 
@@ -172,3 +172,12 @@
 - 对该 env 执行 mock `--trace-mode subfunctions` rollout，JSONL 写入 `../outputs/session20_samples_strict_scan/strict_mock_trace_rollouts.jsonl`，`rollout-export` 输出到 `../outputs/session20_samples_strict_scan/exported_rollouts/`；rollout `qualified=1/1`、`correct=1/1`、`helper_trace_complete=1/1`、`entrypoint_after_helpers=1/1`，但严格口径 `helper_calls_successful=0/1`、`helper_trace_valid=0/1`，3 个 helper failures 均为 `argument_unavailable` TypeError。
 - 生成 review artifact：`../outputs/session20_samples_strict_scan/summary.json`、`summary.md`、`strict_mock_trace_rollouts.jsonl`、`strict_batch/manifest.json`、`exported_rollouts/`，以及轻量打包文件 `../outputs/session20_samples_strict_scan/session20_review_bundle.tgz`（约 177K，不含 worktree）。
 - 结论：task047 strict usable 口径在 fresh source 全量 Python samples 上生效，29 个 weak-oracle build 未进入可用数据；当前样本真实可用量仍只有 1 个，下一步增量应来自安全依赖/fixture 能力或 helper argument synthesis，而不是放宽 strict usable 口径。
+
+## Session 21 - Strict unusable reason analysis
+
+- 回答用户问题“其它环境不 strictly usable 的原因是什么”；本次未修改产品代码，基于 Session20 artifact `../outputs/session20_samples_strict_scan/strict_batch/manifest.json` 做归因分析。
+- strict usable 口径复述：task047 后必须同时满足 `golden_status == real_value` 和 `determinism == deterministic`；Session20 的 29 个 built non-strict env 全部是 `weak_oracle:golden_exception:*`，不是 nondeterministic。
+- 29 个 built non-strict env 的原因分布：`ModuleNotFoundError:bpy=10`、`ModuleNotFoundError:torch=4`、`ModuleNotFoundError:matplotlib=3`、`InvalidExecutorOutput:stdout_before_json=3`、`ExecutorFailed:aeneas_cli/runtime=3`、`ModuleNotFoundError:django=2`、`PackageNotFoundError:folio_migration_tools metadata=1`、`ModuleNotFoundError:languages=1`、`InvalidExecutorOutput:tinytuya missing snapshot.json=1`、`ExecutorFailed:scour CLI output/exit=1`。
+- 典型 repo 归因：Blender plugin 依赖 `bpy`；panseg 依赖 `torch`；Django SaaS decorators 依赖 `django`；speed-comparison 中 analyze 依赖 `matplotlib`、dagger-poc 依赖本地/外部 `languages` 模块；tinytuya 需要 `snapshot.json` 且会打印 banner/error；aeneas/scour 是 CLI-style 函数，stdout/exit 干扰 executor JSON envelope。
+- 同时区分更早被 filter 的候选：未进入 29 个 built env 的 skip 主因包括 `not_module_level=8799`、`insufficient_semantic_helpers=2825`、`possible_side_effect=356`、`untyped_required_param=44`、`unsupported_param_type=8`、`unsafe_rich_fixture_candidate=1`。
+- 产出 report：`../outputs/session21_strict_unusable_reasons/strict_unusable_reasons.md`，包含 cause breakdown、逐 env 表和解释；结论是当前瓶颈主要为 dependency/runtime fixture/CLI output，而不是 semantic helper gate。
