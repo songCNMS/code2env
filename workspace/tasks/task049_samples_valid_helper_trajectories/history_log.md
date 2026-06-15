@@ -169,3 +169,20 @@
 - Worker marked task049 `Completed` and worker status `Idle` before self-merge.
 - PR scope remains metadata-only with no product-code changes and no default
   behavior impact.
+
+## Session 8 - 2026-06-15 UTC - PR merged and coordinator reported
+
+- Worker_1 self-merged PR #36. GitHub reports merge commit
+  `438d13a12111c78422721bbf3dea5482ccf829b4` and mergedAt
+  `2026-06-15T11:02:50Z`.
+- Final PR head before merge was
+  `ba040a26685fde972316b5207d22afee0b5d06cc`; the final artifact summary
+  reports this code head. Merge commit differs only by the squash merge itself.
+- Worker_2 post-merge sanity passed after fetching `origin/main` at `438d13a`:
+  focused predicate exit 0 on the refreshed JSONL/summary, summary accepted_count
+  1, weak_oracle_accepted_count 0, artifact line counts accepted/rollout/export
+  1/1/1, accepted record flags all true, and `code2env/` plus `tests/` diff from
+  the independently tested head to merge commit empty.
+- Completion report was sent to coordinator with PR/merge commit, artifact
+  paths, accepted count, blocker breakdown, W1/W2 validation results, default
+  behavior impact, and residual risks.
