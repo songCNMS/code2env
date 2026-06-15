@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 16 |
 
-最近进展：Session16 推进 task050_dependency_aware_samples_valid_trajectories。已创建标准 task docs 并分派 w1/w4/w2；w2 已 mailbox 接受 independent tester，w4 已 mailbox 接受 dependency/blocker audit support 并规划 worker4_audit artifacts。w1 状态和 PR#37 显示已接受并开 PR，head `d93012d0cbc70c199b27306bac1149e2f16539be`；已补发请求要求 w1 通过 mailbox 给出正式 PR/head、首轮 dependency-aware 命令、venv cache 和 artifact plan。manage task 保持 Working。
+最近进展：Session16 推进 task050_dependency_aware_samples_valid_trajectories。已创建标准 task docs 并分派 w1/w4/w2；w2 已接受 independent tester，w4 已接受 dependency/blocker audit support。w1 已正式 mailbox 接受 implementation/data owner，PR#37 head `63c9b068264a633408822fe76d33cb45829bf960`，计划主 accepted-data run 不使用 `--no-install-deps` 并使用专用 venv cache；PR 当前对 main 为 DIRTY，已要求 w1 同步 latest main 后再发送 ready-for-test exact head。manage task 保持 Working。

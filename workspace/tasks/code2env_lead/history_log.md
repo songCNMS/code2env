@@ -558,3 +558,19 @@
   dependency-aware command plan, dedicated venv cache path, expected artifacts,
   and blockers. Current state: waiting for worker_1 formal mailbox and first
   dependency-aware run evidence.
+- Received and mark-read worker_1 mailbox `w1-task050-acceptance-63c9b06`:
+  worker_1 accepted implementation/data ownership for PR #37, branch
+  `intern_code2env_worker_1/task050_dependency_aware_samples_valid_trajectories`,
+  head `63c9b068264a633408822fe76d33cb45829bf960`.
+- Worker_1 reported product-code changes are not expected initially, main
+  accepted-data run will not pass `--no-install-deps`, dedicated venv cache is
+  under the task050 artifact root, and first batch command will include
+  `--min-semantic-helpers 3`, `--require-real-value`, and `--determinism-runs 2`.
+- Expected worker_1 outputs include accepted JSONL, summary JSON/MD, rollout
+  JSONL/export, dependency batch manifest, install/status evidence, and a
+  focused validator script. Immediate owner blockers: none.
+- PR #37 currently reports `mergeStateStatus=DIRTY` against main. After another
+  mailbox pre-check with unread_count=0, lead peer-sent worker_1 a checkpoint
+  requiring sync with latest `origin/main` before declaring a ready-for-test
+  exact head. Current state: waiting for worker_1 synced ready mailbox and
+  artifacts; worker_2 remains reserved for independent exact-head validation.
