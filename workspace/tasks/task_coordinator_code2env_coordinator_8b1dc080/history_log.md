@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=16 -->
+<!-- METADATA:SESSION=17 -->
 
 ## Session 0 - Created with coordinator
 
@@ -131,3 +131,14 @@
 - 扫描结果：200 个 archive 中处理 38 个 Python repo，跳过 162 个非 Python/缺 profile archive；repo scan errors 0；9 个 repo 含 selected candidates；共选出 26 个当前可转环境候选，并记录 93 个 top near-miss 候选及阻塞原因。
 - 主要输出文件：`../outputs/session16_samples_scan/candidate_results.json`（完整结构化结果，含 repo/branch/commit/filter/selected/near_misses/errors），`../outputs/session16_samples_scan/candidate_results.md`（可读表格），`../outputs/session16_samples_scan/scan.log`（逐 repo 扫描日志）。
 - Top selected 示例：`FOLIO-FSE/folio_migration_tools:folio_migration_tools.__main__:main`、`0-8-4/miui-auto-tasks:utils.utils:get_token`、`jasonacox/tinytuya:tinytuya.scanner:snapshot`、`niklas-heer/speed-comparison:analyze:main`、`kreshuklab/panseg:panseg.run_panseg:main`。
+
+## Session 17 - Top samples candidate validation
+
+- 按用户“执行下一步”要求，基于 Session 16 输出 `../outputs/session16_samples_scan/candidate_results.json` 的 top 10 selected candidates 做可运行性验证；本次未修改产品代码、未下发 team_lead 任务。
+- 对 10 个候选从原 archive 最新分支重新展开 worktree，并执行 `draft -> build -> smoke`；结果 `validated=10`、`draft_ok=10`、`build_ok=10`、`smoke_ok=10`。对应 package/spec/worktree/rollout 产物写入 `../outputs/session17_samples_candidate_validation/`。
+- 对 10 个 EnvPackage 执行 mock `--trace-mode subfunctions` rollout 并合并导出：`mock_trace_rollouts.jsonl` 共 10 lines，10/10 `qualified=true`、10/10 `correct=true`、10/10 `helper_trace_complete=true`、10/10 `entrypoint_after_helpers=true`；`rollout-export` 成功导出到 `exported_rollouts/`。
+- 严格可用性复核：10 个 build 中只有 1 个满足 `golden_status=real_value` 且 `determinism=deterministic`，即 `code2env.scripts.check-versions.check_language_version.c4dd5023.v1`（symbol `scripts.check-versions:check_language_version`）；其余 9 个为 weak-oracle build，主要来自缺失依赖或运行时/import 错误，不计为真实可用样本。
+- 对唯一 strict usable env 执行 endpoint trace rollout：endpoint source `gpt-5.5`，结果 `qualified=true`、`correct=true`、`score=0.98125`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`；JSONL 写入 `../outputs/session17_samples_candidate_validation/endpoint_trace_rank05.jsonl`，schema export 写入 `../outputs/session17_samples_candidate_validation/exported_endpoint_rank05/`。
+- 质量 caveat：该 endpoint trace 中记录 3 次 helper call error，原因是当前 trace prompt/mock 顺序会以空参数调用需要参数的 helper；trace completeness 当前验证的是 required helper coverage/order 和 entrypoint-after-helpers，不等价于每个 helper call 都成功。
+- 汇总产物：`../outputs/session17_samples_candidate_validation/validation_results.json`、`validation_results.md`、`mock_trace_rollouts.jsonl`、`endpoint_trace_rank05.jsonl`、`exported_rollouts/`、`exported_endpoint_rank05/`。
+- 结论：Session 16 的静态候选能生成 package 并跑通 mock trace，但真实可用数据应以 strict usable 口径计数；当前 top 10 中真实可用于 endpoint 数据生成的是 1/10，下一步应优先把 missing dependency / weak-oracle 样本转成 real_value，或在 candidate scan 阶段加入 dependency viability 过滤。
