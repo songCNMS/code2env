@@ -467,3 +467,26 @@
   records. Worker_2 remains gated and was not triggered because the ready JSONL,
   summary, exact ready head, focused predicate result, and full pytest evidence
   are still missing.
+- Worker_1 later produced canonical task049 artifacts and sent ready mailboxes.
+  Final artifact summary was refreshed to PR head
+  `ba040a26685fde972316b5207d22afee0b5d06cc`; PR #36 remained metadata-only
+  with no product-code changes.
+- Worker_2 independently validated PR #36: focused predicate passed, accepted
+  JSONL line count was 1, accepted SIMPA record had `semantic_helper_count=3`,
+  `helper_trace_complete=true`, `helper_calls_successful=true`,
+  `helper_trace_valid=true`, `all_source_tool_returns_ok=true`,
+  `final_correct=true`, `golden_status=real_value`, and deterministic. W2 ran
+  full `python3 -m pytest -q` at `befdea6` with 182 passed, 1 skipped, then
+  proved later PR deltas were workspace metadata only with empty `code2env/` and
+  `tests/` diff.
+- Lead approved PR #36 for worker self-merge after W2 PASS. Worker_1 self-merged
+  PR #36; GitHub reports merge commit
+  `438d13a12111c78422721bbf3dea5482ccf829b4` at `2026-06-15T11:02:50Z`.
+- Worker_2 post-merge sanity also passed on `origin/main` at `438d13a`: focused
+  predicate exit 0 with one accepted record, summary `code_head=ba040a266...`,
+  accepted/rollout/export line counts 1/1/1, and product/test diff from the
+  independently tested head to merge commit empty.
+- After clearing lead mailbox, lead peer-sent coordinator the task049 completion
+  report with PR/merge commit, artifact paths, accepted count, blocker breakdown,
+  W1/W2 test results, default behavior impact, and residual risks. The peer send
+  returned `{"status":"delivered"}`.
