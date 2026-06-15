@@ -1,19 +1,25 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task049_samples_valid_helper_trajectories,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Working |
+| Status | Idle |
 | Role | worker |
 | Team | code2env |
-| Current Task | task049_samples_valid_helper_trajectories |
-| PR | https://github.com/songCNMS/code2env/pull/36 |
-| Session | 4 |
+| Current Task |  |
+| PR |  |
+| Session | 5 |
 
 ## Recent Progress
 
+- Session 5 task049 self-merge authorization received after W2 PASS at exact
+  PR #36 head `0b9a519405086ddcab7ede93220158f82d0985df`; completion metadata
+  prepared with no product-code changes.
+- Task049 final accepted count remains 1 with SIMPA
+  `simpa.utils.calculate:rotation`; focused predicate passed and full pytest
+  evidence is `python3 -m pytest -q` -> 182 passed, 1 skipped.
 - Session 4 task049 ready handoff: PR #36 metadata push completed after canonical
   artifacts were generated; no product-code changes are included in the branch.
 - Formal ready report contents are prepared for mailbox with exact PR head,

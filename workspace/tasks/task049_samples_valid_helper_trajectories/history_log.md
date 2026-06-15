@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -157,3 +157,15 @@
   `PYTHONPATH=/home/leisong/codes/work-agents/intern_code2env_worker_1/code2env python3 .../validate_task049_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`
   -> ok, records=1.
 - Full verification passed: `python3 -m pytest -q` -> 182 passed, 1 skipped.
+
+## Session 7 - 2026-06-15 UTC - Self-merge authorized
+
+- Team lead approved PR #36 for standard self-merge after W2 independent
+  validation passed at exact head `0b9a519405086ddcab7ede93220158f82d0985df`.
+- W2 validated focused predicate exit 0, accepted_count=1, accepted record
+  helper/source/final flags true, coherent blocker breakdown for fewer than 5
+  accepted records, and reused full pytest 182 passed / 1 skipped with
+  metadata-only delta proof from `befdea6` to `0b9a519`.
+- Worker marked task049 `Completed` and worker status `Idle` before self-merge.
+- PR scope remains metadata-only with no product-code changes and no default
+  behavior impact.

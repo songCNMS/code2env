@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Knowledge Entries
 
@@ -31,3 +31,6 @@
    not as flat top-level fields.
 10. After metadata-only PR head changes, rerun the task049 artifact generator with
     `--skip-batch` so `summary.json` and the ready mailbox exact head stay aligned.
+11. Completion metadata for artifact-only tasks still needs task README
+    `Completed` and worker status `Idle` before self-merge, even when product code
+    is unchanged.
