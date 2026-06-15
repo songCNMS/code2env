@@ -1,19 +1,25 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task050_dependency_aware_samples_valid_trajectories,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR |  |
-| Session | 5 |
+| Current Task | task050_dependency_aware_samples_valid_trajectories |
+| PR | https://github.com/songCNMS/code2env/pull/37 |
+| Session | 1 |
 
 ## Recent Progress
 
+- Session 1 accepted task050_dependency_aware_samples_valid_trajectories; PR #37
+  opened for dependency-aware sample valid helper-return trajectory generation.
+- Task050 initial plan: use current `origin/main` at `2051380`, run dependency
+  installation-enabled sample reruns with dedicated venv cache under the
+  Session25 artifact root, preserve task049 strict predicates, and report
+  accepted JSONL/summary plus blocker breakdown if accepted_count stays below 3.
 - Session 5 task049 self-merge authorization received after W2 PASS at exact
   PR #36 head `0b9a519405086ddcab7ede93220158f82d0985df`; completion metadata
   prepared with no product-code changes.

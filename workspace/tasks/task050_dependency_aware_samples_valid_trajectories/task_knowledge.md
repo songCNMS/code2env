@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Knowledge Entries
 
@@ -17,3 +17,8 @@
 4. Because dependency installation can be expensive and flaky, targeted reruns of
    task049 dependency-likely blockers are preferred before broad full-sample
    runs.
+5. The task050 dedicated venv cache path is
+   `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/venv_cache/`.
+6. First accepted-data batch must omit `--no-install-deps`; install failures
+   should be captured as dependency blockers rather than silently converted into
+   weak-oracle accepted records.
