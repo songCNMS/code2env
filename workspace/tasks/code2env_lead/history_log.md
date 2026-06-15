@@ -663,3 +663,16 @@
 - Current state: waiting for worker_1 run2 to produce manifest/JSONL/summary and
   a ready or blocked mailbox. Worker_2 validation remains gated on a ready exact
   head plus artifacts.
+- Received and mark-read worker_1 heartbeat mailboxes
+  `w1-task050-heartbeat-running-c20b72e-run2` and
+  `w1-task050-heartbeat-clean-c20b72e-run2`.
+- Worker_1 reported a metadata-only Session 5 push; PR #37 advanced to clean
+  head `c20b72e3e247bb8254e48c9decef965e7ff875a0` with no product-code changes.
+- Run2 remains the active install-enabled accepted-data run, pid `3146512`,
+  started `2026-06-15T12:40:35Z`, using no `--no-install-deps`, dedicated venv
+  cache, `--target 5`, `--min-semantic-helpers 3`, `--require-real-value`, and
+  `--determinism-runs 2`.
+- Lead poll showed run2 still running after about 187 seconds. The stdout has
+  SIMPA indexing warnings, and one spec file exists at
+  `dependency_batch/install_enabled_targeted_run2/specs/code2env.simpa.utils.calculate.rotation.2b54724b.v1.json`.
+  Manifest, accepted JSONL, summary, and ready-for-test report are still absent.

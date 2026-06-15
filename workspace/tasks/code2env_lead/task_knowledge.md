@@ -48,3 +48,4 @@
 39. 数据/metadata-heavy PR 开始执行后，lead 不宜为每个 checkpoint 继续推 shared main task-history 记录；这些 metadata commits 会让 worker owner 分支反复 DIRTY。非关键进度优先记在 lead 分支，shared main 只在任务创建、关键分派、ready/完成等稳定点更新。
 40. clean PR 只说明同步门槛过了，不等于数据任务 ready；对 artifact-driven 任务必须同时看到 owner ready mailbox、artifact 文件、accepted predicates/summary、测试或复用理由，才可以触发 independent tester。
 41. 数据 run 的 heartbeat 证据应区分空 wrapper 失败和有效运行：空 stdout、无 manifest、pid 已退出只能算 failed attempt；有效 heartbeat 至少要有命令文件、pid/status、stdout/status path、启动时间、目标集合、验收 flags 和 venv cache 路径。
+42. worker 在长数据 run 期间推 metadata-only head 会改变 tester 将来要验证的 exact head；lead 记录时必须区分 product-code unchanged 与 latest exact head，最终 tester 仍要按 ready mailbox 的最新 head 验证。
