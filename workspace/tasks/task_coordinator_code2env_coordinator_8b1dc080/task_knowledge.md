@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=19 -->
+<!-- METADATA:SESSION=20 -->
 
 ## Knowledge Entries
 
@@ -27,3 +27,5 @@
 21. Session 18 已将 strict usable/weak-oracle 过滤与 helper call success metric 合并为 `task047_strict_usable_trace_quality` handoff；后续验收应同时看数据口径和 trace 质量口径，避免“构建可跑但只是在复现错误”或“helper 覆盖完整但 helper 调用失败”的假阳性。
 22. `task047_strict_usable_trace_quality` 已在 PR #33 合入 `main`：后续生成真实 runnable 数据时应启用 `code2env batch --require-real-value` 或 API `require_real_value=True`，并以 `strict_usable` / `real_value + deterministic` 作为可用 env 口径；`weak_oracle` 只能用于审计和阻塞分析。
 23. task047 后 subfunction trace 同时有兼容字段 `helper_trace_complete` 和严格字段 `helper_calls_successful` / `helper_trace_valid` / per-helper results。评估 trace 质量时应优先看严格字段；`helper_trace_complete=true` 只说明 required helper 覆盖和顺序完整，不说明 helper 调用成功。
+24. Session 20 fresh strict scan 说明 `/home/leisong/data/samples` 当前 38 个 Python repo 在 `--require-real-value --min-semantic-helpers 3 --no-install-deps` 下只有 1 个 strict usable env，29 个 build 为 weak-oracle；因此后续扩大真实数据量应优先处理安全依赖安装、typed fixture/hydration 或测试派生 fixture，而不是依赖静态 semantic helper gate。
+25. fresh strict rollout 的唯一可用 env 仍然 `helper_trace_complete=true` 但 `helper_trace_valid=false`，原因是 helper 参数无法从当前 fixture 自动提供。后续若目标是高质量 subfunction trajectory，应推进 helper argument synthesis 或把 `helper_trace_valid=true` 作为数据入选门槛。

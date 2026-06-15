@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=19 -->
+<!-- METADATA:SESSION=20 -->
 
 ## Session 0 - Created with coordinator
 
@@ -162,3 +162,13 @@
 - 抽查 rank5 JSONL 记录 `code2env.scripts.check-versions.check_language_version.c4dd5023.v1`：`qualified=true`、final `correct=true`、score `0.98125`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`，同时新增严格字段 `helper_calls_successful=false`、`helper_trace_valid=false`；3 个 failed helper tools 均记录 `argument_unavailable` + `TypeError`。
 - 核对 w2 validation summary `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w2_validation/w2_validation_summary_e48507e.json`：focused/full/default-compat/strict-mode/rank5 metadata acceptance 均为 PASS。
 - 结论：task047 满足 Session18 handoff 的最低验收，weak-oracle exception 不再计入 strict usable，subfunction trace 已暴露 helper call success/strict validity。残余风险保留为：acceptance replay 使用 Session17 packages 而非 fresh full rebuild，weak-oracle traceback/path exact-match 对消费者仍脆弱，helper arg synthesis 仍保守且本轮只显式暴露 rank5 失败。
+
+## Session 20 - Fresh samples strict scan
+
+- 按用户“执行下一步”要求，基于已 merge 的 task047 能力，对 `/home/leisong/data/samples` 执行 fresh source strict scan；本次未修改产品代码，使用 detached `origin/main` verify worktree `../debug/code2env_main_verify`，HEAD 为 `f551ee88654b1bcb604ebf11361a279310e52e19`。
+- 写出并运行一次性 driver `../outputs/session20_samples_strict_scan/run_session20_strict_scan.py`：从 Session16 `candidate_results.json` 读取 38 个 Python archive，逐个抽取 bare git 最新分支 commit 到 fresh worktree，然后调用 `python3 -m code2env batch --require-real-value --min-semantic-helpers 3 --no-install-deps --determinism-runs 2 --target 20`。
+- Batch 结果写入 `../outputs/session20_samples_strict_scan/strict_batch/manifest.json`；summary：`python_repos=38`、`worktrees_extracted=38`、`candidates_scanned=12063`、`semantic_gate_passed=83`、`draft_ok=30`、`build_ok=30`、`smoke_ok=1`、`weak_oracle=29`、`real_value=1`、`deterministic=1`、`strict_usable=1`。
+- 唯一 strict usable env：`code2env.scripts.check-versions.check_language_version.21a74cc9.v1`，repo 为 fresh extracted `niklas-heer/speed-comparison` 最新分支 `dependabot/uv/dagger-poc/pytest-9.0.3` commit `2a08722e4c8b...`，symbol `scripts.check-versions:check_language_version`，semantic helpers 为 `get_current_version_from_csv`、`get_docker_latest_version`、`get_github_latest_version`。
+- 对该 env 执行 mock `--trace-mode subfunctions` rollout，JSONL 写入 `../outputs/session20_samples_strict_scan/strict_mock_trace_rollouts.jsonl`，`rollout-export` 输出到 `../outputs/session20_samples_strict_scan/exported_rollouts/`；rollout `qualified=1/1`、`correct=1/1`、`helper_trace_complete=1/1`、`entrypoint_after_helpers=1/1`，但严格口径 `helper_calls_successful=0/1`、`helper_trace_valid=0/1`，3 个 helper failures 均为 `argument_unavailable` TypeError。
+- 生成 review artifact：`../outputs/session20_samples_strict_scan/summary.json`、`summary.md`、`strict_mock_trace_rollouts.jsonl`、`strict_batch/manifest.json`、`exported_rollouts/`，以及轻量打包文件 `../outputs/session20_samples_strict_scan/session20_review_bundle.tgz`（约 177K，不含 worktree）。
+- 结论：task047 strict usable 口径在 fresh source 全量 Python samples 上生效，29 个 weak-oracle build 未进入可用数据；当前样本真实可用量仍只有 1 个，下一步增量应来自安全依赖/fixture 能力或 helper argument synthesis，而不是放宽 strict usable 口径。

@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 19 |
+| Session | 20 |
 
 ## 最近进展
 
@@ -33,3 +33,4 @@
 - Session 17：基于 Session 16 top 10 candidates 执行 draft/build/smoke + mock subfunction trace rollout；10/10 draft/build/smoke/mock trace/export OK，但 strict usable 只有 1/10（rank 5 `scripts.check-versions:check_language_version`）；对该 usable env 执行 endpoint trace，`gpt-5.5` 1/1 qualified/correct/helper_trace_complete，JSONL 写入 `../outputs/session17_samples_candidate_validation/endpoint_trace_rank05.jsonl`；9 个为 weak-oracle build，不作为真实可用样本。
 - Session 18：将 Session 17 暴露的 weak-oracle 误计数与 helper 参数质量问题拆成 lead 实现任务 `task047_strict_usable_trace_quality`；handoff 写入 `../outputs/session18_strict_usable_trace_quality/task047_strict_usable_trace_quality_goal.md`，goal API timeout 无可靠回执，peer send 兜底已 delivered。
 - Session 19：收到并复验 `task047_strict_usable_trace_quality` 完成回报；PR #33 已 merge 到 `main`（commit `f551ee8`），coordinator 在 `../debug/code2env_main_verify` 复跑 focused tests `48 passed`、full pytest `178 passed, 1 skipped`，并核对 Session17 top10 replay 为 `weak_oracle=9`、`strict_usable=1`、rank5 `helper_calls_successful=false`/`helper_trace_valid=false`。
+- Session 20：用 merged `main` commit `f551ee8` 对 `/home/leisong/data/samples` 的 38 个 Python archive 做 fresh source strict scan（`--require-real-value --min-semantic-helpers 3 --no-install-deps`）：扫描 12,063 candidates、semantic gate 83、build_ok 30、weak_oracle 29、strict_usable 1；对唯一 strict env 生成 mock trace JSONL/export，review bundle 写入 `../outputs/session20_samples_strict_scan/session20_review_bundle.tgz`。
