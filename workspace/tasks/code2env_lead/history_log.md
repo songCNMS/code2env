@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=8 -->
+<!-- METADATA:SESSION=9 -->
 
 ## Session 0 - Created with team lead
 
@@ -176,3 +176,10 @@
 - 检查 GitHub PR 列表，w1 已打开 PR#34 `https://github.com/songCNMS/code2env/pull/34`，head `8291cf214668fb7a103115db768e868e599aad5a`，mergeStateStatus=CLEAN；PR body 标记状态为进行中。
 - PR#34 当前只包含 worker status 与 task metadata/接受任务提交，files 为 `workspace/interns/intern_code2env_worker_1/status.md` 和 `workspace/tasks/task048_typed_fixture_helper_args/*`，尚无 product code、focused/full tests、rollout JSONL 或 w1 ready-for-validation mailbox。
 - 决策：不触发 w2 验证、不做 review/merge 决策；等待 w1 提交实现并通过 mailbox 报告 exact ready head、测试结果和 artifacts。team_lead 未写产品代码、未跑产品测试、未 merge。
+
+## Session 9 - task048 bootstrap follow-up
+
+- 继续 active goal；先检查 lead mailbox，结果 unread_count=0，无需 mark-read。
+- 重新检查 PR#34 `https://github.com/songCNMS/code2env/pull/34`：head 仍为 `8291cf214668fb7a103115db768e868e599aad5a`，PR body 仍为进行中；commits 只有初始化与接受任务，files 仍仅为 worker status 和 task metadata，未出现 product code、focused/full tests、rollout JSONL 或 ready-for-validation mailbox。
+- 已通过 peer send 跟进 w1，API 返回 `{"status":"delivered"}`；内容要求继续实现 typed fixture hydration + helper argument synthesis，并在 ready 后通过 mailbox 汇报 exact PR head、focused tests、full `python3 -m pytest -q`、rollout JSONL/summary artifact 路径，以及 `helper_trace_complete`/`helper_calls_successful`/`helper_trace_valid`/source returns/final real-value correctness flags。
+- 已再次明确优先 SIMPA `simpa.utils.calculate:rotation`；如 blocked，必须给明确 SIMPA blocker 和替代 real sample repo 证据。当前仍不触发 w2 validation，不做 review/merge 决策。team_lead 未写产品代码、未跑产品测试、未 merge。
