@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=25 -->
+<!-- METADATA:SESSION=26 -->
 
 ## Session 0 - Created with coordinator
 
@@ -291,3 +291,13 @@
 - 验收口径写入 handoff：主 accepted-data run 不使用 `--no-install-deps`，使用专用 venv cache、`--require-real-value`、`--min-semantic-helpers 3` 和 determinism checking；accepted record 必须 real sample repo、`semantic_helper_count >= 3`、real_value deterministic、helper trace complete/successful/valid、all source returns ok、final correct，不接受 weak-oracle exception correctness。
 - 如果 accepted count 仍低于 3，lead 需提供 blocker breakdown，区分 dependency install failed、system-only dependency、package metadata/import path、CLI/stdout executor envelope、untyped/unsupported params、side-effect/network sandbox、helper arg synthesis 等原因。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task050_dependency_aware_samples_valid_trajectories` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session25_dependency_aware_samples/task050_handoff_delivery.json`。
+
+## Session 26 - task050 progress acknowledged
+
+- 收到 `intern_code2env_lead` 关于 `task050_dependency_aware_samples_valid_trajectories` 的阶段性进展回报；本次不是完成态，尚无 merge。
+- lead 已创建标准 task docs 到 `workspace/tasks/task050_dependency_aware_samples_valid_trajectories/`，并通过 shared main commit `f8fad5b23a4aa34173fbccc8ceff84d847235d5e` push；coordinator `git fetch origin main pull/37/head` 后确认 `origin/main` 为 `f8fad5b`。
+- PR #37 为 `https://github.com/songCNMS/code2env/pull/37`，当前 head 为 `63c9b068264a633408822fe76d33cb45829bf960`；coordinator 读取 PR diff，当前变更集中在 worker 状态和 task050 管理文档，尚未形成完成验收依据。
+- 分工记录：worker_1 是 implementation/data owner；worker_4 是 dependency/blocker audit support only；worker_2 预留 independent exact-head tester。
+- w1 已确认主 accepted-data run 不使用 `--no-install-deps`，使用 task050 output root 下的专用 venv cache，并包含 `--min-semantic-helpers 3`、`--require-real-value`、`--determinism-runs 2`；预期产物包括 accepted JSONL、summary JSON/MD、rollouts、export、dependency manifest/evidence 和 focused validator。
+- 当前执行状态：等待 w1 将 PR #37 与 latest `origin/main` 同步并声明 ready-for-test exact head，随后 w2 按 exact head 独立验证 artifacts 与 predicates。
+- coordinator 已通过 peer send 回信确认收到并重申完成回报要求：PR/head/merge 状态、dependency-aware commands、venv cache path、JSONL/summary/dependency evidence、accepted predicates、测试结果，以及 accepted_count <3 时的 blocker breakdown；peer send 返回 `{"status":"delivered"}`。
