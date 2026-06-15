@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -24,3 +24,6 @@
 7. Worker_4 acceptance uses branch
    `intern_code2env_worker_4/task048_typed_fixture_helper_args`; PR #34 is
    superseded and must not be treated as the task048 acceptance head.
+8. WIP PR #35 at head `b47dd5f` is reviewable but not validation-ready; w2 should
+   wait for the ready mailbox with full pytest plus real-sample rollout artifact
+   flags.
