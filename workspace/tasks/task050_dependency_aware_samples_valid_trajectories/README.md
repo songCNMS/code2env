@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Dependency-aware sample valid trajectories
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## Background
 

@@ -50,3 +50,6 @@
 14. If the mailbox API returns stored but lead does not see unread mail, resend
     with a new client_message_id and a concise payload under the mailbox content
     limit, then record the delivered message id in task history.
+15. After independent validation PASS and lead merge authorization, only
+    completion/status metadata should be changed before self-merge; product code
+    remains frozen at the validated scope.

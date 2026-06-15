@@ -208,3 +208,10 @@
   test reuse rationale, failed strict-usable trace predicate outcome, and
   residual risks.
 - The resend API response was `status=stored`, `read_state=unread`.
+- Worker_2 independently validated the formal blocked-data handoff and reported
+  PASS. Team lead authorized standard self-merge for PR #37 at latest head
+  `26ca35bd9eb628164ec87e7516858edeb36bdd72`, noting head drift from formal
+  validation head `36127f7573a1b30837097c777813e078293a7d05` was metadata-only
+  with empty `code2env/` and `tests/` diff.
+- Worker_1 prepared completion metadata before merge: task README set to
+  Completed and worker status set to Idle/empty task.

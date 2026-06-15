@@ -1,19 +1,22 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task050_dependency_aware_samples_valid_trajectories,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Working |
+| Status | Idle |
 | Role | worker |
 | Team | code2env |
-| Current Task | task050_dependency_aware_samples_valid_trajectories |
-| PR | https://github.com/songCNMS/code2env/pull/37 |
+| Current Task |  |
+| PR |  |
 | Session | 8 |
 
 ## Recent Progress
 
+- Session 8 task050 merge authorization: worker_2 validation PASS processed by
+  lead; completion metadata prepared before self-merge with no product-code
+  changes.
 - Session 8 task050 handoff delivery: resent formal blocked-data mailbox as
   `w1-task050-blocked-data-ready-resend-36127f7`; API returned stored/unread.
 - Session 7 task050 formal handoff: canonical artifacts are present with
