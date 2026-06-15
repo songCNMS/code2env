@@ -238,3 +238,4 @@
 - 但 GitHub PR#35 title/body 仍为 draft/WIP，PR body 仍停留在 early WIP 状态；w4 status 也写明 ready 需要 final mailbox report。由于没有 formal ready mailbox，未触发 w2 independent validation。
 - 再次按流程检查 lead mailbox 为 unread_count=0 后，已 peer send w4 formal ready handoff request，API 返回 `{"status":"delivered"}`；要求 w4 补发 ready mailbox，列明 exact head、focused/full test results、rollout JSONL、helper/source/final correctness flags、default behavior impact、residual risks，并同步 PR title/body/draft state。
 - 已更新共享 task048 history，记录 ready evidence observed but formal handoff required。当前状态：等待 w4 formal ready mailbox；w2 validation 仍只针对 w4 正式 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
+- 随后 PR#35 head 前进到 metadata-only `a1a9d759f46b2612e5a09d1079e5689e9abf4632`；branch status 记录 w4 已 merge current `origin/main`，在 merge-clean head `b09a727` 重跑 full `python3 -m pytest -q` 为 182 passed/1 skipped，正在准备 final ready mailbox 和 PR title/body/draft-state update。再次检查 lead mailbox 仍 unread_count=0，因此 w2 仍未触发。
