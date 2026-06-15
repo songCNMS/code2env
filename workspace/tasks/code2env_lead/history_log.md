@@ -696,3 +696,23 @@
   breakdown incorporating run2 dependency evidence and worker_4 audit.
 - Current state: waiting for worker_1 ready-for-test or blocked-data mailbox;
   worker_2 remains reserved for exact-head validation.
+- Continuation check found worker_1 had produced the trace rollout artifact
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/rollouts/code2env.scripts.check-versions.check_language_version.21a74cc9.v1.json`.
+- Lead inspected the rollout JSON. It is `qualified=true` and
+  `subfunction_trace.helper_trace_complete=true`, with observed tools
+  `call_get_current_version_from_csv`, `call_get_docker_latest_version`,
+  `call_get_github_latest_version`, `call_entrypoint`, and `submit_answer`.
+- The same rollout fails task050 accepted gates:
+  `helper_calls_successful=false`, `helper_trace_valid=false`, and
+  `all_source_tool_returns_ok=false`. It therefore cannot enter the canonical
+  accepted JSONL.
+- The rollout records skipped helper `get_alpine_latest_version` because
+  `call_get_alpine_latest_version` is a side-effect helper not exposed.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a trace
+  rollout checkpoint requiring canonical accepted_count=0 artifacts unless
+  another accepted record exists: empty accepted JSONL if needed, summary
+  JSON/MD, rollout export if applicable, validator evidence, categorized blocker
+  breakdown, exact PR head, commands/results, no-weak-oracle confirmation, and
+  test/reuse rationale.
+- Current state: waiting for worker_1 formal ready-for-test or blocked-data
+  mailbox with canonical artifacts; worker_2 validation is still gated.

@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 17 |
 
-最近进展：Session17 继续推进 task050。PR#37 CLEAN head `c20b72e3e247bb8254e48c9decef965e7ff875a0`；w1 install-enabled run2 已 exit_code=0 并写出 manifest，summary 为 candidates_scanned=6207、semantic_gate_passed=58、build_ok=30、strict_usable=1、real_value=1、deterministic=1、weak_oracle=29。当前仍无 accepted JSONL/summary/rollout/validator/ready mailbox；已通知 w1 对 strict usable 候选做 trace-mode rollout/validation，或给出 accepted_count<3 blocker breakdown。w4 audit 已完成；w2 等待 exact ready head。manage task 保持 Working。
+最近进展：Session17 继续推进 task050。PR#37 CLEAN head `c20b72e3e247bb8254e48c9decef965e7ff875a0`；w1 install-enabled run2 已 exit_code=0，strict_usable=1。唯一 strict usable 候选 `scripts.check-versions:check_language_version` 已生成 rollout，但仅 `helper_trace_complete=true`，`helper_calls_successful=false`、`helper_trace_valid=false`、`all_source_tool_returns_ok=false`，不能进入 accepted JSONL。已要求 w1 收束 accepted_count=0 canonical artifacts、summary 和 blocker breakdown；w2 等待 exact ready/blocked artifact 后验证。manage task 保持 Working。
