@@ -10,10 +10,43 @@
 | Team | code2env |
 | Current Task |  |
 | PR |  |
-| Session | 5 |
+| Session | 8 |
 
 ## Recent Progress
 
+- Session 8 task050 merge authorization: worker_2 validation PASS processed by
+  lead; completion metadata prepared before self-merge with no product-code
+  changes.
+- Session 8 task050 handoff delivery: resent formal blocked-data mailbox as
+  `w1-task050-blocked-data-ready-resend-36127f7`; API returned stored/unread.
+- Session 7 task050 formal handoff: canonical artifacts are present with
+  accepted_count=0; formal blocked-data mailbox id
+  `w1-task050-blocked-data-ready` is reserved for the exact pushed PR head.
+- Session 6 task050 owner artifacts ready: run2 produced one strict usable batch
+  env, fresh trace-mode rollout rejected it because helper returns failed, and
+  canonical artifacts now report accepted_count=0 with focused validator passing.
+- Session 5 task050 heartbeat: PR #37 was clean at `1d6077a`; launched
+  install-enabled targeted batch run2 with PID `3146512`, dedicated
+  `venv_cache`, `--min-semantic-helpers 3`, `--require-real-value`, and
+  `--determinism-runs 2`; mailbox `w1-task050-heartbeat-running-1d6077a-run2`
+  sent to lead.
+- Session 4 task050 checkpoint: synced PR #37 with latest `origin/main`
+  through `b08774b`; artifacts are not ready yet, so work continues on the
+  install-enabled dependency-aware batch with dedicated venv cache and strict
+  task049-compatible predicates.
+- Session 3 task050 branch sync: merged latest `origin/main` through
+  `b08774b`, resolved task history metadata conflicts, and kept PR #37 as the
+  implementation/data-owner branch while dependency-aware artifacts are still
+  being generated.
+- Session 2 task050 reporting gate: merged latest `origin/main` dispatch-history
+  metadata into PR #37, prepared formal acceptance mailbox, and kept the main
+  accepted-data plan dependency-aware with no `--no-install-deps`.
+- Session 1 accepted task050_dependency_aware_samples_valid_trajectories; PR #37
+  opened for dependency-aware sample valid helper-return trajectory generation.
+- Task050 initial plan: use current `origin/main` at `2051380`, run dependency
+  installation-enabled sample reruns with dedicated venv cache under the
+  Session25 artifact root, preserve task049 strict predicates, and report
+  accepted JSONL/summary plus blocker breakdown if accepted_count stays below 3.
 - Session 5 task049 self-merge authorization received after W2 PASS at exact
   PR #36 head `0b9a519405086ddcab7ede93220158f82d0985df`; completion metadata
   prepared with no product-code changes.
