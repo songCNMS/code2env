@@ -295,3 +295,25 @@
   showed Idle and no task048 validation process/artifact was visible. After a
   fresh mailbox pre-check with unread_count=0, lead peer-sent w2 a validation
   follow-up for exact head `fe286f76cb6fe066e07a208aadad13984bbdb590`.
+- Received and mark-read w2 validation mailbox
+  `worker2-task048-pr35-validation-pass-20260615-01`. w2 independently
+  validated PR#35 exact head `fe286f76cb6fe066e07a208aadad13984bbdb590`:
+  focused `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_rollout.py`
+  -> 38 passed, 1 skipped; full `python3 -m pytest -q` -> 182 passed,
+  1 skipped. w2 inspected SIMPA artifacts and JSONL under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/worker4_pr35_simpa/`
+  and verified `simpa.utils.calculate:rotation`, semantic_helper_count=3
+  (`rotation_x`, `rotation_y`, `rotation_z`), `helper_trace_complete=true`,
+  `helper_calls_successful=true`, `helper_trace_valid=true`,
+  `entrypoint_after_helpers=true`, `all_source_tool_returns_ok=true`, all source
+  return rows ok, `final.correct=true`, score=1.0, exact match true,
+  `golden_status=real_value`, deterministic, helper arguments synthesized as
+  torch.Tensor scalar descriptors. w2 also confirmed default behavior
+  compatibility and did not merge.
+- Lead review found no blocker. GitHub formal approve failed with same-account
+  policy (`Review Can not approve your own pull request`), so lead recorded the
+  process approval as PR#35 comment
+  `https://github.com/songCNMS/code2env/pull/35#issuecomment-4706625226`.
+  After another mailbox pre-check with unread_count=0, lead peer-sent w4
+  approval to self-merge PR#35 and requested merge-result/post-merge
+  verification mailbox.
