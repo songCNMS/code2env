@@ -397,3 +397,17 @@
 - Lead mailbox check after the coordinator peer showed unread_count=0. Current
   state remains waiting for w1/w4 progress or ready artifacts; no review/merge
   decision is pending.
+- Continued task049 monitoring: lead mailbox remained unread_count=0, the
+  task049 artifact root was still empty, and shared worker statuses still showed
+  worker_1 and worker_4 as Idle with no task049 acceptance/progress recorded.
+- After mailbox pre-checks, lead peer-sent worker_1 a checkpoint follow-up
+  requesting acceptance or blocker plus branch/head or no-code data-run plan,
+  first scan command/script plan, expected JSONL/summary names, validation
+  predicate command, and immediate blockers.
+- After another mailbox pre-check, lead peer-sent worker_4 a checkpoint follow-up
+  requesting acceptance or blocker plus exact head, prior artifacts or fresh
+  indexes to inspect, preliminary candidate/blocker taxonomy plan, and immediate
+  blockers.
+- Shared task049 history was updated with this follow-up status. Worker_2 remains
+  reserved as independent tester and must wait for worker_1's ready exact
+  head/artifacts.
