@@ -105,3 +105,8 @@
   checkpoint requiring sync with latest `origin/main` before declaring a
   ready-for-test exact head. Worker_2 must not validate until worker_1 sends a
   clean ready mailbox with exact head and artifact report.
+- After confirming lead mailbox had unread_count=0, team lead peer-sent
+  coordinator a progress report, explicitly marked not completion. The report
+  included shared main `f8fad5b`, worker assignments, PR #37 head
+  `63c9b068264a633408822fe76d33cb45829bf960`, accepted-data run constraints,
+  artifact root, and current wait state for a synced worker_1 ready head.
