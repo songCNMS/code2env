@@ -574,3 +574,8 @@
   requiring sync with latest `origin/main` before declaring a ready-for-test
   exact head. Current state: waiting for worker_1 synced ready mailbox and
   artifacts; worker_2 remains reserved for independent exact-head validation.
+- After confirming lead mailbox had unread_count=0, lead peer-sent coordinator a
+  task050 progress report, explicitly not a completion report. It included shared
+  main `f8fad5b`, worker assignments, PR #37 head, no-`--no-install-deps`
+  accepted-data constraint, artifact root, and the current wait state for a
+  synced worker_1 ready head before worker_2 validation.
