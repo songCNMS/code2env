@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Typed fixtures and helper arguments
 
-<!-- METADATA:STATUS=Open,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Open,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## Background
 
@@ -147,15 +147,20 @@ Independent tester must validate the exact PR head and report:
 
 - Team: `code2env`
 - Team lead: `intern_code2env_lead`
-- Implementation worker: `intern_code2env_worker_1`
+- Implementation worker: `intern_code2env_worker_4`
 - Independent tester / validation worker: `intern_code2env_worker_2`
 
 Worker availability decision:
 
-- `intern_code2env_worker_1` and `intern_code2env_worker_2` are Idle and assigned.
+- Initial implementation assignment was `intern_code2env_worker_1`, but PR #34
+  remained bootstrap-only at head `8291cf214668fb7a103115db768e868e599aad5a`
+  with no product code, tests, artifacts, or ready report after repeated lead
+  checks/follow-up. `intern_code2env_worker_1` is stood down from task048
+  implementation to avoid blocking the acceptance path.
+- `intern_code2env_worker_4` now reports Idle and is assigned as implementation
+  owner.
+- `intern_code2env_worker_2` remains the independent tester / validation worker.
 - `intern_code2env_worker_3` still reports Working on `task032_qa_session3_fixes`.
-- `intern_code2env_worker_4` still reports Working on `task046_rich_fixture_min3_qlib`
-  in its own workspace.
 - `intern_code2env_worker_5` still reports Working on `task041_rerun_rollouts_v3`.
 - This task touches executor/runtime/rollout/spec fixture contracts, so one
   implementation owner plus one independent tester is the safest split with the

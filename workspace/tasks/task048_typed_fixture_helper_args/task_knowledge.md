@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Knowledge Entries
 
@@ -17,3 +17,7 @@
 5. If SIMPA cannot pass due dependency/runtime constraints, the implementation
    still needs a real sample repo alternative with at least three semantic helper
    tools and a clear SIMPA blocker.
+6. A bootstrap PR with only task/status metadata is not a validation-ready
+   implementation head. If that state repeats without a worker ready report,
+   reassign the implementation owner and keep the independent tester reserved for
+   the eventual exact product-code head.
