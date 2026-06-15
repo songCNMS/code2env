@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Knowledge Entries
 
@@ -29,3 +29,5 @@
 9. Worker4 audit-support JSON stores the full blocker counts under
    `session20_gate_summary` and `blocker_taxonomy.raw_session20_ge3_rejections`,
    not as flat top-level fields.
+10. After metadata-only PR head changes, rerun the task049 artifact generator with
+    `--skip-batch` so `summary.json` and the ready mailbox exact head stay aligned.
