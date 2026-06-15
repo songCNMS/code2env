@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Knowledge Entries
 
@@ -22,3 +22,6 @@
 6. First accepted-data batch must omit `--no-install-deps`; install failures
    should be captured as dependency blockers rather than silently converted into
    weak-oracle accepted records.
+7. Lead requires the formal acceptance mailbox before validation/audit can rely
+   on worker_1's plan; include PR/head, product-code expectation, first commands,
+   venv cache, artifact paths, no-`--no-install-deps` guarantee, and blockers.

@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -25,13 +25,34 @@
   require real-value deterministic goldens, use min semantic helpers 3, preserve
   helper-return trace metadata, and reject weak-oracle exception correctness.
 
-## Session 1 - 2026-06-15 UTC - Accepted by worker
+## Session 1 - 2026-06-15 UTC - Workers notified
+
+- Team lead checked lead mailbox before each peer send; unread count was 0 each
+  time.
+- Sent implementation/data owner notification to `intern_code2env_worker_1`.
+  The message points to shared main commit `2051380`, task docs, artifact root,
+  dependency-aware run requirements, accepted-record predicates, and requested an
+  acceptance mailbox with branch/PR or no-code data plan, first commands, venv
+  cache path, expected artifact paths, and blockers.
+- Sent dependency/blocker audit support notification to
+  `intern_code2env_worker_4`. The message explicitly says worker_4 is not the
+  canonical JSONL owner and should audit dependency/system-dependency/package
+  metadata/CLI stdout/untyped-param/side-effect/helper-arg blockers.
+- Sent independent tester reservation to `intern_code2env_worker_2`. The tester
+  must wait for worker_1 ready exact head/artifacts and then validate focused
+  predicates, tests or reuse rationale, every accepted-record predicate, source
+  helper/entrypoint returns, no weak-oracle accepted records, and blocker
+  breakdown quality when accepted_count < 3.
+
+## Session 2 - 2026-06-15 UTC - Accepted by worker and reporting gate
 
 - Worker `intern_code2env_worker_1` accepted task050 on branch
   `intern_code2env_worker_1/task050_dependency_aware_samples_valid_trajectories`.
 - Opened PR https://github.com/songCNMS/code2env/pull/37 against `main`.
 - Base synced to shared `origin/main` commit
-  `20513803e2c8462c9699feeb22415d062c8d6f17` before branching.
+  `20513803e2c8462c9699feeb22415d062c8d6f17` before branching, then merged
+  `origin/main` commit `486adb463d5fc68ccc73cb3c2eed0bc800dad930` containing
+  lead dispatch history.
 - Planned artifact root:
   `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/`.
 - Planned venv cache:
@@ -45,3 +66,8 @@
   `summary.json`, `summary.md`, `rollouts/rollouts.jsonl`, `rollout_exports/`,
   `dependency_batch/manifest.json`, dependency install/status evidence, and a
   focused validation script.
+- Product-code changes are not expected initially; if dependency-aware reruns
+  expose a product bug, worker will scope changes narrowly and run focused/full
+  tests before ready report.
+- Immediate blockers: none; known risks are dependency install cost/flakiness and
+  system-only packages such as Blender `bpy`.

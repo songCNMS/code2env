@@ -10,10 +10,13 @@
 | Team | code2env |
 | Current Task | task050_dependency_aware_samples_valid_trajectories |
 | PR | https://github.com/songCNMS/code2env/pull/37 |
-| Session | 1 |
+| Session | 2 |
 
 ## Recent Progress
 
+- Session 2 task050 reporting gate: merged latest `origin/main` dispatch-history
+  metadata into PR #37, prepared formal acceptance mailbox, and kept the main
+  accepted-data plan dependency-aware with no `--no-install-deps`.
 - Session 1 accepted task050_dependency_aware_samples_valid_trajectories; PR #37
   opened for dependency-aware sample valid helper-return trajectory generation.
 - Task050 initial plan: use current `origin/main` at `2051380`, run dependency
