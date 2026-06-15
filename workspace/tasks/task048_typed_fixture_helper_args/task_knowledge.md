@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Knowledge Entries
 
@@ -17,3 +17,5 @@
 5. If SIMPA cannot pass due dependency/runtime constraints, the implementation
    still needs a real sample repo alternative with at least three semantic helper
    tools and a clear SIMPA blocker.
+6. PR opened at https://github.com/songCNMS/code2env/pull/34 from branch
+   `intern_code2env_worker_1/task048_typed_fixture_helper_args` to `main`.
