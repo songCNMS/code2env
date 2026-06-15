@@ -51,3 +51,4 @@
 42. worker 在长数据 run 期间推 metadata-only head 会改变 tester 将来要验证的 exact head；lead 记录时必须区分 product-code unchanged 与 latest exact head，最终 tester 仍要按 ready mailbox 的最新 head 验证。
 43. dependency-aware batch 的 `strict_usable=1` 仍只是 env 可运行证据，不是 task050 accepted trajectory；尤其是历史上 helper-return 失败的目标，必须再看 fresh trace-mode `helper_calls_successful/helper_trace_valid/all_source_tool_returns_ok/final_correct` 才能计入 accepted JSONL。
 44. trace-mode `helper_trace_complete=true` 仍不足以接受记录；若 direct helpers 被按序调用但 helper returns/source returns 失败，必须归入 helper-arg/source-return blocker，accepted JSONL 不能收录该 env。
+45. artifact 文件先出现但 owner formal ready/blocked mailbox 未到时，lead 可以做只读 sanity check，但不应触发 tester；tester 的 exact-head 验证输入必须来自 owner handoff，避免验证半成品或 head/path 漂移。

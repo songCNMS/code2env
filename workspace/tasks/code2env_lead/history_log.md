@@ -716,3 +716,25 @@
   test/reuse rationale.
 - Current state: waiting for worker_1 formal ready-for-test or blocked-data
   mailbox with canonical artifacts; worker_2 validation is still gated.
+- Later artifact inspection found worker_1 had produced canonical task050
+  artifacts without a formal mailbox:
+  `accepted_valid_helper_trajectories.jsonl` (0 lines), `summary.json`, and
+  `summary.md`.
+- Summary records PR #37 head
+  `c20b72e3e247bb8254e48c9decef965e7ff875a0`, accepted_count=0, run2 manifest
+  path, rollout path/export dir, no product-code change/default behavior impact,
+  and test reuse rationale for a data/metadata-only PR.
+- Summary blocker breakdown includes dependency_install_failed=0,
+  system_only_dependency=10, package_metadata_or_import_path=9,
+  cli_stdout_executor_envelope=9, untyped_or_unsupported_required_params=28,
+  side_effect_or_network_sandbox=169, helper_argument_synthesis_unavailable=1,
+  and runtime_timeout_or_execution_failure=1.
+- Lead confirmed the accepted JSONL is empty, matching accepted_count=0.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a formal
+  handoff request requiring ready-for-test/blocked-data mailbox with exact PR
+  head, merge state, artifact paths, accepted_count=0, commands/results, failed
+  strict usable predicate evidence, no-weak-oracle confirmation, tests/reuse
+  rationale, and residual risks. A short follow-up mailbox check still had no
+  unread messages.
+- Current state: worker_2 validation remains gated until worker_1 sends the
+  formal handoff naming the exact head/artifact set.
