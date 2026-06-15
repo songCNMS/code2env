@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Knowledge Entries
 
@@ -21,3 +21,6 @@
    implementation head. If that state repeats without a worker ready report,
    reassign the implementation owner and keep the independent tester reserved for
    the eventual exact product-code head.
+7. Worker_4 acceptance uses branch
+   `intern_code2env_worker_4/task048_typed_fixture_helper_args`; PR #34 is
+   superseded and must not be treated as the task048 acceptance head.
