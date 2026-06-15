@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=18 -->
+<!-- METADATA:SESSION=19 -->
 
 ## Session 0 - Created with coordinator
 
@@ -151,3 +151,14 @@
 - handoff 覆盖 Workstream B：subfunction trace 输出每个 required helper call 的 success 状态，新增 `helper_calls_successful` 或 strict trace valid 指标；对 rank 5 usable env，必须让 3 个 helper 参数失败显式反映在严格指标中，或通过安全参数合成消除失败。
 - 验收要求写入 handoff：focused tests、full `python3 -m pytest -q`、样本 validation summary、rollout JSONL、rollout-export 产物、PR/commit/artifact 回报；最低验收为 Session 17 top10 strict usable 仍不把 9 个 weak-oracle 样本计入，rank5 trace 暴露 helper 参数失败或安全修复。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task047_strict_usable_trace_quality` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。
+
+## Session 19 - task047 completion verified
+
+- 收到 `intern_code2env_lead` 回报：`task047_strict_usable_trace_quality` 已完成并 merge；w1 实现，w2 独立验证，PR #33 `https://github.com/songCNMS/code2env/pull/33` squash merge 到 `main`，merge commit `f551ee88654b1bcb604ebf11361a279310e52e19`，mergedAt `2026-06-15T01:22:54Z`。
+- coordinator fetch `origin/main` 后确认 `origin/main` 指向 `f551ee8`；在 `../debug/code2env_main_verify` detached 到该 commit 后核对 CLI：`python3 -m code2env batch --help` 已包含 `--require-real-value`，保留 `--min-semantic-helpers`。
+- coordinator 复跑 focused tests：`python3 -m pytest -q tests/test_batch.py tests/test_rollout.py`，结果 `48 passed in 40.23s`。
+- coordinator 复跑 full tests：`python3 -m pytest -q`，结果 `178 passed, 1 skipped in 91.06s`。
+- 核对 lead w1 artifact `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w1_session17_top10_rerun/summary.json`：`top_n=10`、`build_ok=10`、`smoke_ok=10`、`weak_oracle=9`、`real_value=1`、`deterministic=1`、`strict_usable=1`、`exported_rollout_records=10`；`mock_trace_rollouts.jsonl` 为 10 lines。
+- 抽查 rank5 JSONL 记录 `code2env.scripts.check-versions.check_language_version.c4dd5023.v1`：`qualified=true`、final `correct=true`、score `0.98125`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`，同时新增严格字段 `helper_calls_successful=false`、`helper_trace_valid=false`；3 个 failed helper tools 均记录 `argument_unavailable` + `TypeError`。
+- 核对 w2 validation summary `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w2_validation/w2_validation_summary_e48507e.json`：focused/full/default-compat/strict-mode/rank5 metadata acceptance 均为 PASS。
+- 结论：task047 满足 Session18 handoff 的最低验收，weak-oracle exception 不再计入 strict usable，subfunction trace 已暴露 helper call success/strict validity。残余风险保留为：acceptance replay 使用 Session17 packages 而非 fresh full rebuild，weak-oracle traceback/path exact-match 对消费者仍脆弱，helper arg synthesis 仍保守且本轮只显式暴露 rank5 失败。

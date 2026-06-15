@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=18 -->
+<!-- METADATA:SESSION=19 -->
 
 ## Knowledge Entries
 
@@ -25,3 +25,5 @@
 19. Session 16 的静态 eligibility 会高估真实可用性：Session 17 top10 验证显示 10/10 可 draft/build/smoke/mock trace，但只有 1/10 是 `golden_status=real_value` 且 deterministic。后续数据质量统计必须把 weak-oracle build 与 strict usable env 分开；只有 strict usable 才适合计入真实 endpoint rollout 数据。
 20. subfunction trace completeness 当前检查的是 required helper tool 覆盖和 `call_entrypoint` 顺序，不保证 helper call 本身成功。Session 17 的 usable endpoint trace 出现 helper 空参数调用错误但仍 helper_trace_complete，因此后续 trace 质量改进应增加 helper call success 校验，或根据 entrypoint fixture/签名合成 helper 参数。
 21. Session 18 已将 strict usable/weak-oracle 过滤与 helper call success metric 合并为 `task047_strict_usable_trace_quality` handoff；后续验收应同时看数据口径和 trace 质量口径，避免“构建可跑但只是在复现错误”或“helper 覆盖完整但 helper 调用失败”的假阳性。
+22. `task047_strict_usable_trace_quality` 已在 PR #33 合入 `main`：后续生成真实 runnable 数据时应启用 `code2env batch --require-real-value` 或 API `require_real_value=True`，并以 `strict_usable` / `real_value + deterministic` 作为可用 env 口径；`weak_oracle` 只能用于审计和阻塞分析。
+23. task047 后 subfunction trace 同时有兼容字段 `helper_trace_complete` 和严格字段 `helper_calls_successful` / `helper_trace_valid` / per-helper results。评估 trace 质量时应优先看严格字段；`helper_trace_complete=true` 只说明 required helper 覆盖和顺序完整，不说明 helper 调用成功。
