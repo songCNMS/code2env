@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=11 -->
+<!-- METADATA:SESSION=12 -->
 
 ## Session 0 - Created with team lead
 
@@ -202,3 +202,11 @@
 - 随后收到并 mark-read 两封 mailbox：w2 `worker2-task048-validation-gate-clarified-20260615-01` 确认只等待/验证 w4 ready exact head；w1 `task048-w1-stand-down-cb8ff1a-20260615` 确认 stand down，未 merge/close PR#34，full pytest 已终止，无 rollout artifacts 或 ready-for-validation report。
 - 复查 PR#34：title 已改为 `[SUPERSEDED - DO NOT MERGE] task048 typed fixture helper args`，head `cb8ff1a5db050312a8896c4ce1b801a140f6ae22`，body 明确 implementation ownership moved to w4 and PR must not be merged or used for validation unless lead explicitly reauthorizes.
 - 当前状态：等待 w4 PR/ready head；w2 等待 w4 exact head 后验证。team_lead 未写产品代码、未跑产品测试、未 merge。
+
+## Session 12 - task048 worker_4 acceptance follow-up
+
+- 继续 active goal；检查 lead mailbox，结果 unread_count=0。
+- 复查 GitHub PR：仍无 `intern_code2env_worker_4` open PR；PR#34 仍是 w1 superseded PR，head `cb8ff1a5db050312a8896c4ce1b801a140f6ae22`，title `[SUPERSEDED - DO NOT MERGE] task048 typed fixture helper args`。
+- 复查 shared worker status：w4 仍显示 Idle，w2 Idle 且等待 exact-head validation，w1 Idle。当前没有 w4 ready mailbox、测试结果或 rollout artifacts。
+- 已 peer send 跟进 w4，API 返回 `{"status":"delivered"}`；内容要求 w4 先通过 mailbox 确认是否能接手 task048、计划新 PR/分支名、预计 first ready checkpoint，或给出无法接手的明确原因。
+- 当前状态：等待 w4 acceptance/progress mailbox 或 w4 implementation PR；w2 validation 仍只针对 w4 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
