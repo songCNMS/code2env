@@ -1,6 +1,6 @@
 # task047_strict_usable_trace_quality - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -14,3 +14,4 @@
 8. Trace-quality decision: keep compatibility field `helper_trace_complete` for coverage/order, and add `helper_calls_successful` plus `helper_trace_valid` so TypeError helper calls are visible as strict trace failures.
 9. Evidence note: do not use `--per-repo-limit 1` as the sole Session17 top10 proof because ranks 4 and 5 share `niklas-heer/speed-comparison`, allowing rank4 to consume the repo slot and skip the known strict usable rank5 target.
 10. Acceptance evidence uses exact Session17 top10 package replay at `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w1_session17_top10_rerun`, which proves strict_usable 1/10 and exposes rank5 helper strict trace failure metadata.
+11. Merge note: PR #33 was merge-authorized at validated head `e48507ea419d61efa7e834a1b4a3862c5d2aae33`; completion metadata after that head must stay workspace-only.

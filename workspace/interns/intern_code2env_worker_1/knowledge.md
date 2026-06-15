@@ -15,3 +15,5 @@
 7. 技术事实(task045)：batch 侧需要筛选最终 dedicated semantic helper tools 时应复用 `spec.semantic_helpers_for_candidate`，避免与 `ToolSpec` 里的 `call_<helper>`、side-effect helper partition、`MAX_SEMANTIC_HELPER_TOOLS` 上限语义漂移。
 8. 技术事实(task046)：rich fixture hydration 只能对显式 `__code2env_rich_fixture__` 描述符生效；source_root Path 描述符必须拒绝 absolute path 和 resolved outside-root path，且在任何 `mkdir` 前校验。
 9. 技术事实(task046)：default batch 不应 generic synthesize `Path` required params；否则 Path writer 函数可能在 golden/smoke 阶段写入 source tree，安全做法是默认 unsupported skip，除非 symbol-specific safe policy 显式处理。
+10. 技术事实(task047)：strict usable batch gating should be opt-in (`--require-real-value`) so default build/target behavior stays compatible while strict mode counts only deterministic `real_value` envs and audits weak-oracle rejections.
+11. 技术事实(task047)：`helper_trace_complete` only proves helper coverage/order; rollout trace quality also needs per-helper success metadata plus `helper_calls_successful`/`helper_trace_valid` to expose failed helper calls such as `argument_unavailable` TypeErrors.

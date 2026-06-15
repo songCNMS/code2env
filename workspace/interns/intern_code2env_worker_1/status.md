@@ -1,19 +1,20 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Working,TASK=task047_strict_usable_trace_quality,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Working |
+| Status | Idle |
 | Role | worker |
 | Team | code2env |
-| Current Task | task047_strict_usable_trace_quality |
-| PR | https://github.com/songCNMS/code2env/pull/33 |
-| Session | 2 |
+| Current Task |  |
+| PR |  |
+| Session | 3 |
 
 ## Recent Progress
 
+- Session 3 task047 merge authorization received after W2 validation PASS; completion metadata prepared for PR #33 squash merge with no product-code changes after validated head `e48507e`.
 - Session 2 task047 implementation/evidence is pushed to PR #33: explicit `--require-real-value` strict usable batch mode plus helper-call success/strict trace-quality metadata.
 - Task047 focused verification: `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` -> 48 passed; full `python3 -m pytest -q` -> 178 passed, 1 skipped.
 - Session17 exact top10 replay artifacts are under `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w1_session17_top10_rerun`: build_ok 10, smoke_ok 10, weak_oracle 9, real_value 1, deterministic 1, strict_usable 1, rollout exports 10.
