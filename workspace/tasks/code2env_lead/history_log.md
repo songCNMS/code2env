@@ -595,3 +595,21 @@
   head `63c9b068264a633408822fe76d33cb45829bf960` and GitHub reports
   `mergeStateStatus=DIRTY`. Current state remains waiting for worker_1 synced
   ready mailbox and artifacts.
+- Goal continuation check: lead rechecked mailbox, PR #37, worker statuses, and
+  artifact root. Mailbox had no unread messages. PR #37 advanced to head
+  `7cc126949fd2415f9273f6e5bff03e0901ba74ff` but still reported
+  `mergeStateStatus=DIRTY`; worker_1 status indicates it had only merged shared
+  main through `9423810` while shared main has since advanced. The task050
+  artifact root contained only directories and no accepted JSONL, summary,
+  dependency manifest, validator output, or blocker audit file.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a
+  checkpoint requiring another sync with latest `origin/main`, continuation of
+  the install-enabled dependency-aware accepted-data run, and a ready mailbox
+  only after exact head/artifacts/predicates are available.
+- After a second mailbox pre-check with unread_count=0, lead peer-sent worker_4
+  a checkpoint to proceed with audit support and produce
+  `worker4_audit/worker4_dependency_blocker_audit.json` and `.md` without
+  creating a competing canonical JSONL.
+- Current state: waiting for worker_1 artifacts and clean ready exact head, plus
+  worker_4 blocker audit artifact. Worker_2 remains reserved for independent
+  validation after worker_1's ready mailbox.

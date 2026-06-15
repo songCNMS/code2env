@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 17 |
 
-最近进展：Session17 收到 coordinator 对 task050 进度汇报的 ack。Coordinator 验证 task050 docs 已在 main、PR#37 head `63c9b068264a633408822fe76d33cb45829bf960` 且尚未完成/merge；当前 mailbox 无未读，PR#37 仍 open 且 merge state 为 DIRTY，继续等待 w1 同步 latest main 后发送 ready-for-test exact head，再由 w2 独立验证 artifacts。manage task 保持 Working。
+最近进展：Session17 继续推进 task050。复查 mailbox 无未读；PR#37 已前进到 head `7cc126949fd2415f9273f6e5bff03e0901ba74ff` 但仍为 DIRTY，artifact root 目前只有空目录、无 accepted JSONL/summary/manifest。已分别通知 w1 同步 latest main 并继续 dependency-aware accepted-data run，通知 w4 产出 blocker audit JSON/MD；w2 仍保留为 ready exact head 后的独立验证者。manage task 保持 Working。
