@@ -10,10 +10,21 @@
 | Team | code2env |
 | Current Task | task049_samples_valid_helper_trajectories |
 | PR | https://github.com/songCNMS/code2env/pull/36 |
-| Session | 1 |
+| Session | 2 |
 
 ## Recent Progress
 
+- Session 2 task049 checkpoint: fetched and merged latest `origin/main` at
+  `3522114`; PR #36 remains the canonical JSONL branch for
+  `task049_samples_valid_helper_trajectories`.
+- Current task049 data-run plan: run a no-install strict batch blocker audit over
+  sample-derived Session20 worktrees, then regenerate the SIMPA
+  `simpa.utils.calculate:rotation` real-value subfunction rollout with current
+  code and the Session24 dependency venv.
+- Expected task049 artifacts:
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/accepted_valid_helper_trajectories.jsonl`,
+  `summary.json`, `summary.md`, `rollouts/rollouts.jsonl`,
+  `rollout_exports/`, and `validate_task049_outputs.py`.
 - Session 1 accepted task049_samples_valid_helper_trajectories; PR #36 opened for sample corpus valid helper-return trajectory generation.
 - Session 3 task047 merge authorization received after W2 validation PASS; completion metadata prepared for PR #33 squash merge with no product-code changes after validated head `e48507e`.
 - Session 2 task047 implementation/evidence is pushed to PR #33: explicit `--require-real-value` strict usable batch mode plus helper-call success/strict trace-quality metadata.

@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -27,12 +27,29 @@
   `final_correct=true`, `golden_status=real_value`, deterministic, and at least
   three dedicated semantic helper tools for every accepted record.
 
-## Session 1 - 2026-06-15 UTC - Accepted by worker
+## Session 1 - 2026-06-15 UTC - Workers assigned
+
+- Team lead checked lead mailbox before each peer send; unread count was 0.
+- Sent implementation/data generation assignment to `intern_code2env_worker_1`.
+- Sent candidate/blocker audit support assignment to `intern_code2env_worker_4`.
+- Sent independent tester/validator assignment to `intern_code2env_worker_2`.
+- Current expected flow: worker_1 owns the canonical scan and final JSONL,
+  worker_4 supplies candidate/blocker audit support, and worker_2 validates only
+  worker_1's ready exact head/artifacts.
+
+## Session 2 - 2026-06-15 UTC - Accepted by worker and checkpointed
 
 - Worker `intern_code2env_worker_1` accepted task049 on branch
   `intern_code2env_worker_1/task049_samples_valid_helper_trajectories`.
 - Opened PR https://github.com/songCNMS/code2env/pull/36 against `main`.
-- Initial implementation plan: inspect task048 generation/validation surfaces,
-  build a focused corpus scan and predicate validation path, run full pytest,
-  generate JSONL/summary artifacts under the Session24 task049 output root, and
-  report accepted count plus blocker breakdown through mailbox.
+- Merged latest `origin/main` at `3522114` into the PR branch before the
+  canonical data run.
+- Concrete generation plan: use current branch code to run a no-install strict
+  batch audit over sample-derived Session20 worktrees from `/home/leisong/data/samples`,
+  then rebuild and roll out the SIMPA `simpa.utils.calculate:rotation` real-value
+  anchor with the Session24 dependency venv for the accepted helper-return JSONL.
+- Expected artifacts under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`:
+  `accepted_valid_helper_trajectories.jsonl`, `summary.json`, `summary.md`,
+  `rollouts/rollouts.jsonl`, `rollout_exports/`, and
+  `validate_task049_outputs.py`.

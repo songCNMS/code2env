@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Knowledge Entries
 
@@ -16,3 +16,9 @@
    the summary.
 5. PR opened at https://github.com/songCNMS/code2env/pull/36 from branch
    `intern_code2env_worker_1/task049_samples_valid_helper_trajectories` to `main`.
+6. Latest shared task history commit `3522114` is merged into the PR branch for
+   Session 2 before generating canonical task049 artifacts.
+7. The first scan plan uses current code over Session20 worktrees derived from
+   `/home/leisong/data/samples` for the broad blocker audit, plus a current-code
+   SIMPA rebuild/trace rollout using the Session24 dependency venv for an
+   accepted real-value helper-return trajectory.
