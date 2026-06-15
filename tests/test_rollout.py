@@ -57,6 +57,28 @@ def format_bundle(text=None):
 """
 
 
+TRACE_ARG_SAMPLE = """
+def add_one(theta):
+    return theta + 1
+
+
+def double(theta):
+    return theta * 2
+
+
+def minus_three(theta):
+    return theta - 3
+
+
+def combine(angles):
+    return {
+        "x": add_one(angles[0]),
+        "y": double(angles[1]),
+        "z": minus_three(angles[2]),
+    }
+"""
+
+
 def _build_env(temp_dir: Path) -> Code2Env:
     repo = temp_dir / "repo"
     repo.mkdir(parents=True, exist_ok=True)
@@ -86,6 +108,22 @@ def _build_trace_env(temp_dir: Path) -> Code2Env:
     spec_path = temp_dir / "trace_env_spec.json"
     write_json(spec_path, spec.to_dict())
     package_root = build_env_package(spec_path, temp_dir / "trace_generated")
+    return Code2Env(package_root / "env_spec.json")
+
+
+def _build_trace_arg_env(temp_dir: Path) -> Code2Env:
+    repo = temp_dir / "trace_arg_repo"
+    repo.mkdir(parents=True, exist_ok=True)
+    (repo / "trace_arg_sample.py").write_text(TRACE_ARG_SAMPLE.lstrip(), encoding="utf-8")
+    snapshot = ingest_repo(str(repo))
+    spec = draft_env_spec(
+        snapshot,
+        symbol="trace_arg_sample:combine",
+        fixture={"args": [[2, 4, 9]], "kwargs": {}},
+    )
+    spec_path = temp_dir / "trace_arg_env_spec.json"
+    write_json(spec_path, spec.to_dict())
+    package_root = build_env_package(spec_path, temp_dir / "trace_arg_generated")
     return Code2Env(package_root / "env_spec.json")
 
 
@@ -346,11 +384,62 @@ class SubfunctionTraceModeTest(unittest.TestCase):
             self.assertTrue(result["qualified"])
             self.assertTrue(result["final"]["correct"])
 
+    def test_trace_mode_synthesizes_helper_args_from_entrypoint_fixture(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_trace_arg_env(Path(temp))
+            plan = build_subfunction_trace_plan(env)
+            self.assertEqual(
+                plan["required_helper_tools"],
+                ["call_add_one", "call_double", "call_minus_three"],
+            )
+            self.assertEqual(
+                plan["helper_argument_synthesis"]["call_add_one"]["arguments"],
+                {"args": [2], "kwargs": {}},
+            )
+
+            result = run_rollout(
+                env,
+                ScriptedTraceSolveChat(env),
+                primary_source="mock",
+                max_rounds=8,
+                trace_mode="subfunctions",
+            )
+
+            self.assertEqual(
+                [step["action"]["tool"] for step in result["steps"]],
+                ["call_add_one", "call_double", "call_minus_three", "call_entrypoint", "submit_answer"],
+            )
+            self.assertEqual(result["steps"][0]["action"]["arguments"], {"args": [2], "kwargs": {}})
+            self.assertEqual(result["steps"][1]["action"]["arguments"], {"args": [4], "kwargs": {}})
+            self.assertEqual(result["steps"][2]["action"]["arguments"], {"args": [9], "kwargs": {}})
+
+            trace = result["subfunction_trace"]
+            self.assertTrue(trace["helper_trace_complete"])
+            self.assertTrue(trace["helper_calls_successful"])
+            self.assertTrue(trace["helper_trace_valid"])
+            self.assertTrue(trace["all_source_tool_returns_ok"])
+            self.assertTrue(result["all_source_tool_returns_ok"])
+            self.assertTrue(result["qualified"])
+            self.assertTrue(result["final"]["correct"])
+            self.assertEqual(
+                [item["argument_source"] for item in trace["helper_call_results"]],
+                ["synthesized", "synthesized", "synthesized"],
+            )
+            self.assertEqual(
+                [item["argument_status"] for item in trace["helper_call_results"]],
+                ["ok", "ok", "ok"],
+            )
+            self.assertEqual(
+                [item["argument_synthesis"]["mappings"][0]["fixture_path"] for item in trace["helper_call_results"]],
+                ["fixture.args[0][0]", "fixture.args[0][1]", "fixture.args[0][2]"],
+            )
+
     def test_default_mode_remains_black_box_without_trace_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             env = _build_trace_env(Path(temp))
             result = run_rollout(env, ScriptedSolveChat(env), primary_source="mock", max_rounds=8)
             self.assertNotIn("subfunction_trace", result)
+            self.assertNotIn("all_source_tool_returns_ok", result)
             self.assertEqual([step["action"]["tool"] for step in result["steps"]], ["call_entrypoint", "submit_answer"])
             self.assertNotIn("SUBFUNCTION TRACE MODE", result["messages"][0]["content"])
 

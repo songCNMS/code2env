@@ -54,6 +54,7 @@ from code2env.rich_fixtures import (
     rich_fixture_audit,
     series_descriptor,
     timestamp_descriptor,
+    torch_tensor_descriptor,
 )
 from code2env.runtime import Code2Env
 from code2env.spec import (
@@ -596,6 +597,8 @@ def _rich_fixture_policy(
     candidate: FunctionCandidate | None,
 ) -> dict[str, Any] | None:
     symbol = candidate.symbol if candidate is not None else ""
+    if symbol == "simpa.utils.calculate:rotation":
+        return _simpa_rotation_fixture()
     if symbol == "scripts.data_collector.utils:calc_adjusted_price":
         return _qlib_calc_adjusted_price_fixture()
     if symbol in {
@@ -605,6 +608,18 @@ def _rich_fixture_policy(
         if importlib.util.find_spec("torch") is None:
             return _fixture_skip("missing_optional_dependency:torch")
     return None
+
+
+def _simpa_rotation_fixture() -> dict[str, Any]:
+    return {
+        "ok": True,
+        "strategy": "rich_signature:simpa_rotation_torch_angles",
+        "value": {
+            "args": [torch_tensor_descriptor([0.1, 0.2, 0.3], dtype="float32")],
+            "kwargs": {},
+        },
+        "reason": None,
+    }
 
 
 def _qlib_calc_adjusted_price_fixture() -> dict[str, Any]:

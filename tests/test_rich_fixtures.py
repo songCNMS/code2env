@@ -115,9 +115,13 @@ class RichSerializationTest(unittest.TestCase):
             self.skipTest("numpy is not installed")
         import numpy as np
 
+        hydrated = hydrate_value(numpy_array_descriptor([[1, 2], [3, 4]], dtype="int64"))
         array_payload = serialize_value(np.array([[1, 2], [3, 4]], dtype="int64"))
         scalar_payload = serialize_value(np.float32(1.25))
 
+        self.assertIsInstance(hydrated, np.ndarray)
+        self.assertEqual(hydrated.shape, (2, 2))
+        self.assertEqual(str(hydrated.dtype), "int64")
         self.assertEqual(array_payload["kind"], "numpy.ndarray")
         self.assertEqual(array_payload["shape"], [2, 2])
         self.assertEqual(array_payload["dtype"], "int64")
@@ -136,6 +140,18 @@ class RichSerializationTest(unittest.TestCase):
         self.assertEqual(payload["shape"], [1, 2])
         self.assertEqual(payload["dtype"], "float32")
         self.assertEqual(payload["data"], [[1.0, 2.0]])
+
+    def test_torch_scalar_tensor_descriptor_when_available(self) -> None:
+        if importlib.util.find_spec("torch") is None:
+            self.skipTest("torch is not installed")
+
+        tensor = hydrate_value(torch_tensor_descriptor(0.25, dtype="float32"))
+        payload = serialize_value(tensor)
+
+        self.assertEqual(payload["kind"], "torch.Tensor")
+        self.assertEqual(payload["shape"], [])
+        self.assertEqual(payload["dtype"], "float32")
+        self.assertAlmostEqual(payload["data"], 0.25)
 
 
 class RichFixtureBatchTraceTest(unittest.TestCase):

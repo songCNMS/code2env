@@ -15,11 +15,15 @@ from __future__ import annotations
 
 import copy
 import datetime
+import ast
 import json
+from pathlib import Path
 from typing import Any, Protocol
 
 from code2env.llm import parse_llm_json
+from code2env.rich_fixtures import DESCRIPTOR_KEY, is_descriptor
 from code2env.runtime import Code2Env
+from code2env.spec import source_root_for_spec
 
 TRACE_MODE_DEFAULT = "default"
 TRACE_MODE_SUBFUNCTIONS = "subfunctions"
@@ -222,6 +226,7 @@ def build_subfunction_trace_plan(env: Code2Env) -> dict[str, Any]:
         "trace_mode": TRACE_MODE_SUBFUNCTIONS,
         "required_helper_tools": required,
         "skipped_helpers": skipped,
+        "helper_argument_synthesis": _build_helper_argument_synthesis(env, required),
     }
 
 
@@ -261,8 +266,9 @@ def build_subfunction_trace_system_prompt(
         "SUBFUNCTION TRACE MODE:\n"
         "This rollout is collecting a decomposed helper trajectory, not only a black-box answer.\n"
         f"{helper_instruction}\n"
-        "Call each helper with empty arguments unless the task explicitly requires different arguments; the "
-        "runtime will use helper defaults where available. After the helper sequence, call call_entrypoint with "
+        "Call each helper with empty arguments unless the task explicitly requires different arguments; trace mode "
+        "may synthesize safe fixture-derived helper arguments when a required helper maps to entrypoint fixture "
+        "components. After the helper sequence, call call_entrypoint with "
         "empty arguments so it uses the provided fixture. Then call submit_answer with the exact result from "
         "call_entrypoint. Do not submit a helper result as the final answer."
         f"{skipped_block}"
@@ -314,6 +320,8 @@ def build_subfunction_trace_metadata(trace_plan: dict[str, Any], steps: list[dic
         entrypoint_after_helpers = entrypoint_index is not None
     helper_calls_successful = all(item["success"] for item in helper_results) if required else True
     helper_trace_valid = helper_trace_complete and entrypoint_after_helpers and helper_calls_successful
+    source_tool_results = _source_tool_results(steps, required)
+    all_source_tool_returns_ok = bool(source_tool_results) and all(item["success"] for item in source_tool_results)
 
     return {
         "trace_mode": trace_plan.get("trace_mode", TRACE_MODE_SUBFUNCTIONS),
@@ -324,6 +332,9 @@ def build_subfunction_trace_metadata(trace_plan: dict[str, Any], steps: list[dic
         "helper_trace_valid": helper_trace_valid,
         "helper_call_results": helper_results,
         "failed_helper_tools": [item["tool"] for item in helper_results if not item["success"]],
+        "source_tool_results": source_tool_results,
+        "all_source_tool_returns_ok": all_source_tool_returns_ok,
+        "helper_argument_synthesis": copy.deepcopy(trace_plan.get("helper_argument_synthesis", {})),
         "entrypoint_after_helpers": entrypoint_after_helpers,
         "skipped_helpers": list(trace_plan.get("skipped_helpers", [])),
         "missing_helper_tools": missing,
@@ -340,6 +351,8 @@ def _helper_call_result(tool_name: str, step_index: int, step: dict[str, Any]) -
         "called": True,
         "success": success,
         "argument_status": _helper_argument_status(step, tool_result, success),
+        "argument_source": _helper_argument_source(step, success),
+        "argument_synthesis": copy.deepcopy(step.get("argument_synthesis")),
         "step": step.get("step", step_index + 1),
         "error_type": error_type if isinstance(error_type, str) else None,
         "error_message": error_message if isinstance(error_message, str) else None,
@@ -363,6 +376,286 @@ def _helper_argument_status(step: dict[str, Any], tool_result: Any, success: boo
     ):
         return "argument_unavailable"
     return "call_failed"
+
+
+def _helper_argument_source(step: dict[str, Any], success: bool) -> str:
+    synthesis = step.get("argument_synthesis")
+    if isinstance(synthesis, dict):
+        if synthesis.get("applied") is True:
+            return "synthesized"
+        if synthesis.get("source") == "model_supplied":
+            return "model_supplied"
+        if synthesis.get("source") == "synthesis_unavailable":
+            return "synthesis_unavailable"
+    action = step.get("action") if isinstance(step.get("action"), dict) else {}
+    arguments = action.get("arguments", {}) if isinstance(action, dict) else {}
+    if isinstance(arguments, dict) and (arguments.get("args") or arguments.get("kwargs")):
+        return "model_supplied"
+    return "empty_ok" if success else "empty"
+
+
+def _source_tool_results(steps: list[dict[str, Any]], required_helpers: list[str]) -> list[dict[str, Any]]:
+    source_tools = {CALL_ENTRYPOINT_TOOL, CALL_HELPER_TOOL, *required_helpers}
+    results: list[dict[str, Any]] = []
+    for index, step in enumerate(steps):
+        action = step.get("action") if isinstance(step.get("action"), dict) else {}
+        tool = action.get("tool") if isinstance(action, dict) else None
+        if tool not in source_tools:
+            continue
+        tool_result = step.get("tool_result")
+        success = isinstance(tool_result, dict) and tool_result.get("ok") is True
+        results.append(
+            {
+                "tool": tool,
+                "step": step.get("step", index + 1),
+                "success": success,
+                "error_type": tool_result.get("error_type") if isinstance(tool_result, dict) else None,
+                "error_message": tool_result.get("error_message") if isinstance(tool_result, dict) else None,
+            }
+        )
+    return results
+
+
+def _build_helper_argument_synthesis(env: Code2Env, required_tools: list[str]) -> dict[str, Any]:
+    if not required_tools:
+        return {}
+    entrypoint_node = _load_entrypoint_node(env)
+    entrypoint_params = _entrypoint_param_names(env, entrypoint_node)
+    fixture_bindings = _fixture_bindings(env.spec.fixture, entrypoint_params)
+    records: dict[str, Any] = {}
+    if entrypoint_node is None:
+        for tool_name in required_tools:
+            records[tool_name] = {"status": "unavailable", "reason": "entrypoint_source_unavailable"}
+        return records
+
+    for tool_name in required_tools:
+        helper_name = _helper_name_for_tool(env, tool_name)
+        if helper_name is None:
+            records[tool_name] = {"status": "unavailable", "reason": "helper_symbol_unavailable"}
+            continue
+        call = _first_helper_call(entrypoint_node, helper_name)
+        if call is None:
+            records[tool_name] = {"status": "unavailable", "reason": "entrypoint_helper_call_not_found"}
+            continue
+        synthesized = _synthesize_call_arguments(call, fixture_bindings)
+        if synthesized is None:
+            records[tool_name] = {
+                "status": "unavailable",
+                "reason": "helper_args_not_fixture_mappable",
+                "helper": helper_name,
+            }
+            continue
+        records[tool_name] = {
+            "status": "available",
+            "source": "entrypoint_fixture",
+            "strategy": "entrypoint_call_argument_mapping",
+            "helper": helper_name,
+            **synthesized,
+        }
+    return records
+
+
+def _load_entrypoint_node(env: Code2Env) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    try:
+        source_root = source_root_for_spec(env.spec, env.package_root)
+        source_file = Path(source_root) / str(env.spec.source["file"])
+        tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
+    except (OSError, SyntaxError, UnicodeDecodeError, KeyError, TypeError, ValueError):
+        return None
+    qualname = str(env.spec.source.get("entrypoint", "")).split(":", 1)[-1]
+    line_start = env.spec.source.get("line_start")
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if node.name != qualname.split(".")[-1]:
+            continue
+        if isinstance(line_start, int) and node.lineno != line_start:
+            continue
+        return node
+    return None
+
+
+def _entrypoint_param_names(
+    env: Code2Env, entrypoint_node: ast.FunctionDef | ast.AsyncFunctionDef | None
+) -> list[str]:
+    if entrypoint_node is not None:
+        return [
+            arg.arg
+            for arg in [
+                *entrypoint_node.args.posonlyargs,
+                *entrypoint_node.args.args,
+            ]
+        ]
+    for source in env.spec.provenance.get("task_sources", []):
+        if isinstance(source, dict) and source.get("kind") == "signature":
+            args = source.get("args", [])
+            if isinstance(args, list):
+                return [arg for arg in args if isinstance(arg, str) and not arg.startswith("*")]
+    return []
+
+
+def _fixture_bindings(fixture: dict[str, Any], param_names: list[str]) -> dict[str, dict[str, Any]]:
+    bindings: dict[str, dict[str, Any]] = {}
+    args = fixture.get("args", []) if isinstance(fixture, dict) else []
+    kwargs = fixture.get("kwargs", {}) if isinstance(fixture, dict) else {}
+    if isinstance(args, list):
+        for index, value in enumerate(args):
+            if index < len(param_names):
+                bindings[param_names[index]] = {"value": value, "path": f"fixture.args[{index}]"}
+    if isinstance(kwargs, dict):
+        for name, value in kwargs.items():
+            if isinstance(name, str):
+                bindings[name] = {"value": value, "path": f"fixture.kwargs.{name}"}
+    return bindings
+
+
+def _helper_name_for_tool(env: Code2Env, tool_name: str) -> str | None:
+    for tool in env.spec.tools:
+        if tool.name != tool_name:
+            continue
+        backing = tool.provenance.get("backing", {}) if isinstance(tool.provenance, dict) else {}
+        symbol = backing.get("symbol") if isinstance(backing, dict) else None
+        if isinstance(symbol, str):
+            return _helper_name_from_symbol(symbol)
+        if tool_name.startswith(HELPER_TOOL_PREFIX):
+            return tool_name.removeprefix(HELPER_TOOL_PREFIX)
+    return tool_name.removeprefix(HELPER_TOOL_PREFIX) if tool_name.startswith(HELPER_TOOL_PREFIX) else None
+
+
+def _first_helper_call(
+    node: ast.FunctionDef | ast.AsyncFunctionDef, helper_name: str
+) -> ast.Call | None:
+    for child in ast.walk(node):
+        if not isinstance(child, ast.Call):
+            continue
+        if _called_name(child.func) == helper_name:
+            return child
+    return None
+
+
+def _called_name(func: ast.expr) -> str | None:
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return None
+
+
+def _synthesize_call_arguments(
+    call: ast.Call, fixture_bindings: dict[str, dict[str, Any]]
+) -> dict[str, Any] | None:
+    args: list[Any] = []
+    kwargs: dict[str, Any] = {}
+    mappings: list[dict[str, Any]] = []
+
+    for index, expr in enumerate(call.args):
+        resolved = _resolve_fixture_expr(expr, fixture_bindings)
+        if resolved is None:
+            return None
+        args.append(resolved["value"])
+        mappings.append(
+            {
+                "target": f"args[{index}]",
+                "expression": _unparse_expr(expr),
+                "fixture_path": resolved["path"],
+                "value_kind": _value_kind(resolved["value"]),
+            }
+        )
+
+    for keyword in call.keywords:
+        if keyword.arg is None:
+            return None
+        resolved = _resolve_fixture_expr(keyword.value, fixture_bindings)
+        if resolved is None:
+            return None
+        kwargs[keyword.arg] = resolved["value"]
+        mappings.append(
+            {
+                "target": f"kwargs.{keyword.arg}",
+                "expression": _unparse_expr(keyword.value),
+                "fixture_path": resolved["path"],
+                "value_kind": _value_kind(resolved["value"]),
+            }
+        )
+
+    if not args and not kwargs:
+        return None
+    return {"arguments": {"args": args, "kwargs": kwargs}, "mappings": mappings}
+
+
+def _resolve_fixture_expr(expr: ast.expr, fixture_bindings: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    if isinstance(expr, ast.Name):
+        binding = fixture_bindings.get(expr.id)
+        if binding is None:
+            return None
+        return {"value": copy.deepcopy(binding["value"]), "path": binding["path"]}
+    if isinstance(expr, ast.Subscript):
+        base = _resolve_fixture_expr(expr.value, fixture_bindings)
+        index = _literal_subscript_index(expr.slice)
+        if base is None or index is None:
+            return None
+        extracted = _extract_component(base["value"], index)
+        if extracted is None:
+            return None
+        return {"value": extracted, "path": f"{base['path']}[{index!r}]"}
+    if isinstance(expr, ast.Constant) and _is_json_scalar(expr.value):
+        return {"value": expr.value, "path": "literal"}
+    if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, (ast.UAdd, ast.USub)):
+        operand = _resolve_fixture_expr(expr.operand, fixture_bindings)
+        if operand is None or not isinstance(operand["value"], (int, float)):
+            return None
+        value = +operand["value"] if isinstance(expr.op, ast.UAdd) else -operand["value"]
+        return {"value": value, "path": operand["path"]}
+    return None
+
+
+def _literal_subscript_index(expr: ast.expr) -> int | str | None:
+    if isinstance(expr, ast.Constant) and isinstance(expr.value, (int, str)):
+        return expr.value
+    return None
+
+
+def _extract_component(value: Any, index: int | str) -> Any | None:
+    if is_descriptor(value):
+        kind = value[DESCRIPTOR_KEY]
+        if kind in {"torch.Tensor", "numpy.ndarray"} and "data" in value:
+            data = _extract_component(value.get("data"), index)
+            if data is None:
+                return None
+            extracted = {key: copy.deepcopy(item) for key, item in value.items() if key not in {"data", "shape"}}
+            extracted["data"] = data
+            return extracted
+        return None
+    if isinstance(value, list) and isinstance(index, int):
+        if -len(value) <= index < len(value):
+            return copy.deepcopy(value[index])
+        return None
+    if isinstance(value, dict) and isinstance(index, str) and index in value:
+        return copy.deepcopy(value[index])
+    return None
+
+
+def _value_kind(value: Any) -> str:
+    if is_descriptor(value):
+        return str(value[DESCRIPTOR_KEY])
+    if isinstance(value, list):
+        return "list"
+    if isinstance(value, dict):
+        return "dict"
+    if value is None:
+        return "null"
+    return type(value).__name__
+
+
+def _unparse_expr(expr: ast.expr) -> str:
+    try:
+        return ast.unparse(expr)
+    except Exception:  # noqa: BLE001 - best-effort audit string only.
+        return type(expr).__name__
+
+
+def _is_json_scalar(value: Any) -> bool:
+    return value is None or isinstance(value, (str, int, float, bool))
 
 
 def _semantic_helper_tools(env: Code2Env) -> dict[str, str]:
@@ -646,19 +939,23 @@ def run_rollout(
             termination_reason = "error"
             break
 
+        argument_synthesis: dict[str, Any] | None = None
+        if trace_plan is not None:
+            action, argument_synthesis = _apply_trace_helper_argument_synthesis(trace_plan, action)
         observation, reward, done, info = env.step(action)
         rounds += 1
         num_tool_call_rounds += 1
         tool_result = copy.deepcopy(env.state.get("last_tool_result"))
-        steps.append(
-            {
-                "step": env.state.get("step", rounds),
-                "action": action,
-                "tool_result": tool_result,
-                "reward": reward,
-                "parse_error": parse_error,
-            }
-        )
+        step_record = {
+            "step": env.state.get("step", rounds),
+            "action": action,
+            "tool_result": tool_result,
+            "reward": reward,
+            "parse_error": parse_error,
+        }
+        if argument_synthesis is not None:
+            step_record["argument_synthesis"] = argument_synthesis
+        steps.append(step_record)
         tool_content = json.dumps(tool_result, ensure_ascii=False, default=str)
         transcript.append({"role": "tool", "name": action["tool"], "content": tool_content})
         api_messages.append(
@@ -701,8 +998,45 @@ def run_rollout(
         "errors": errors,
     }
     if trace_plan is not None:
-        result["subfunction_trace"] = build_subfunction_trace_metadata(trace_plan, steps)
+        trace_metadata = build_subfunction_trace_metadata(trace_plan, steps)
+        result["subfunction_trace"] = trace_metadata
+        result["all_source_tool_returns_ok"] = trace_metadata["all_source_tool_returns_ok"]
     return result
+
+
+def _apply_trace_helper_argument_synthesis(
+    trace_plan: dict[str, Any], action: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    tool_name = action.get("tool")
+    if tool_name not in set(trace_plan.get("required_helper_tools", [])):
+        return action, None
+
+    arguments = action.get("arguments", {})
+    if not isinstance(arguments, dict):
+        return action, None
+    if arguments.get("args") or arguments.get("kwargs"):
+        return action, {"applied": False, "source": "model_supplied"}
+
+    synthesis_by_tool = trace_plan.get("helper_argument_synthesis", {})
+    synthesis = synthesis_by_tool.get(tool_name) if isinstance(synthesis_by_tool, dict) else None
+    if not isinstance(synthesis, dict) or synthesis.get("status") != "available":
+        reason = synthesis.get("reason") if isinstance(synthesis, dict) else "synthesis_unavailable"
+        return action, {
+            "applied": False,
+            "source": "synthesis_unavailable",
+            "reason": reason,
+        }
+
+    next_action = copy.deepcopy(action)
+    next_action["arguments"] = copy.deepcopy(synthesis["arguments"])
+    return next_action, {
+        "applied": True,
+        "source": "entrypoint_fixture",
+        "strategy": synthesis.get("strategy"),
+        "original_arguments": copy.deepcopy(arguments),
+        "arguments": copy.deepcopy(synthesis["arguments"]),
+        "mappings": copy.deepcopy(synthesis.get("mappings", [])),
+    }
 
 
 def _obtain_action(
