@@ -283,3 +283,15 @@
   and residual risk that SIMPA evidence uses the documented Session24 venv plus
   30s timeout rather than fresh dependency installation. w2 validation request
   was already sent for this exact head; current state is waiting for w2 mailbox.
+- Lead reviewed PR#35/artifacts read-only while waiting: diff is limited to
+  trace-mode helper argument synthesis, SIMPA rich fixture policy, focused
+  tests, and task metadata; rollout JSONL directly shows
+  `call_rotation_x/y/z -> call_entrypoint -> submit_answer`, all source tools
+  `ok=true`, `subfunction_trace.helper_trace_complete=true`,
+  `helper_calls_successful=true`, `helper_trace_valid=true`,
+  `all_source_tool_returns_ok=true`, and final exact-match correct. No lead-side
+  blocker found, but approval remains gated on w2 independent validation.
+- After waiting, lead mailbox still had no w2 report; shared w2 status still
+  showed Idle and no task048 validation process/artifact was visible. After a
+  fresh mailbox pre-check with unread_count=0, lead peer-sent w2 a validation
+  follow-up for exact head `fe286f76cb6fe066e07a208aadad13984bbdb590`.
