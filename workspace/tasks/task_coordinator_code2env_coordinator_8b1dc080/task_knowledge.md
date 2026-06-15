@@ -39,3 +39,4 @@
 33. Session24 valid tool-return JSONL 已发送飞书：本地文件 `../outputs/session24_valid_tool_returns/valid_tool_return_trajectories.jsonl`，飞书文件消息 ID `om_x100b6dcf0646a490b29f5b1468ee6c8`，file_key `file_v3_0012m_84e168dc-899e-4590-b9ad-135131a65c4g`。
 34. task048 handoff 已下发给 `intern_code2env_lead`：目标是 typed fixture hydration + helper argument synthesis，验收不能只看 `helper_trace_complete`，必须看 helper return success（`helper_calls_successful/helper_trace_valid/all_source_tool_returns_ok`）和 real-value final correctness。handoff 文件位于 `../outputs/session24_valid_tool_returns/task048_typed_fixture_helper_args_goal.md`。
 35. task048 当前状态是 lead 已正式立项、w1 执行中、w2 预留独立验证，尚未有 PR/验证/merge；coordinator 复验时应等待 lead 的完成态回报，并按 exact head 复核测试、JSONL artifact 和 helper success 指标。
+36. task048 implementation owner 已从 w1 改为 w4：PR#34/w1 head `8291cf214668fb7a103115db768e868e599aad5a` 只有 bootstrap/metadata，不作为验收依据；复验时应看 w4 新 PR/head 与 w2 对该 exact head 的独立验证。
