@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=6 -->
 
 ## Session 0 - Created with team lead
 
@@ -150,3 +150,10 @@
 - w2 独立验证 PASS，exact SHA `e48507ea419d61efa7e834a1b4a3862c5d2aae33`：focused 48 passed；full 178 passed, 1 skipped；default compatibility probe 无 `--require-real-value` 时 build_ok=2、weak_oracle=1、strict_usable=1 且无 strict rejection skip；strict probe 加 `--require-real-value` 后 audit 出 `strict_unusable:weak_oracle:golden_exception:ModuleNotFoundError` 并保留 error type/message。w2 验证 artifacts：`/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w2_validation/w2_validation_summary_e48507e.md`。
 - lead 在 w1 ready report + w2 PASS + PR CLEAN 后授权 w1 self-merge。w1 添加 completion metadata-only head `b77311c59db822e7b4f636f33592b84385697047`，squash-merge PR#33 到 main，merge commit `f551ee88654b1bcb604ebf11361a279310e52e19`，mergedAt `2026-06-15T01:22:54Z`。
 - w1 post-merge verification on merged main：`python3 -m pytest -q` 为 178 passed, 1 skipped。task047 README 已 Completed；w1 status Idle；lead mark-read 了 w1 ready、w2 validation、w1 merge-result mailbox。剩余风险：acceptance top10 proof 是 Session17 package replay 而非 fresh source rebuild；weak-oracle traceback/path exact-match 仍 brittle，消费者必须使用 `strict_usable`/real_value+deterministic 分母；helper arg synthesis 仍保守，rank5 通过 metadata 暴露失败而非消除失败。
+
+## Session 6 - coordinator completion report for task047
+
+- 用户追问是否已向 coordinator 汇报 task047 执行情况；核对上一轮动作后确认已完成用户回报和 lead 记录归档，但未看到单独给 `intern_code2env_coordinator` 的 peer completion report。
+- 按流程先检查 lead mailbox，结果 unread_count=0，无需 mark-read。
+- 已通过 peer send 向 `intern_code2env_coordinator` 补发 task047 完成态汇报，API 返回 `{"status":"delivered"}`。汇报内容包含：task047 已完成并 merge、PR#33 URL、validated product head `e48507ea419d61efa7e834a1b4a3862c5d2aae33`、final pre-merge metadata-only head `b77311c59db822e7b4f636f33592b84385697047`、merge commit `f551ee88654b1bcb604ebf11361a279310e52e19`、w1/w2/post-merge pytest 结果、artifact paths、Session17 exact top10 replay counts、rank5 helper failure metadata 与 residual risks。
+- 本次只补 coordinator 报告和 lead 管理记录，不触碰产品代码、不跑测试、不执行 merge。
