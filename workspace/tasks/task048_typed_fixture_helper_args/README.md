@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Typed fixtures and helper arguments
 
-<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Open,ASSIGNEE=intern_code2env_worker_4 -->
 
 ## Background
 
