@@ -222,4 +222,6 @@
 - w4 已打开 draft/WIP PR#35 `https://github.com/songCNMS/code2env/pull/35`，head `b47dd5faeb8c45c1ac8056a9c0fbccd6c8ecf95e`；PR body 明确 WIP / not ready for validation，当前 focused `tests/test_rich_fixtures.py tests/test_rollout.py` 为 38 passed/1 skipped，py_compile passed。
 - PR#35 仍缺 full `python3 -m pytest -q`、SIMPA 或 alternate real-sample rollout JSONL/summary artifacts、ready report 和 default behavior/risk summary；mergeStateStatus=DIRTY。因此不触发 w2 validation。
 - 已更新共享 task048 history，记录 worker_4 WIP PR，并推送 main commit `dcdcfe9`。
+- 收到并 mark-read w4 WIP checkpoint mailbox `task048-w4-wip-pr35-checkpoint-5d6bc78`；w4 报告 PR#35 exact pushed branch head `5d6bc78c6fbe4aee46928799db30a0090ed884d8`，product/test implementation commit `b47dd5f`，focused `tests/test_rich_fixtures.py tests/test_rollout.py` 为 38 passed/1 skipped in 35.41s，changed-file py_compile passed。w4 明确仍 WIP only/not ready for w2 validation，剩余 full pytest 和 SIMPA/alternate real-sample rollout JSONL/summary artifacts with correctness flags；no blocker reported.
+- 已更新共享 task048 history，记录 worker_4 WIP checkpoint，并推送 main commit `e6d063b`。
 - 当前状态：等待 w4 ready exact head；w2 validation 仍只针对 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
