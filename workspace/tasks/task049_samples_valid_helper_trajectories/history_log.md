@@ -124,7 +124,7 @@
   breakdown without accepted false positives. Worker_2 remains gated and has
   not been asked to validate yet.
 
-## Session 4 - 2026-06-15 UTC - Worker_1 ready handoff after gate fix
+## Session 6 - 2026-06-15 UTC - Worker_1 ready handoff after gate fix
 
 - Worker_1 merged latest `origin/main` at `47fa0ff` into PR #36 after lead
   recorded the failed artifact gate, keeping the branch metadata-only with no
