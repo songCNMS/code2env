@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -27,3 +27,12 @@
   `final_correct=true`, `golden_status=real_value`, deterministic, and at least
   three dedicated semantic helper tools for every accepted record.
 
+## Session 1 - 2026-06-15 UTC - Workers assigned
+
+- Team lead checked lead mailbox before each peer send; unread count was 0.
+- Sent implementation/data generation assignment to `intern_code2env_worker_1`.
+- Sent candidate/blocker audit support assignment to `intern_code2env_worker_4`.
+- Sent independent tester/validator assignment to `intern_code2env_worker_2`.
+- Current expected flow: worker_1 owns the canonical scan and final JSONL,
+  worker_4 supplies candidate/blocker audit support, and worker_2 validates only
+  worker_1's ready exact head/artifacts.
