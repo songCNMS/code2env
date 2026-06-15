@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - Task Knowledge
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Knowledge Entries
 
@@ -27,3 +27,11 @@
 8. WIP PR #35 at head `b47dd5f` is reviewable but not validation-ready; w2 should
    wait for the ready mailbox with full pytest plus real-sample rollout artifact
    flags.
+9. SIMPA helper calls can exceed the default 3s runtime timeout on cold imports;
+   the ready artifact uses the documented Session 24 venv and a 30s runtime
+   timeout so validation measures typed helper behavior rather than import
+   latency.
+10. The accepted SIMPA evidence path is
+    `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/worker4_pr35_simpa/`
+    with `validation_summary.json`, `validation_summary.md`, and
+    `rollouts/rollouts.jsonl`.

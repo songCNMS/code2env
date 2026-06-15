@@ -1,6 +1,6 @@
 # task048_typed_fixture_helper_args - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -71,3 +71,24 @@
 - PR #35 is not ready for validation yet; remaining acceptance work is full
   `python3 -m pytest -q` plus SIMPA or documented real-sample rollout JSONL and
   summary artifacts.
+
+## Session 4 - 2026-06-15 UTC - Ready checkpoint for PR #35
+
+- Focused check passed:
+  `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_rollout.py`
+  -> 38 passed, 1 skipped.
+- Full check passed:
+  `python3 -m pytest -q` -> 182 passed, 1 skipped.
+- SIMPA real-sample validation passed for
+  `simpa.utils.calculate:rotation` using helpers `rotation_x`, `rotation_y`, and
+  `rotation_z`.
+- SIMPA rollout flags: `helper_trace_complete=true`,
+  `helper_calls_successful=true`, `helper_trace_valid=true`,
+  `all_source_tool_returns_ok=true`, final correct true, golden status
+  `real_value`, determinism `deterministic`.
+- Artifact root:
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/worker4_pr35_simpa/`.
+- Artifact files include `validation_summary.json`, `validation_summary.md`, and
+  `rollouts/rollouts.jsonl`.
+- Dependency setup uses the documented Session 24 venv with torch/numpy/SIMPA
+  runtime dependencies and a 30s runtime timeout for SIMPA cold imports.
