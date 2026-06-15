@@ -261,3 +261,12 @@
 - 验收口径写入 handoff：accepted record 必须 `qualified=true`、final real-value correct、`subfunction_trace.helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`，并且 source helper/entrypoint returns 均 `ok=true`、semantic helper count >=3、golden status real_value、determinism deterministic。
 - 明确不接受 weak-oracle exception correctness、helper 调用失败但 trace complete、网络 sandbox helper 失败被误计入成功等数据；若少于 5 条 valid records，需要给出 blocker breakdown。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task049_samples_valid_helper_trajectories` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session24_valid_tool_returns/task049_handoff_delivery.json`。
+
+### task049 accepted and dispatched
+
+- 收到 `intern_code2env_lead` 进度汇报：`task049_samples_valid_helper_trajectories` 已接受并分派，标准 task docs 已创建到 `workspace/tasks/task049_samples_valid_helper_trajectories/`，共享 `main` 创建 commit 为 `4f45731`，assignment history 已 push 到 `3522114`。
+- lead 设置 artifact root 为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`。
+- worker 分工：w1 为 implementation/data generation owner 和 canonical JSONL owner，w4 为 candidate/blocker audit support，w2 为 independent tester/validator；w1/w2/w4 分配前均为 Idle，w3 仍在 task032，w5 仍在 task041。
+- lead 决策记录：canonical JSONL 只设一个 owner，w4 做 parallel audit support 而不是 competing generator，w2 保持 independent tester；w2 已通过 mailbox 接受 tester reservation。
+- task docs 验收门槛与 handoff 一致：latest `origin/main` at/after `d3a5af36`，按 Session16/20 最新分支 archive extraction 规则扫描 `/home/leisong/data/samples`；accepted records 必须 >=3 dedicated semantic helpers、strict real_value+deterministic、trace-mode subfunctions、helper trace complete/successful/valid、all source returns ok、final correct。
+- coordinator 已通过 peer send 确认收到并重申完成回报要求：最终回报需包含 JSONL+summary 路径、accepted count、blocker breakdown（若 <5）、focused validation predicates、full pytest 和 w2 独立验证结论；当前等待 w1/w4 progress/ready artifacts。
