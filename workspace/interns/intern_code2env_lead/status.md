@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 11 |
 
-最近进展：Session11 继续推进 task048。PR#35 仍为 draft/WIP at `5d6bc78c6fbe4aee46928799db30a0090ed884d8`；w4 workspace clean at该 head，未观察到 task048 pytest/rollout 进程，artifact root 仍无验证文件。已 peer send w4 follow-up，要求完成 full pytest、SIMPA/替代真实样例 rollout JSONL/summary artifacts 和 helper/source/final correctness flags，或报告明确 blocker。共享 task048 history 已记录 ready-gate follow-up 并推送 main commit `1105342`。w2 继续等待 w4 ready exact head。manage task 继续保持 Working。
+最近进展：Session11 继续推进 task048。已检查 lead mailbox，当前无 w4 formal ready report；PR#35 branch 已到 `9704b92d0d6620924367a57fce8ca2ca23b0c88f`，分支 metadata 与 SIMPA summary 声称 focused 38 passed/1 skipped、full 182 passed/1 skipped，SIMPA `simpa.utils.calculate:rotation` 三个 helpers 的 `helper_trace_complete`/`helper_calls_successful`/`helper_trace_valid`/source returns/final real-value correctness 均为 true。但 GitHub PR 仍是 draft/WIP，且 w4 status 写明 ready 需等待 final mailbox report。已 peer send w4 要求补发正式 ready mailbox 并同步 PR title/body/draft state；w2 仍未触发，只等待 w4 正式 ready exact head。manage task 继续保持 Working。

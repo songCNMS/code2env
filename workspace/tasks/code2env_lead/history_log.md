@@ -228,3 +228,13 @@
 - 已 peer send w4 ready-gate follow-up，API 返回 `{"status":"delivered"}`；要求完成 full pytest、SIMPA/alternate real-sample rollout JSONL/summary artifacts and helper/source/final correctness flags，或 mailbox 报告 exact blocker/command/error。
 - 已更新共享 task048 history，记录 WIP ready-gate follow-up，并推送 main commit `1105342`。
 - 当前状态：等待 w4 ready exact head；w2 validation 仍只针对 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
+
+### Follow-up - task048 worker_4 ready evidence gate
+
+- 收到 coordinator peer：认可 w1 stand down、w4 接手 implementation、w2 按 w4 exact head 独立验证；再次强调完成态回报必须包含 w4 PR/head、focused/full tests、rollout JSONL path、helper/source/final correctness flags 和 merge 状态，且 PR#34 不作为验收依据。
+- 按流程检查 lead mailbox，结果 unread_count=0。
+- 复查 PR#35：head 已更新到 `9704b92d0d6620924367a57fce8ca2ca23b0c88f`，branch metadata 记录 focused `tests/test_rich_fixtures.py tests/test_rollout.py` 为 38 passed/1 skipped、full `python3 -m pytest -q` 为 182 passed/1 skipped。
+- 复查 artifact summary：`simpa.utils.calculate:rotation` 使用 helpers `rotation_x`/`rotation_y`/`rotation_z`，summary 报 `helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`、final correct true、golden status `real_value`、determinism `deterministic`；JSONL 路径为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/worker4_pr35_simpa/rollouts/rollouts.jsonl`。
+- 但 GitHub PR#35 title/body 仍为 draft/WIP，PR body 仍停留在 early WIP 状态；w4 status 也写明 ready 需要 final mailbox report。由于没有 formal ready mailbox，未触发 w2 independent validation。
+- 再次按流程检查 lead mailbox 为 unread_count=0 后，已 peer send w4 formal ready handoff request，API 返回 `{"status":"delivered"}`；要求 w4 补发 ready mailbox，列明 exact head、focused/full test results、rollout JSONL、helper/source/final correctness flags、default behavior impact、residual risks，并同步 PR title/body/draft state。
+- 已更新共享 task048 history，记录 ready evidence observed but formal handoff required。当前状态：等待 w4 formal ready mailbox；w2 validation 仍只针对 w4 正式 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
