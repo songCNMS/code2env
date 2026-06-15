@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Session 0 - Created with team lead
 
@@ -168,3 +168,11 @@
 - 已按流程在每次 peer send 前检查 lead mailbox，结果均为 unread_count=0；随后 peer send 通知 w1 接受 implementation worker 分工、w2 接受 independent tester/validation worker 分工，两个通知均返回 `{"status":"delivered"}`。
 - 已向 `intern_code2env_coordinator` 发送 task048 当前进度汇报，API 返回 `{"status":"delivered"}`；汇报内容包含 task docs commit `5f2b36e`、lead records commit `e4f8da6`、w1/w2 分工、artifact root、验收口径和当前等待 PR/验证状态。
 - 当前状态：task048 已正式立项和分派，等待 w1 开 PR/报告实现 head；w2 等待 PR exact head 后独立验证。team_lead 未写产品代码、未跑产品测试、未 merge。
+
+## Session 8 - task048 PR bootstrap tracking
+
+- 收到 `intern_code2env_coordinator` 确认 task048 进度汇报，并要求继续按既定验收推进：w1 PR/head + focused/full tests + rollout artifact 后，由 w2 exact head 独立验证；完成回报必须明确 PR、merge 状态、测试命令结果、JSONL 路径，以及 helper/source/final correctness flags。
+- 按流程检查 lead mailbox，发现 w2 mailbox `worker2-task048-reserved-20260615-01`；内容为 w2 已阅读 task048 文档、handoff 和 Session24 report，确认 artifact root，并等待 w1 PR exact head 执行 focused tests、full pytest、summary JSON/MD、rollout JSONL/export 验证。已调用 `/api/intern/mailbox/mark-read`，marked_count=1，随后 unread_count=0。
+- 检查 GitHub PR 列表，w1 已打开 PR#34 `https://github.com/songCNMS/code2env/pull/34`，head `8291cf214668fb7a103115db768e868e599aad5a`，mergeStateStatus=CLEAN；PR body 标记状态为进行中。
+- PR#34 当前只包含 worker status 与 task metadata/接受任务提交，files 为 `workspace/interns/intern_code2env_worker_1/status.md` 和 `workspace/tasks/task048_typed_fixture_helper_args/*`，尚无 product code、focused/full tests、rollout JSONL 或 w1 ready-for-validation mailbox。
+- 决策：不触发 w2 验证、不做 review/merge 决策；等待 w1 提交实现并通过 mailbox 报告 exact ready head、测试结果和 artifacts。team_lead 未写产品代码、未跑产品测试、未 merge。

@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Knowledge Entries
 
@@ -37,3 +37,4 @@
 28. task047 验收口径：`--require-real-value` 应保持 opt-in，默认 batch 仍按 build target 兼容；strict mode 可保留 weak-oracle builds 做 audit，但必须用 `strict_usable`/real_value+deterministic 作为 runnable 数据分母。样本证明若 direct batch 因 rank/limit 跳过已知 target，可用 exact prior package replay 证明 metadata 语义，但报告必须明示这不是 fresh source rebuild。
 29. coordinator-origin 任务完成后，除了用户 final 和 lead 记录归档，还要显式 peer send 给 `intern_code2env_coordinator` 汇报完成态；发送前仍必须先清空 lead mailbox。最终交付清单应包含 PR、merge commit、测试结果、artifact paths、默认行为影响和 residual risks。
 30. typed helper return 验收要同时覆盖值类型和参数来源：`helper_trace_complete=true` 只说明顺序覆盖，不说明 helper 成功；SIMPA 的 `torch.cos(float)` 复现表明 executor hydration、canonical typed serialization、helper argument synthesis/provenance 和 real-value golden correctness 必须一起看，不能只看最终 `call_entrypoint` correct。
+31. bootstrap PR 不等于 ready head：worker 打开 PR/提交接受任务 metadata 后，team_lead 只能记录进度；触发 tester 必须等 implementation worker 通过 mailbox 明确给出 exact ready head、focused/full test results、rollout JSONL/artifacts 和默认行为影响说明。
