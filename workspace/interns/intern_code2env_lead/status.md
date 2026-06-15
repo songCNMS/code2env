@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 11 |
 
-最近进展：Session11 继续推进 task048。lead mailbox unread_count=0；仍无 w4 PR/ready head、测试结果或 rollout artifacts。w4 本地 implementation diff 已扩展到 `code2env/batch.py`、`code2env/rich_fixtures.py`、`code2env/rollout.py`、`tests/test_rich_fixtures.py`、`tests/test_rollout.py`，约 466 insertions/10 deletions；已 peer send w4 要求尽快推 WIP PR/head。共享 task048 history 已记录该进展并推送 main commit `6fa8359`。w2 继续等待 w4 exact head 验证。manage task 继续保持 Working。
+最近进展：Session11 继续推进 task048。w4 已打开 draft/WIP PR#35 `https://github.com/songCNMS/code2env/pull/35`，head `b47dd5faeb8c45c1ac8056a9c0fbccd6c8ecf95e`，PR body 明确 not ready for validation；focused `tests/test_rich_fixtures.py tests/test_rollout.py` 为 38 passed/1 skipped，py_compile passed，但 full pytest、SIMPA/替代真实样例 rollout JSONL/summary artifacts 和 ready report 仍缺失，mergeStateStatus=DIRTY。共享 task048 history 已记录该 WIP PR 并推送 main commit `dcdcfe9`。w2 继续等待 w4 ready exact head。manage task 继续保持 Working。

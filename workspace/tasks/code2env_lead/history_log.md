@@ -219,4 +219,7 @@
 - 再次检查时 mailbox 仍无 unread，GitHub 仍无 w4 open PR；w4 local diff 进一步扩展到 `code2env/batch.py`、`code2env/rich_fixtures.py`、`code2env/rollout.py`、`tests/test_rich_fixtures.py`、`tests/test_rollout.py`，diff stat 为 466 insertions/10 deletions。artifact root仍为空，未收到 test/artifact report。
 - 已 peer send w4 WIP checkpoint request，API 返回 `{"status":"delivered"}`；要求 w4 在 slice coherent 后尽快推 WIP commit/PR，并说明 ready-for-validation 仍需要 exact head、focused/full tests、rollout artifacts 和 real-sample correctness flags。
 - 已更新共享 task048 history，记录 worker_4 expanded local diff，并推送 main commit `6fa8359`。
-- 当前状态：等待 w4 implementation PR/ready head；w2 validation 仍只针对 w4 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
+- w4 已打开 draft/WIP PR#35 `https://github.com/songCNMS/code2env/pull/35`，head `b47dd5faeb8c45c1ac8056a9c0fbccd6c8ecf95e`；PR body 明确 WIP / not ready for validation，当前 focused `tests/test_rich_fixtures.py tests/test_rollout.py` 为 38 passed/1 skipped，py_compile passed。
+- PR#35 仍缺 full `python3 -m pytest -q`、SIMPA 或 alternate real-sample rollout JSONL/summary artifacts、ready report 和 default behavior/risk summary；mergeStateStatus=DIRTY。因此不触发 w2 validation。
+- 已更新共享 task048 history，记录 worker_4 WIP PR，并推送 main commit `dcdcfe9`。
+- 当前状态：等待 w4 ready exact head；w2 validation 仍只针对 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
