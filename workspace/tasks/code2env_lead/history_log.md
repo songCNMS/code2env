@@ -537,3 +537,24 @@
   generation, worker_4 audits dependency/blocker categories in parallel, and
   worker_2 remains independent for exact-head artifact validation.
 - Current state: waiting for worker acceptance mailboxes and initial run plans.
+- Received and mark-read worker_2 mailbox
+  `worker2-task050-validator-reserved-20260615-01`: worker_2 accepted independent
+  tester reservation, synced to shared commit `2051380`, verified artifact root
+  and `/home/leisong/data/samples` are accessible, and reported no validation
+  environment blocker.
+- Received and mark-read worker_4 mailbox
+  `task050-w4-acceptance-progress-2051380`: worker_4 accepted dependency/blocker
+  audit support only, confirmed it will not produce a competing final JSONL, and
+  pushed audit branch
+  `intern_code2env_worker_4/task050_dependency_aware_samples_valid_trajectories_audit`
+  at `20513803e2c8462c9699feeb22415d062c8d6f17`.
+- Worker_4 planned audit outputs under the task050 artifact root:
+  `worker4_audit/worker4_dependency_blocker_audit.json` and `.md`.
+- Worker_1 has not yet sent a formal mailbox, but objective state shows worker_1
+  status changed to Working on task050 and PR #37 opened at head
+  `d93012d0cbc70c199b27306bac1149e2f16539be`.
+- After a fresh mailbox pre-check with unread_count=0, lead peer-sent worker_1 a
+  formal acceptance/progress mailbox request naming required PR/head,
+  dependency-aware command plan, dedicated venv cache path, expected artifacts,
+  and blockers. Current state: waiting for worker_1 formal mailbox and first
+  dependency-aware run evidence.

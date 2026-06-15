@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 16 |
 
-最近进展：Session16 接受 task050_dependency_aware_samples_valid_trajectories。已读取 handoff，确认 latest shared main `57b18f5`/`486adb4` 包含 task049 merge `438d13a`；创建标准 task docs 并推送 shared main commits `2051380`、`486adb4`。分派 w1 为 implementation/data owner，w4 为 dependency/blocker audit support，w2 为 independent tester；w3/w5 仍显示旧 Working 未分配。当前等待 w1/w4/w2 mailbox 回执；manage task 保持 Working。
+最近进展：Session16 推进 task050_dependency_aware_samples_valid_trajectories。已创建标准 task docs 并分派 w1/w4/w2；w2 已 mailbox 接受 independent tester，w4 已 mailbox 接受 dependency/blocker audit support 并规划 worker4_audit artifacts。w1 状态和 PR#37 显示已接受并开 PR，head `d93012d0cbc70c199b27306bac1149e2f16539be`；已补发请求要求 w1 通过 mailbox 给出正式 PR/head、首轮 dependency-aware 命令、venv cache 和 artifact plan。manage task 保持 Working。
