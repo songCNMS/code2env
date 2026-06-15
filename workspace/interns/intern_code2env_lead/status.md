@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 17 |
 
-最近进展：Session17 继续推进 task050。PR#37 已前进到 CLEAN head `36127f7573a1b30837097c777813e078293a7d05`，commit 为 formal handoff marker；canonical artifacts 已存在：empty accepted JSONL、summary.json、summary.md、run2 manifest、failed trace rollout 和 w4 audit，summary 记录 accepted_count=0 与 blocker breakdown。w1 状态显示 formal mailbox id `w1-task050-blocked-data-ready` 已预留但 lead mailbox 尚未收到；已提醒 w1 实际投递。w2 等待该 mailbox 后验证。manage task 保持 Working。
+最近进展：Session17 继续推进 task050。w1 formal blocked-data handoff 已收到并标记已读：validation head `36127f7573a1b30837097c777813e078293a7d05`，accepted_count=0，canonical artifacts 已齐。已把 exact-head 验证交给 w2；随后 w1 又报告 PR latest head 变为 metadata-only `26ca35bd9eb628164ec87e7516858edeb36bdd72`，artifact 不变。已补发 w2：验证 formal head，同时检查 latest head drift 是否仅 metadata。manage task 保持 Working。

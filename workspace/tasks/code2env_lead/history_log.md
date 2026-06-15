@@ -758,3 +758,30 @@
   and residual risks.
 - Current state: worker_2 validation remains gated on receipt of the actual
   worker_1 blocked-data mailbox.
+- Received and mark-read worker_1 formal blocked-data handoff mailboxes
+  `w1-task050-blocked-data-ready` and
+  `w1-task050-blocked-data-ready-resend-36127f7`.
+- Worker_1 named PR #37 exact validation head
+  `36127f7573a1b30837097c777813e078293a7d05`, open/non-draft/clean at that time,
+  no product-code changes, accepted_count=0, no weak-oracle accepted records,
+  focused validator result
+  `python3 validate_task050_outputs.py --jsonl accepted_valid_helper_trajectories.jsonl --summary summary.json`
+  -> `{\"accepted_count\":0,\"ok\":true,\"records\":0}`, and full pytest reuse
+  rationale because the PR is data/metadata-only.
+- Worker_1's handoff artifact set includes empty accepted JSONL, summary
+  JSON/MD, run2 manifest/command/stdout, rollout JSON and rollouts JSONL,
+  rollout_exports, validator script/report, and worker_4 audit JSON/MD.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_2 the
+  independent validation request for exact head
+  `36127f7573a1b30837097c777813e078293a7d05`, artifact predicates, blocker
+  breakdown, product-code unchanged check, focused validator, and pytest reuse
+  rationale.
+- Received and mark-read worker_1 follow-up mailbox
+  `w1-task050-blocked-data-ready-followup-26ca35b`: worker_1 reported latest PR
+  head advanced to metadata-only `26ca35bd9eb628164ec87e7516858edeb36bdd72`,
+  artifact set unchanged, while formal validation head remains `36127f7`.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_2 a
+  validation addendum requiring validation of formal head `36127f7` plus a
+  head-drift check from `36127f7` to latest head, failing or requesting a new
+  handoff if product code/tests/artifacts changed.
+- Current state: waiting for worker_2 PASS/FAIL validation mailbox.
