@@ -78,3 +78,17 @@
   result or rollout JSONL had been reported.
 - State remains implementation-in-progress; worker_2 validation is still waiting
   for a worker_4 ready exact head.
+
+## Session 5 - 2026-06-15 UTC - Worker_4 local diff expanded
+
+- Team lead rechecked state: mailbox had no ready report, GitHub still had no
+  worker_4 PR, and artifact root still had no validation files.
+- Worker_4 branch still had pushed head `679fcae`, with local uncommitted changes
+  now spanning `code2env/batch.py`, `code2env/rich_fixtures.py`,
+  `code2env/rollout.py`, `tests/test_rich_fixtures.py`, and
+  `tests/test_rollout.py`.
+- Local diff stat was 466 insertions and 10 deletions across those five files.
+- Team lead sent a checkpoint request asking worker_4 to push a WIP commit/PR as
+  soon as the slice is coherent, while keeping ready-for-validation gated on
+  exact head, focused/full tests, rollout artifacts, and real-sample correctness
+  evidence.
