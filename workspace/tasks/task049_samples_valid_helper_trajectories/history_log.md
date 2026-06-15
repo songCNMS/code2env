@@ -53,3 +53,21 @@
   candidate/blocker taxonomy plan, and immediate blockers.
 - Worker_2 had already accepted tester reservation in mailbox and remains gated
   on worker_1's ready exact head/artifacts.
+
+## Session 3 - 2026-06-15 UTC - Worker_4 audit support accepted
+
+- Worker_4 sent mailbox `task049-w4-acceptance-progress-3522114`, which team
+  lead marked read.
+- Worker_4 accepted the audit-support role and explicitly confirmed it will not
+  produce a competing final JSONL.
+- Worker_4 is using exact head
+  `352211473e30e24a2a0dcb6a123b0646829e48dc` on branch
+  `intern_code2env_worker_4/task049_samples_valid_helper_trajectories_audit`.
+- Planned audit sources include task049 docs, Session20 strict scan, Session24
+  valid-tool-return context, task048 SIMPA proof, and the task049 artifact root.
+- Preliminary candidate/blocker taxonomy includes SIMPA rotation as likely
+  anchor plus other >=3-helper families; blocker categories include weak oracle
+  or missing deps, untyped/custom fixtures, unsupported param type, unsafe
+  network/filesystem side effects, source helper return failures,
+  nondeterministic/non-real golden, and framework/runtime context missing.
+- No immediate blocker was reported by worker_4.
