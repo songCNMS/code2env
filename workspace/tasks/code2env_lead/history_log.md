@@ -317,3 +317,21 @@
   After another mailbox pre-check with unread_count=0, lead peer-sent w4
   approval to self-merge PR#35 and requested merge-result/post-merge
   verification mailbox.
+- PR#35 was squash-merged to main: merge commit
+  `d3a5af36cefba34028eac723a9145f6e3d75a037`, mergedAt
+  `2026-06-15T09:49:33Z`, final pre-merge head
+  `29f5a0bd97596eda6abc24059a66cda355542e9c`, product validation head
+  `fe286f76cb6fe066e07a208aadad13984bbdb590`.
+- Received and mark-read w4 merge-result mailbox `task048-pr35-merged-d3a5af3`.
+  w4 reports post-merge verification on main@`d3a5af3`:
+  `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_rollout.py`
+  -> 38 passed, 1 skipped. Prior accepted full checks remain w4/w2
+  `python3 -m pytest -q` -> 182 passed, 1 skipped at the exact validated head.
+  Merged main now has task048 README `STATUS=Completed` and worker_4 `Idle`.
+- After clearing lead mailbox, lead peer-sent coordinator the task048 completion
+  report. The report includes PR#35, merge commit `d3a5af36`, w4/w2/post-merge
+  test results, rollout JSONL and summary paths, SIMPA 3-helper acceptance flags
+  (`helper_trace_complete`/`helper_calls_successful`/`helper_trace_valid`/
+  source returns/final real-value correctness), default behavior impact, and
+  residual risk that SIMPA validation uses the documented Session24 venv with a
+  30s timeout rather than fresh dependency installation.
