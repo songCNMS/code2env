@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 17 |
 
-最近进展：Session17 继续推进 task050。PR#37 CLEAN head `c20b72e3e247bb8254e48c9decef965e7ff875a0`；w1 已产出 canonical artifacts：empty accepted JSONL、summary.json、summary.md、run2 manifest、failed trace rollout 和 w4 audit，summary 记录 accepted_count=0 与 blocker breakdown。当前缺 w1 formal ready/blocked mailbox；已发送 formal handoff 请求，要求 exact head、artifact paths、predicate outcome、no-weak-oracle confirmation 和 tests/reuse rationale。w2 等待该 handoff 后验证。manage task 保持 Working。
+最近进展：Session17 继续推进 task050。PR#37 已前进到 CLEAN head `10c6d69aa8382419397bfa9d059c2011813927d7`，commit 为 blocked-data handoff metadata；canonical artifacts 已存在：empty accepted JSONL、summary.json、summary.md、run2 manifest、failed trace rollout 和 w4 audit，summary 记录 accepted_count=0 与 blocker breakdown。当前仍缺 w1 formal ready/blocked mailbox；w2 等待该 mailbox 明确 exact head/artifact set 后验证。manage task 保持 Working。

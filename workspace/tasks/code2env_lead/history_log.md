@@ -738,3 +738,10 @@
   unread messages.
 - Current state: worker_2 validation remains gated until worker_1 sends the
   formal handoff naming the exact head/artifact set.
+- A later PR check showed PR #37 advanced to clean head
+  `10c6d69aa8382419397bfa9d059c2011813927d7` with commit title
+  `记录 task050 blocked-data handoff`. Worker_1 status says it is preparing an
+  exact-head blocked-data mailbox after pushing metadata.
+- Lead rechecked mailbox after the new head appeared; no unread formal handoff
+  mailbox was present. Current state remains gated on the worker_1 mailbox before
+  worker_2 validation.
