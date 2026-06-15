@@ -130,3 +130,16 @@
   `helper_trace_complete`/`helper_calls_successful`/`helper_trace_valid`/source
   returns/final real-value correctness flags.
 - No blocker reported at this checkpoint.
+
+## Session 8 - 2026-06-15 UTC - WIP PR still waiting on ready gates
+
+- Team lead rechecked PR #35 and worker_4 workspace after the WIP checkpoint.
+- PR #35 remains draft/WIP at head `5d6bc78c6fbe4aee46928799db30a0090ed884d8`.
+- Worker_4 workspace is clean at that head.
+- No task048 pytest/rollout processes were observed, and the task048 artifact
+  root still had no validation files.
+- Team lead sent a follow-up to worker_4 requesting completion of the remaining
+  ready gates: full `python3 -m pytest -q`, SIMPA or alternate real-sample
+  rollout JSONL/summary artifacts, and helper/source/final correctness flags; if
+  blocked, worker_4 must report exact blocker and command/error.
+- Worker_2 validation remains gated on worker_4 ready exact head.
