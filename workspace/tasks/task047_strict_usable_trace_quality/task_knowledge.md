@@ -1,6 +1,6 @@
 # task047_strict_usable_trace_quality - Task Knowledge
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=1 -->
 
 ## Knowledge Entries
 
@@ -9,3 +9,4 @@
 3. Existing `helper_trace_complete` measures required helper tool coverage/order, not whether helper tool calls succeeded.
 4. Rank5 `scripts.check-versions:check_language_version` is the key trace-quality regression target: endpoint trace was correct, but 3 helper calls failed from empty args before entrypoint.
 5. Required artifacts must include machine-readable summary JSON, rollout JSONL, and export output for Session17 top10 or equivalent samples top-N.
+6. PR opened at https://github.com/songCNMS/code2env/pull/33 from branch `intern_code2env_worker_1/task047_strict_usable_trace_quality` to `main`.
