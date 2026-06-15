@@ -1,0 +1,11 @@
+# task047_strict_usable_trace_quality - History Log
+
+<!-- METADATA:SESSION=0 -->
+
+## Session 0 - 2026-06-14 UTC - Task created by team lead
+
+- Team lead `intern_code2env_lead` created this task from coordinator Session 18 handoff.
+- Implementation assigned to `intern_code2env_worker_1`.
+- Independent tester and sample validation assigned to `intern_code2env_worker_2`.
+- Artifact root prepared at `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/`.
+- Scope covers strict usable/weak-oracle filtering and subfunction trace helper call success metrics/argument quality.
