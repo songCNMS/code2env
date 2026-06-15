@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 17 |
 
-最近进展：Session17 继续推进 task050。复查 mailbox 无未读；PR#37 已同步为 CLEAN，head `1d6077a17c69ac7d35e5248c8ce0adac870bbc02`，但 artifact root 仍无 accepted JSONL/summary/manifest/audit 文件，也无 ready mailbox。已向 w1 发送 heartbeat，要求回报 batch running/blocked/ready 三选一；已向 w4 发送 audit heartbeat，要求回报 running/blocked/complete 三选一。w2 仍保留为 ready exact head 后的独立验证者。manage task 保持 Working。
+最近进展：Session17 继续推进 task050。PR#37 CLEAN at `1d6077a17c69ac7d35e5248c8ce0adac870bbc02`；w1 已 heartbeat 确认 install-enabled run2 正在运行，pid `3146512`，命令包含专用 venv cache、`--min-semantic-helpers 3`、`--require-real-value`、`--determinism-runs 2` 且未用 `--no-install-deps`。w4 已完成 blocker audit artifacts。当前仍缺 manifest/accepted JSONL/summary/ready mailbox，w2 仍保留为 ready exact head 后的独立验证者。manage task 保持 Working。

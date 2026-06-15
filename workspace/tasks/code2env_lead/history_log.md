@@ -635,3 +635,31 @@
 - Current state: PR #37 is clean but not ready because required artifacts and
   ready mailbox are absent. Worker_2 validation is still gated on worker_1's
   exact-head ready report.
+- Received and mark-read worker_4 mailbox `task050-w4-audit-complete-b08774b`.
+  Worker_4 completed dependency/blocker audit support without producing a
+  competing canonical JSONL. Artifacts:
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/worker4_audit/worker4_dependency_blocker_audit.json`
+  and `.md`; worker_4 validated the JSON with `python3 -m json.tool`.
+- Worker_4's audit is based on task049/session20 evidence because no worker_1
+  task050 dependency manifest existed at audit generation time. It records
+  dependency-install-failed observed_count=0 pending task050 rerun evidence,
+  system-only dependency=10, package metadata/import path=2, CLI/stdout executor
+  envelope=8, untyped/unsupported params=52, side-effect/network sandbox=357,
+  and helper-arg synthesis unavailable=1.
+- Lead inspected task050 artifacts and found worker_1 had created
+  `dependency_batch/install_enabled_targeted_run1/` with an empty stdout and no
+  manifest, plus `install_enabled_targeted_run2/` with command/stdout/pid files.
+  Run2 command is install-enabled, uses the dedicated venv cache, includes
+  `--min-semantic-helpers 3`, `--require-real-value`, `--determinism-runs 2`,
+  and does not include `--no-install-deps`.
+- Lead polled run2 pid `3146512`; the bash wrapper was still running after about
+  97 seconds. No manifest/json/jsonl artifacts were present yet.
+- Received and mark-read worker_1 mailbox
+  `w1-task050-heartbeat-running-1d6077a-run2`. Worker_1 confirmed PR #37 is
+  clean at head `1d6077a17c69ac7d35e5248c8ce0adac870bbc02`, run2 is the active
+  dependency-aware accepted-data evidence run, run1 exited immediately with an
+  empty log, target count is 9 sample worktrees with `--target 5`, and no
+  ready-for-test report has been sent.
+- Current state: waiting for worker_1 run2 to produce manifest/JSONL/summary and
+  a ready or blocked mailbox. Worker_2 validation remains gated on a ready exact
+  head plus artifacts.

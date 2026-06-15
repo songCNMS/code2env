@@ -47,3 +47,4 @@
 38. dependency-aware 样本重跑任务要把 dependency install run 与 no-install audit 分开标注；accepted-data run 不能使用 `--no-install-deps`，但可以用 no-install 结果做 blocker prioritization。若 accepted_count 仍低，blocker taxonomy 必须区分 install failure、system-only deps、package metadata/import path、CLI/stdout envelope、untyped/unsupported params、side-effect sandbox、helper-arg synthesis。
 39. 数据/metadata-heavy PR 开始执行后，lead 不宜为每个 checkpoint 继续推 shared main task-history 记录；这些 metadata commits 会让 worker owner 分支反复 DIRTY。非关键进度优先记在 lead 分支，shared main 只在任务创建、关键分派、ready/完成等稳定点更新。
 40. clean PR 只说明同步门槛过了，不等于数据任务 ready；对 artifact-driven 任务必须同时看到 owner ready mailbox、artifact 文件、accepted predicates/summary、测试或复用理由，才可以触发 independent tester。
+41. 数据 run 的 heartbeat 证据应区分空 wrapper 失败和有效运行：空 stdout、无 manifest、pid 已退出只能算 failed attempt；有效 heartbeat 至少要有命令文件、pid/status、stdout/status path、启动时间、目标集合、验收 flags 和 venv cache 路径。
