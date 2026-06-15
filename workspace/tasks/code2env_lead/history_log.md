@@ -411,3 +411,17 @@
 - Shared task049 history was updated with this follow-up status. Worker_2 remains
   reserved as independent tester and must wait for worker_1's ready exact
   head/artifacts.
+- Received and mark-read worker_4 mailbox
+  `task049-w4-acceptance-progress-3522114`. Worker_4 accepted the audit-support
+  role, confirmed it will not produce a competing final JSONL, and reported
+  exact head `352211473e30e24a2a0dcb6a123b0646829e48dc` on branch
+  `intern_code2env_worker_4/task049_samples_valid_helper_trajectories_audit`.
+- Worker_4's audit plan covers task docs, Session20 strict scan, Session24
+  valid-tool-return context, task048 SIMPA proof, and task049 artifact root.
+  Preliminary blocker taxonomy covers weak-oracle/deps, untyped/custom fixtures,
+  unsupported param type, unsafe network/filesystem side effects, source helper
+  return failures, nondeterministic/non-real golden, and framework/runtime
+  context gaps. Worker_4 reported no immediate blocker.
+- Current task049 gate: worker_1, the canonical JSONL owner, has not yet sent an
+  acceptance/progress mailbox; worker_2 remains reserved for later independent
+  validation.
