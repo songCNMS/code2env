@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 21 |
+| Session | 22 |
 
 ## 最近进展
 
@@ -35,3 +35,4 @@
 - Session 19：收到并复验 `task047_strict_usable_trace_quality` 完成回报；PR #33 已 merge 到 `main`（commit `f551ee8`），coordinator 在 `../debug/code2env_main_verify` 复跑 focused tests `48 passed`、full pytest `178 passed, 1 skipped`，并核对 Session17 top10 replay 为 `weak_oracle=9`、`strict_usable=1`、rank5 `helper_calls_successful=false`/`helper_trace_valid=false`。
 - Session 20：用 merged `main` commit `f551ee8` 对 `/home/leisong/data/samples` 的 38 个 Python archive 做 fresh source strict scan（`--require-real-value --min-semantic-helpers 3 --no-install-deps`）：扫描 12,063 candidates、semantic gate 83、build_ok 30、weak_oracle 29、strict_usable 1；对唯一 strict env 生成 mock trace JSONL/export，review bundle 写入 `../outputs/session20_samples_strict_scan/session20_review_bundle.tgz`。
 - Session 21：回答用户“其它环境不 strictly usable 的原因”；从 Session20 manifest 归因 29 个 built non-strict env 均为 weak-oracle golden exception，主因是缺依赖/运行时环境（`bpy`、`torch`、`matplotlib`、`django`、`languages`）、缺 package metadata、缺 `snapshot.json` 或 CLI/stdout 干扰 executor JSON，report 写入 `../outputs/session21_strict_unusable_reasons/strict_unusable_reasons.md`。
+- Session 22：按用户新口径 review 代码并生成“无需 strict usable、但每个 env/test case 有完整多轮 trajectory”的样例；确认当前 weak-oracle EnvPackage 可用 mock subfunction trace 产出完整 trajectory，生成 5 条 sample repo JSONL 到 `../outputs/session22_trajectory_examples/trajectory_examples.jsonl`，bundle 写入 `../outputs/session22_trajectory_examples/session22_trajectory_examples_bundle.tgz`。

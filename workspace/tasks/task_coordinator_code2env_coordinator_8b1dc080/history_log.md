@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=21 -->
+<!-- METADATA:SESSION=22 -->
 
 ## Session 0 - Created with coordinator
 
@@ -181,3 +181,12 @@
 - 典型 repo 归因：Blender plugin 依赖 `bpy`；panseg 依赖 `torch`；Django SaaS decorators 依赖 `django`；speed-comparison 中 analyze 依赖 `matplotlib`、dagger-poc 依赖本地/外部 `languages` 模块；tinytuya 需要 `snapshot.json` 且会打印 banner/error；aeneas/scour 是 CLI-style 函数，stdout/exit 干扰 executor JSON envelope。
 - 同时区分更早被 filter 的候选：未进入 29 个 built env 的 skip 主因包括 `not_module_level=8799`、`insufficient_semantic_helpers=2825`、`possible_side_effect=356`、`untyped_required_param=44`、`unsupported_param_type=8`、`unsafe_rich_fixture_candidate=1`。
 - 产出 report：`../outputs/session21_strict_unusable_reasons/strict_unusable_reasons.md`，包含 cause breakdown、逐 env 表和解释；结论是当前瓶颈主要为 dependency/runtime fixture/CLI output，而不是 semantic helper gate。
+
+## Session 22 - Relaxed trajectory examples
+
+- 按用户新思路“环境不需要可运行或交互，但每个 env 和 test case 需要能生成完整多轮 trajectory”重新 review 当前代码；本次未修改产品代码，使用 detached `origin/main` verify worktree `../debug/code2env_main_verify`，HEAD `f551ee88654b1bcb604ebf11361a279310e52e19`。
+- 代码 review 结论：`batch.generate_batch` 在非 strict 口径下会保留 `weak_oracle:*` EnvPackage；`rollout.ScriptedTraceSolveChat` 可离线生成 deterministic trace，顺序为 required `call_<helper>` tools -> `call_entrypoint` -> `submit_answer`；`runtime.Code2Env` 对提交答案做 exact-match，因此 weak-oracle trajectory 也可 `final_correct=true`，但这只表示匹配捕获的异常 oracle，不代表真实函数语义正确。
+- 写出并运行样例生成脚本 `../outputs/session22_trajectory_examples/generate_trajectory_examples.py`，从 Session20 strict batch manifest 选 5 个 sample repo env：`updater:check_for_update`（`bpy` missing）、`tinytuya.scanner:snapshot`（InvalidExecutorOutput / missing snapshot）、`saas.decorators:requires_subscription`（`django` missing）、`check_dependencies:check_import`（stdout before JSON）、`scripts.check-versions:check_language_version`（real_value baseline）。
+- 生成结果：`trajectory_examples.jsonl` 共 5 lines，5/5 `qualified=true`、5/5 `final_correct=true`、5/5 `helper_trace_complete=true`，全部为 5 轮 trajectory；5/5 `helper_trace_valid=false`，因为 helper calls 均为空参数或环境错误，符合“完整轨迹但非高质量真实子函数执行”的 caveat。
+- 主要产物：`../outputs/session22_trajectory_examples/review.md`、`summary.json`、`trajectory_examples.jsonl`、per-env full rollout JSON `rollouts/`、export records `export/`、打包文件 `session22_trajectory_examples_bundle.tgz`。
+- 结论：如果数据目标转为“完整多轮 trajectory”而非“strict runnable correctness”，现有代码已经能用 weak-oracle EnvPackage 扩大样本；但标签必须明确区分 `oracle_kind=weak_oracle`、`functional_correctness_untrusted`、`helper_trace_valid=false`，避免把异常复现当作真实功能正确。

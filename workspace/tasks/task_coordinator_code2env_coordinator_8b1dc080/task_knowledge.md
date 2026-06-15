@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=21 -->
+<!-- METADATA:SESSION=22 -->
 
 ## Knowledge Entries
 
@@ -30,3 +30,5 @@
 24. Session 20 fresh strict scan 说明 `/home/leisong/data/samples` 当前 38 个 Python repo 在 `--require-real-value --min-semantic-helpers 3 --no-install-deps` 下只有 1 个 strict usable env，29 个 build 为 weak-oracle；因此后续扩大真实数据量应优先处理安全依赖安装、typed fixture/hydration 或测试派生 fixture，而不是依赖静态 semantic helper gate。
 25. fresh strict rollout 的唯一可用 env 仍然 `helper_trace_complete=true` 但 `helper_trace_valid=false`，原因是 helper 参数无法从当前 fixture 自动提供。后续若目标是高质量 subfunction trajectory，应推进 helper argument synthesis 或把 `helper_trace_valid=true` 作为数据入选门槛。
 26. Session 21 对 Session20 的 29 个 non-strict built env 归因：全部因为 golden 执行落到 weak-oracle exception，主因是缺依赖/运行环境（`bpy`、`torch`、`matplotlib`、`django`、`languages`）、缺 package metadata、缺输入文件或 CLI/stdout 干扰 executor JSON；没有 nondeterministic 导致的 non-strict built env。后续提升 strict usable 数量应优先做 dependency/runtime fixture/CLI-output 隔离。
+27. 如果目标转为“完整多轮 trajectory 数据”而非 strict runnable correctness，则 weak-oracle EnvPackage 可以纳入：`rollout --llm-mode mock --trace-mode subfunctions` 能生成 helper -> entrypoint -> submit 的完整轨迹。数据标签必须区分 `trajectory_complete/correct_against_stored_oracle` 与 `functional_correctness_trusted`；weak-oracle 的 `final_correct=true` 只表示提交答案匹配捕获异常。
+28. Session22 样例说明现有 mock trace 足以生成多轮轨迹，但 `helper_trace_valid=false` 很常见；如果训练目标只需要工具调用序列可接受，若训练目标需要真实子函数执行质量，则仍需 helper argument synthesis 和 helper success gate。
