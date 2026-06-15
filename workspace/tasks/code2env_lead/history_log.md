@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=12 -->
+<!-- METADATA:SESSION=11 -->
 
 ## Session 0 - Created with team lead
 
@@ -203,7 +203,7 @@
 - 复查 PR#34：title 已改为 `[SUPERSEDED - DO NOT MERGE] task048 typed fixture helper args`，head `cb8ff1a5db050312a8896c4ce1b801a140f6ae22`，body 明确 implementation ownership moved to w4 and PR must not be merged or used for validation unless lead explicitly reauthorizes.
 - 当前状态：等待 w4 PR/ready head；w2 等待 w4 exact head 后验证。team_lead 未写产品代码、未跑产品测试、未 merge。
 
-## Session 12 - task048 worker_4 acceptance follow-up
+### Follow-up - task048 worker_4 acceptance check
 
 - 继续 active goal；检查 lead mailbox，结果 unread_count=0。
 - 复查 GitHub PR：仍无 `intern_code2env_worker_4` open PR；PR#34 仍是 w1 superseded PR，head `cb8ff1a5db050312a8896c4ce1b801a140f6ae22`，title `[SUPERSEDED - DO NOT MERGE] task048 typed fixture helper args`。
