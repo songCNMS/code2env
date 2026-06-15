@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=7 -->
 
 ## Knowledge Entries
 
@@ -36,3 +36,14 @@
     has an explicit start marker before reporting option A. An empty log and
     missing manifest from a wrapper that already exited must be reported as a
     failed launch, not as an active accepted-data run.
+11. A batch `strict_usable` record is not accepted for task050 until fresh
+    trace-mode evidence also proves helper_calls_successful,
+    helper_trace_valid, all_source_tool_returns_ok, final_correct, and every
+    source helper plus call_entrypoint return `ok=true`.
+12. An empty accepted JSONL is valid blocked-data evidence only when paired with
+    summary JSON/MD, rollout proof for rejected strict usable candidates,
+    focused validator output, no weak-oracle confirmation, and a categorized
+    blocker breakdown for accepted_count below 3.
+13. Formal handoff must name the exact PR head after metadata pushes; otherwise
+    worker_2 cannot validate the intended artifact set against a stable owner
+    revision.

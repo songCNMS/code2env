@@ -10,10 +10,16 @@
 | Team | code2env |
 | Current Task | task050_dependency_aware_samples_valid_trajectories |
 | PR | https://github.com/songCNMS/code2env/pull/37 |
-| Session | 5 |
+| Session | 7 |
 
 ## Recent Progress
 
+- Session 7 task050 formal handoff: canonical artifacts are present with
+  accepted_count=0; preparing exact-head blocked-data mailbox for worker_2
+  validation after pushing metadata.
+- Session 6 task050 owner artifacts ready: run2 produced one strict usable batch
+  env, fresh trace-mode rollout rejected it because helper returns failed, and
+  canonical artifacts now report accepted_count=0 with focused validator passing.
 - Session 5 task050 heartbeat: PR #37 was clean at `1d6077a`; launched
   install-enabled targeted batch run2 with PID `3146512`, dedicated
   `venv_cache`, `--min-semantic-helpers 3`, `--require-real-value`, and

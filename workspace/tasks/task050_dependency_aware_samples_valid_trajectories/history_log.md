@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - History Log
 
-<!-- METADATA:SESSION=5 -->
+<!-- METADATA:SESSION=7 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -153,3 +153,42 @@
 - Sent mailbox heartbeat `w1-task050-heartbeat-running-1d6077a-run2` reporting
   option A: dependency-aware accepted-data batch is running. No ready-for-test
   report has been sent.
+
+## Session 6 - 2026-06-15 UTC - Canonical zero-accepted artifacts ready
+
+- Run2 completed with exit code 0 and wrote
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/dependency_batch/install_enabled_targeted_run2/manifest.json`.
+  Summary: candidates_scanned=6207, semantic_gate_passed=58, build_ok=30,
+  smoke_ok=1, strict_usable=1, usable=1, real_value=1, deterministic=1,
+  weak_oracle=29, min_semantic_helpers=3, require_real_value=true.
+- Fresh trace-mode rollout was run for the only strict usable candidate,
+  `code2env.scripts.check-versions.check_language_version.21a74cc9.v1`
+  / `scripts.check-versions:check_language_version`, using
+  `python3 -m code2env rollout ... --llm-mode mock --trace-mode subfunctions`.
+  The rollout was qualified and final_correct=true, but
+  helper_calls_successful=false, helper_trace_valid=false, and
+  all_source_tool_returns_ok=false, so the candidate was rejected from the
+  accepted JSONL.
+- Canonical task050 artifacts were produced under the Session25 artifact root:
+  empty `accepted_valid_helper_trajectories.jsonl`, `summary.json`,
+  `summary.md`, `rollouts/rollouts.jsonl`, `rollout_exports/`,
+  `validate_task050_outputs.py`, and `validation_report.json`.
+- Focused validation command
+  `python3 .../validate_task050_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`
+  passed with `{"accepted_count": 0, "ok": true, "records": 0}`.
+- Product code did not change in PR #37; full pytest is not rerun for this
+  owner-side handoff and the report uses a data/metadata-only reuse rationale.
+
+## Session 7 - 2026-06-15 UTC - Formal owner handoff requested
+
+- Team lead confirmed the canonical artifact set is visible at the task050 root:
+  `accepted_valid_helper_trajectories.jsonl` with 0 lines, `summary.json`,
+  `summary.md`, run2 manifest, rollout artifact, and worker4 audit.
+- Team lead requested a formal ready-for-test/blocked-data mailbox identifying
+  exact PR #37 head, merge state if known, artifact paths, accepted_count=0,
+  commands/results, failed strict-usable predicate outcome, no weak-oracle
+  confirmation, tests or reuse rationale, and residual risks.
+- Worker_1 prepared the handoff as blocked-data ready for worker_2 validation:
+  accepted_count remains 0 because the only strict usable run2 candidate failed
+  helper_calls_successful, helper_trace_valid, and all_source_tool_returns_ok in
+  fresh trace-mode rollout evidence.
