@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 17 |
+| Session | 18 |
 
 ## 最近进展
 
@@ -31,3 +31,4 @@
 - Session 15：按用户“执行下一步”要求，将 qlib min3 gate 后的 fixture synthesis 阻塞拆成 lead 任务；handoff 写入 `../outputs/session15_rich_fixture_min3_qlib_goal.md`，要求 rich fixture descriptors/hydration/canonical serialization，并以至少 1 个安全 qlib min3 usable env + subfunction trace rollout 为目标；goal API timeout，peer send 兜底已 delivered。
 - Session 16：按用户新任务扫描 `/home/leisong/data/samples` 离线 repo archive；使用最新 `origin/main` verify 代码（`dc695ba`）按最新本地分支、Python 仓库、module-level、无明显风险、auto fixture OK、dedicated semantic helpers >=3、复杂度阈值过滤，处理 200 个 archive / 38 个 Python repo，选出 26 个当前可转环境候选，结果写入 `../outputs/session16_samples_scan/candidate_results.{json,md}`。
 - Session 17：基于 Session 16 top 10 candidates 执行 draft/build/smoke + mock subfunction trace rollout；10/10 draft/build/smoke/mock trace/export OK，但 strict usable 只有 1/10（rank 5 `scripts.check-versions:check_language_version`）；对该 usable env 执行 endpoint trace，`gpt-5.5` 1/1 qualified/correct/helper_trace_complete，JSONL 写入 `../outputs/session17_samples_candidate_validation/endpoint_trace_rank05.jsonl`；9 个为 weak-oracle build，不作为真实可用样本。
+- Session 18：将 Session 17 暴露的 weak-oracle 误计数与 helper 参数质量问题拆成 lead 实现任务 `task047_strict_usable_trace_quality`；handoff 写入 `../outputs/session18_strict_usable_trace_quality/task047_strict_usable_trace_quality_goal.md`，goal API timeout 无可靠回执，peer send 兜底已 delivered。

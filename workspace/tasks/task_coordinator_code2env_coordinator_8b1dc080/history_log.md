@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=17 -->
+<!-- METADATA:SESSION=18 -->
 
 ## Session 0 - Created with coordinator
 
@@ -142,3 +142,12 @@
 - 质量 caveat：该 endpoint trace 中记录 3 次 helper call error，原因是当前 trace prompt/mock 顺序会以空参数调用需要参数的 helper；trace completeness 当前验证的是 required helper coverage/order 和 entrypoint-after-helpers，不等价于每个 helper call 都成功。
 - 汇总产物：`../outputs/session17_samples_candidate_validation/validation_results.json`、`validation_results.md`、`mock_trace_rollouts.jsonl`、`endpoint_trace_rank05.jsonl`、`exported_rollouts/`、`exported_endpoint_rank05/`。
 - 结论：Session 16 的静态候选能生成 package 并跑通 mock trace，但真实可用数据应以 strict usable 口径计数；当前 top 10 中真实可用于 endpoint 数据生成的是 1/10，下一步应优先把 missing dependency / weak-oracle 样本转成 real_value，或在 candidate scan 阶段加入 dependency viability 过滤。
+
+## Session 18 - Strict usable and trace quality handoff
+
+- 按用户“执行下一步”要求，将 Session 17 发现的两个产品问题拆成 `intern_code2env_lead` 可执行任务：一是 weak-oracle exception build 不应计入 strict usable/runnable 数据，二是 subfunction trace completeness 需要暴露 required helper call 是否成功。
+- 写出 handoff 文件 `../outputs/session18_strict_usable_trace_quality/task047_strict_usable_trace_quality_goal.md`，建议任务 id `task047_strict_usable_trace_quality`，要求 lead 创建标准 task、分配 implementation worker 与 independent tester。
+- handoff 覆盖 Workstream A：新增或等价实现 strict usable / dependency viability 过滤，要求 batch/summary/manifest 分离 `build_ok`、`smoke_ok`、`real_value`、`deterministic`、`strict_usable`、`weak_oracle`，保留 weak-oracle exception type/message，复跑 Session 17 top 10 或等价 samples top-N。
+- handoff 覆盖 Workstream B：subfunction trace 输出每个 required helper call 的 success 状态，新增 `helper_calls_successful` 或 strict trace valid 指标；对 rank 5 usable env，必须让 3 个 helper 参数失败显式反映在严格指标中，或通过安全参数合成消除失败。
+- 验收要求写入 handoff：focused tests、full `python3 -m pytest -q`、样本 validation summary、rollout JSONL、rollout-export 产物、PR/commit/artifact 回报；最低验收为 Session 17 top10 strict usable 仍不把 9 个 weak-oracle 样本计入，rank5 trace 暴露 helper 参数失败或安全修复。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task047_strict_usable_trace_quality` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。

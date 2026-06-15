@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=17 -->
+<!-- METADATA:SESSION=18 -->
 
 ## Knowledge Entries
 
@@ -24,3 +24,4 @@
 18. `/home/leisong/data/samples` 的离线样本不是已展开 worktree，而是含 bare git repo 与 profile/issue/PR 元数据的 `.tgz` archive；扫描“最新分支”时应抽取 bare git、按本地 heads 最新 committerdate 选 branch，再 `git archive` 展开 commit。Session 16 的可转换候选结果保存在 `../outputs/session16_samples_scan/candidate_results.json` 和 `.md`。
 19. Session 16 的静态 eligibility 会高估真实可用性：Session 17 top10 验证显示 10/10 可 draft/build/smoke/mock trace，但只有 1/10 是 `golden_status=real_value` 且 deterministic。后续数据质量统计必须把 weak-oracle build 与 strict usable env 分开；只有 strict usable 才适合计入真实 endpoint rollout 数据。
 20. subfunction trace completeness 当前检查的是 required helper tool 覆盖和 `call_entrypoint` 顺序，不保证 helper call 本身成功。Session 17 的 usable endpoint trace 出现 helper 空参数调用错误但仍 helper_trace_complete，因此后续 trace 质量改进应增加 helper call success 校验，或根据 entrypoint fixture/签名合成 helper 参数。
+21. Session 18 已将 strict usable/weak-oracle 过滤与 helper call success metric 合并为 `task047_strict_usable_trace_quality` handoff；后续验收应同时看数据口径和 trace 质量口径，避免“构建可跑但只是在复现错误”或“helper 覆盖完整但 helper 调用失败”的假阳性。
