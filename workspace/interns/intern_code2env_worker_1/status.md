@@ -10,10 +10,15 @@
 | Team | code2env |
 | Current Task | task050_dependency_aware_samples_valid_trajectories |
 | PR | https://github.com/songCNMS/code2env/pull/37 |
-| Session | 4 |
+| Session | 5 |
 
 ## Recent Progress
 
+- Session 5 task050 heartbeat: PR #37 was clean at `1d6077a`; launched
+  install-enabled targeted batch run2 with PID `3146512`, dedicated
+  `venv_cache`, `--min-semantic-helpers 3`, `--require-real-value`, and
+  `--determinism-runs 2`; mailbox `w1-task050-heartbeat-running-1d6077a-run2`
+  sent to lead.
 - Session 4 task050 checkpoint: synced PR #37 with latest `origin/main`
   through `b08774b`; artifacts are not ready yet, so work continues on the
   install-enabled dependency-aware batch with dedicated venv cache and strict

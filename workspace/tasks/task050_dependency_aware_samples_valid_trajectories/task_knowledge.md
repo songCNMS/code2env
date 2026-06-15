@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Knowledge Entries
 
@@ -32,3 +32,7 @@
    report must include generated JSONL/summary files, dependency manifest or
    equivalent command evidence, focused predicate output, accepted count, and
    blocker breakdown when accepted_count is below 3.
+10. For heartbeat reporting, verify the batch PID is still alive and the log path
+    has an explicit start marker before reporting option A. An empty log and
+    missing manifest from a wrapper that already exited must be reported as a
+    failed launch, not as an active accepted-data run.

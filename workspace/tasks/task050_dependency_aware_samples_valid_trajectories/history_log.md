@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -129,3 +129,27 @@
   installs enabled, the dedicated `venv_cache`, `--min-semantic-helpers 3`,
   `--require-real-value`, and determinism checking. No ready-for-validation
   mailbox is due until JSONL/summary artifacts and predicate evidence exist.
+
+## Session 5 - 2026-06-15 UTC - Heartbeat and install-enabled batch launch
+
+- Team lead heartbeat confirmed PR #37 was `CLEAN` at head
+  `1d6077a17c69ac7d35e5248c8ce0adac870bbc02` and requested a mailbox progress
+  update with either running-batch, failure/blocker, or ready-for-test evidence.
+- Worker_1 launched install-enabled targeted accepted-data run
+  `dependency_batch/install_enabled_targeted_run1`, but its wrapper exited
+  immediately with an empty log and no `manifest.json`; no accepted-data claim
+  was made from that run.
+- Worker_1 relaunched as
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/dependency_batch/install_enabled_targeted_run2/`.
+  The run uses no `--no-install-deps`, `--target 5`, dedicated `venv_cache`,
+  `--determinism-runs 2`, `--min-semantic-helpers 3`, and
+  `--require-real-value`.
+- Run2 target set is 9 task049 dependency-likely sample worktrees: SIMPA,
+  speed-comparison, FOLIO migration tools, djaodjin-saas, tinytuya, panseg,
+  aeneas, scour, and cats-blender-plugin for system dependency evidence.
+- Run2 started at `2026-06-15T12:40:35Z` with PID `3146512`; primary log path is
+  `.../dependency_batch/install_enabled_targeted_run2/batch.stdout`, with
+  `command.sh`, `batch.pid`, and `started_at.txt` alongside it.
+- Sent mailbox heartbeat `w1-task050-heartbeat-running-1d6077a-run2` reporting
+  option A: dependency-aware accepted-data batch is running. No ready-for-test
+  report has been sent.
