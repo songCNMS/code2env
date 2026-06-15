@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Knowledge Entries
 
@@ -47,3 +47,6 @@
 13. Formal handoff must name the exact PR head after metadata pushes; otherwise
     worker_2 cannot validate the intended artifact set against a stable owner
     revision.
+14. If the mailbox API returns stored but lead does not see unread mail, resend
+    with a new client_message_id and a concise payload under the mailbox content
+    limit, then record the delivered message id in task history.

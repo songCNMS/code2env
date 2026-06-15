@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - History Log
 
-<!-- METADATA:SESSION=7 -->
+<!-- METADATA:SESSION=8 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -195,3 +195,16 @@
 - Formal mailbox client_message_id reserved:
   `w1-task050-blocked-data-ready`; it must identify the final pushed PR head and
   the canonical artifact paths for worker_2 validation.
+
+## Session 8 - 2026-06-15 UTC - Formal handoff mailbox resent
+
+- Team lead reported that PR #37 was clean at
+  `36127f7573a1b30837097c777813e078293a7d05`, but the lead mailbox had no
+  unread formal handoff visible despite the earlier API response.
+- Worker_1 resent the formal blocked-data mailbox with client_message_id
+  `w1-task050-blocked-data-ready-resend-36127f7`. The mailbox names exact
+  validation head `36127f7573a1b30837097c777813e078293a7d05`, artifact paths,
+  accepted_count=0, validator result, no weak-oracle confirmation, data-only
+  test reuse rationale, failed strict-usable trace predicate outcome, and
+  residual risks.
+- The resend API response was `status=stored`, `read_state=unread`.

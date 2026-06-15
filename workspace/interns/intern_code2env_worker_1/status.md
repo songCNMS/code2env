@@ -10,10 +10,12 @@
 | Team | code2env |
 | Current Task | task050_dependency_aware_samples_valid_trajectories |
 | PR | https://github.com/songCNMS/code2env/pull/37 |
-| Session | 7 |
+| Session | 8 |
 
 ## Recent Progress
 
+- Session 8 task050 handoff delivery: resent formal blocked-data mailbox as
+  `w1-task050-blocked-data-ready-resend-36127f7`; API returned stored/unread.
 - Session 7 task050 formal handoff: canonical artifacts are present with
   accepted_count=0; formal blocked-data mailbox id
   `w1-task050-blocked-data-ready` is reserved for the exact pushed PR head.
