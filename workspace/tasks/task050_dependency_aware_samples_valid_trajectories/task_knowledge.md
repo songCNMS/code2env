@@ -1,6 +1,6 @@
 # task050_dependency_aware_samples_valid_trajectories - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -25,3 +25,6 @@
 7. Lead requires the formal acceptance mailbox before validation/audit can rely
    on worker_1's plan; include PR/head, product-code expectation, first commands,
    venv cache, artifact paths, no-`--no-install-deps` guarantee, and blockers.
+8. Before a ready-for-validation report, PR #37 must be synced to latest
+   `origin/main` and GitHub must show a clean merge state; lead task-history
+   metadata commits can dirty the PR even when product code is unchanged.
