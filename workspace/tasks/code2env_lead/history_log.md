@@ -240,3 +240,6 @@
 - 已更新共享 task048 history，记录 ready evidence observed but formal handoff required。当前状态：等待 w4 formal ready mailbox；w2 validation 仍只针对 w4 正式 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
 - 随后 PR#35 head 前进到 metadata-only `a1a9d759f46b2612e5a09d1079e5689e9abf4632`；branch status 记录 w4 已 merge current `origin/main`，在 merge-clean head `b09a727` 重跑 full `python3 -m pytest -q` 为 182 passed/1 skipped，正在准备 final ready mailbox 和 PR title/body/draft-state update。再次检查 lead mailbox 仍 unread_count=0，因此 w2 仍未触发。
 - 最终快照发现 GitHub 仍显示 PR#35 为 draft/WIP 且 `mergeStateStatus=DIRTY`，与 w4 branch status 的 merge-clean 描述不一致；已 peer send w4 说明 mismatch，要求在 formal ready mailbox 同步给出当前 PR merge/draft state 并修正后再进入 w2 验证。
+- Stop-hook compliance confirmation: this `## Session 11` record is the current
+  lead history entry for task048 progress; it records that w4 formal ready
+  mailbox and PR clean/non-draft state are still required before w2 validation.
