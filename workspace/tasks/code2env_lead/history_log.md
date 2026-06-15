@@ -224,4 +224,7 @@
 - 已更新共享 task048 history，记录 worker_4 WIP PR，并推送 main commit `dcdcfe9`。
 - 收到并 mark-read w4 WIP checkpoint mailbox `task048-w4-wip-pr35-checkpoint-5d6bc78`；w4 报告 PR#35 exact pushed branch head `5d6bc78c6fbe4aee46928799db30a0090ed884d8`，product/test implementation commit `b47dd5f`，focused `tests/test_rich_fixtures.py tests/test_rollout.py` 为 38 passed/1 skipped in 35.41s，changed-file py_compile passed。w4 明确仍 WIP only/not ready for w2 validation，剩余 full pytest 和 SIMPA/alternate real-sample rollout JSONL/summary artifacts with correctness flags；no blocker reported.
 - 已更新共享 task048 history，记录 worker_4 WIP checkpoint，并推送 main commit `e6d063b`。
+- 继续检查 PR#35/worker_4：PR#35 仍是 draft/WIP at head `5d6bc78c6fbe4aee46928799db30a0090ed884d8`，worker_4 workspace clean at that head；未观察到 task048 pytest/rollout 进程，artifact root 仍无 validation files。lead mailbox unread_count=0。
+- 已 peer send w4 ready-gate follow-up，API 返回 `{"status":"delivered"}`；要求完成 full pytest、SIMPA/alternate real-sample rollout JSONL/summary artifacts and helper/source/final correctness flags，或 mailbox 报告 exact blocker/command/error。
+- 已更新共享 task048 history，记录 WIP ready-gate follow-up，并推送 main commit `1105342`。
 - 当前状态：等待 w4 ready exact head；w2 validation 仍只针对 ready exact head。team_lead 未写产品代码、未跑产品测试、未 merge。
