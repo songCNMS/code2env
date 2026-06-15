@@ -15,8 +15,8 @@
 ## Recent Progress
 
 - Session 7 task050 formal handoff: canonical artifacts are present with
-  accepted_count=0; preparing exact-head blocked-data mailbox for worker_2
-  validation after pushing metadata.
+  accepted_count=0; formal blocked-data mailbox id
+  `w1-task050-blocked-data-ready` is reserved for the exact pushed PR head.
 - Session 6 task050 owner artifacts ready: run2 produced one strict usable batch
   env, fresh trace-mode rollout rejected it because helper returns failed, and
   canonical artifacts now report accepted_count=0 with focused validator passing.

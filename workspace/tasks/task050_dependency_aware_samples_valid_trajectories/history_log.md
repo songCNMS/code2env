@@ -192,3 +192,6 @@
   accepted_count remains 0 because the only strict usable run2 candidate failed
   helper_calls_successful, helper_trace_valid, and all_source_tool_returns_ok in
   fresh trace-mode rollout evidence.
+- Formal mailbox client_message_id reserved:
+  `w1-task050-blocked-data-ready`; it must identify the final pushed PR head and
+  the canonical artifact paths for worker_2 validation.
