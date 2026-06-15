@@ -213,9 +213,7 @@
 - 写出诊断报告 `../outputs/session24_valid_tool_returns/session24_report.md`，说明旧 relaxed missing packages 的根因、依赖安装 probe、simpa JSON/Tensor 参数阻塞，以及本轮 valid trajectory 的质量口径。
 - 通过 Feishu messaging 脚本发送 JSONL 到 `intern_code2env_coordinator` 飞书会话 chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`；file_key `file_v3_0012m_84e168dc-899e-4590-b9ad-135131a65c4g`，文件消息 ID `om_x100b6dcf0646a490b29f5b1468ee6c8`，确认文本消息 ID `om_x100b6dcf0655f8e4b1f54504763ee25`，回执保存到 `../outputs/session24_valid_tool_returns/feishu_send_result.json`。
 
-## Session 24 - task048 typed fixture and helper args handoff
-
-<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->
+### task048 typed fixture and helper args handoff
 
 - 按用户“执行下一步”要求，继续推进 Session24 结论中的 typed fixture/hydration 与 helper argument synthesis；coordinator 遵守 role 边界，不直接修改产品代码，将实现与验证任务下发给 `intern_code2env_lead`。
 - 核对当前实现：`code2env/executor.py` 仍将 JSON payload 直接 `json.loads` 后传给目标函数，非 JSON 返回退化为 `repr`；`code2env/batch.py:synthesize_fixture` 只支持标量/list/dict/None 等简单类型；`code2env/rollout.py` prompt 明确要求 helper args 省略，导致 subfunction trace 可完整但 helper tool return 可能失败。
