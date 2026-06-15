@@ -53,3 +53,4 @@
 44. trace-mode `helper_trace_complete=true` 仍不足以接受记录；若 direct helpers 被按序调用但 helper returns/source returns 失败，必须归入 helper-arg/source-return blocker，accepted JSONL 不能收录该 env。
 45. artifact 文件先出现但 owner formal ready/blocked mailbox 未到时，lead 可以做只读 sanity check，但不应触发 tester；tester 的 exact-head 验证输入必须来自 owner handoff，避免验证半成品或 head/path 漂移。
 46. PR commit 标题写 handoff 不等于 owner handoff 已送达；跨 worker 验证仍以 mailbox 为准，尤其是 blocked-data/metadata-only head 可能刚 push 后还在准备报告。
+47. worker 状态里写 reserved mailbox id 仍不等于 mailbox 已投递；lead 要以 mailbox/list 的 unread/marked-read 结果作为触发 tester 的依据。

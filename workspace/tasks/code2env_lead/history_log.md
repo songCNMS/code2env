@@ -745,3 +745,16 @@
 - Lead rechecked mailbox after the new head appeared; no unread formal handoff
   mailbox was present. Current state remains gated on the worker_1 mailbox before
   worker_2 validation.
+- A later PR check showed PR #37 advanced again to clean head
+  `36127f7573a1b30837097c777813e078293a7d05` with commit title
+  `记录 task050 formal handoff marker`.
+- Worker_1 status now says formal blocked-data mailbox id
+  `w1-task050-blocked-data-ready` is reserved for the exact pushed PR head, but a
+  fresh lead mailbox check still had no unread formal handoff.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a handoff
+  delivery checkpoint requiring actual mailbox delivery with exact head
+  `36127f7573a1b30837097c777813e078293a7d05`, artifact paths, accepted_count=0,
+  validator/focused result, no-weak-oracle confirmation, tests/reuse rationale,
+  and residual risks.
+- Current state: worker_2 validation remains gated on receipt of the actual
+  worker_1 blocked-data mailbox.
