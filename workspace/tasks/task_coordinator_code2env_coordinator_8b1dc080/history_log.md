@@ -253,3 +253,11 @@
 ### hook format correction
 
 - 对 stop hook 的 Session 24 记录检查做格式修正：保留唯一 Session 24 主标题和 `<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->` 元数据，task048 handoff/progress/reassignment/completion 均作为该 Session 24 记录下的子节保存，避免重复 Session 主标题。
+
+### task049 samples valid helper trajectories handoff
+
+- 按用户“执行下一步”要求，基于 task048/PR #35 已合入能力推进下一阶段数据生成：重新扫描 `/home/leisong/data/samples`，寻找更多 >=3 semantic helper 且能生成 valid helper-return trajectory 的 sample repo 环境。
+- 写出 handoff 文件 `../outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories_goal.md`，建议任务 id `task049_samples_valid_helper_trajectories`。目标是在 latest `origin/main`（至少 `d3a5af36cefba34028eac723a9145f6e3d75a037`）上运行 sample repo scan/rollout，输出 JSONL dataset 和 summary。
+- 验收口径写入 handoff：accepted record 必须 `qualified=true`、final real-value correct、`subfunction_trace.helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`，并且 source helper/entrypoint returns 均 `ok=true`、semantic helper count >=3、golden status real_value、determinism deterministic。
+- 明确不接受 weak-oracle exception correctness、helper 调用失败但 trace complete、网络 sandbox helper 失败被误计入成功等数据；若少于 5 条 valid records，需要给出 blocker breakdown。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task049_samples_valid_helper_trajectories` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session24_valid_tool_returns/task049_handoff_delivery.json`。
