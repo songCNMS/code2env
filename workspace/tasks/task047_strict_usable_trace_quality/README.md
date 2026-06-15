@@ -1,6 +1,6 @@
 # task047_strict_usable_trace_quality - Strict usable and helper trace quality
 
-<!-- METADATA:STATUS=Open,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## Background
 

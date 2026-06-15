@@ -106,6 +106,7 @@ def generate_batch(
     venv_cache_dir: str | Path | None = None,
     determinism_runs: int = 3,
     min_semantic_helpers: int = 0,
+    require_real_value: bool = False,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
     """Generate EnvPackages across ``repos`` and return the manifest dict.
@@ -131,6 +132,7 @@ def generate_batch(
     repo_deps: dict[str, dict[str, Any]] = {}
     candidates_scanned = 0
     build_ok_total = 0
+    accepted_total = 0
     semantic_gate_passed = 0
     skipped_insufficient_semantic_helpers = 0
 
@@ -144,6 +146,8 @@ def generate_batch(
                 "build_ok": 0,
                 "smoke_ok": 0,
                 "real_value": 0,
+                "deterministic": 0,
+                "strict_usable": 0,
                 "weak_oracle": 0,
                 "usable": 0,
                 "nondeterministic": 0,
@@ -170,7 +174,7 @@ def generate_batch(
         repo_build_ok = 0
 
         for candidate in candidates:
-            if build_ok_total >= target_count:
+            if accepted_total >= target_count:
                 break
             if per_repo_limit is not None and repo_build_ok >= per_repo_limit:
                 break
@@ -253,15 +257,24 @@ def generate_batch(
                 by_repo[repo_label]["real_value"] += 1
             elif env_record["golden_status"]:
                 by_repo[repo_label]["weak_oracle"] += 1
+            if env_record["determinism"] == "deterministic":
+                by_repo[repo_label]["deterministic"] += 1
             if is_usable(env_record["golden_status"], env_record["determinism"]):
                 by_repo[repo_label]["usable"] += 1
+                by_repo[repo_label]["strict_usable"] += 1
             elif env_record["determinism"] and env_record["determinism"] != "deterministic":
                 by_repo[repo_label]["nondeterministic"] += 1
+            if require_real_value and env_record["strict_rejection_reason"]:
+                skipped.append(_strict_rejection_skip(env_record, repo_label))
+            if env_record["strict_usable"] or (env_record["build_ok"] and not require_real_value):
+                accepted_total += 1
 
-        if build_ok_total >= target_count:
+        if accepted_total >= target_count:
             break
 
     real_value = sum(1 for env in envs if env["golden_status"] == "real_value")
+    deterministic = sum(1 for env in envs if env["determinism"] == "deterministic")
+    strict_usable = sum(1 for env in envs if env["strict_usable"])
     summary = {
         "candidates_scanned": candidates_scanned,
         "draft_ok": sum(1 for env in envs if env["draft_ok"]),
@@ -270,6 +283,8 @@ def generate_batch(
         "skipped_no_fixture": len(skipped),
         # task030: real_value envs have a real golden; weak_oracle excluded & listed apart.
         "real_value": real_value,
+        "deterministic": deterministic,
+        "strict_usable": strict_usable,
         "weak_oracle": sum(
             1 for env in envs if env["golden_status"] and env["golden_status"] != "real_value"
         ),
@@ -281,6 +296,7 @@ def generate_batch(
             for env in envs
             if env["determinism"] and env["determinism"] != "deterministic"
         ),
+        "require_real_value": require_real_value,
         "min_semantic_helpers": min_semantic_helpers,
         "semantic_gate_passed": semantic_gate_passed,
         "skipped_insufficient_semantic_helpers": skipped_insufficient_semantic_helpers,
@@ -329,6 +345,10 @@ def _generate_one(
         "smoke_fail_reason": None,
         "golden_status": None,
         "determinism": None,
+        "strict_usable": False,
+        "strict_rejection_reason": None,
+        "golden_error_type": None,
+        "golden_error_message": None,
         "semantic_helper_count": len(semantic_helpers),
         "semantic_helpers": semantic_helpers,
         "deps_status": repo_env["deps_status"],
@@ -352,6 +372,13 @@ def _generate_one(
         record["draft_ok"] = True
         record["golden_status"] = spec.provenance.get("golden_status")
         record["determinism"] = spec.provenance.get("determinism")
+        record["strict_usable"] = is_usable(record["golden_status"], record["determinism"])
+        record["strict_rejection_reason"] = _strict_rejection_reason(
+            record["golden_status"], record["determinism"]
+        )
+        if isinstance(spec.golden_answer, dict) and spec.golden_answer.get("ok") is False:
+            record["golden_error_type"] = spec.golden_answer.get("error_type")
+            record["golden_error_message"] = spec.golden_answer.get("error_message")
         spec.provenance["fixture_strategy"] = fixture.get("strategy")
         spec.provenance["fixture_rich_params"] = fixture_rich_params
     except Exception as exc:  # noqa: BLE001 - a failed draft is a recorded outcome, not a crash.
@@ -374,6 +401,33 @@ def _generate_one(
             package_root, spec.golden_answer
         )
     return record
+
+
+def _strict_rejection_reason(golden_status: str | None, determinism: str | None) -> str | None:
+    if is_usable(golden_status, determinism):
+        return None
+    if golden_status and golden_status != "real_value":
+        suffix = golden_status.removeprefix("weak_oracle:")
+        return f"strict_unusable:weak_oracle:{suffix}"
+    if golden_status == "real_value" and determinism != "deterministic":
+        return f"strict_unusable:nondeterministic:{determinism or 'unknown'}"
+    return "strict_unusable:golden_unavailable"
+
+
+def _strict_rejection_skip(env_record: dict[str, Any], repo_label: str) -> dict[str, Any]:
+    entry = {
+        "symbol": env_record["symbol"],
+        "repo": repo_label,
+        "reason": env_record["strict_rejection_reason"],
+        "env_id": env_record["env_id"],
+        "golden_status": env_record["golden_status"],
+        "determinism": env_record["determinism"],
+    }
+    if env_record.get("golden_error_type"):
+        entry["error_type"] = env_record["golden_error_type"]
+    if env_record.get("golden_error_message"):
+        entry["error_message"] = env_record["golden_error_message"]
+    return entry
 
 
 def _validate_min_semantic_helpers(value: int) -> None:

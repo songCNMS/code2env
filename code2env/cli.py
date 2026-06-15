@@ -168,6 +168,14 @@ def main(argv: list[str] | None = None) -> int:
             f"batch generation work (0-{MAX_SEMANTIC_HELPER_TOOLS}, default: 0)"
         ),
     )
+    batch_parser.add_argument(
+        "--require-real-value",
+        action="store_true",
+        help=(
+            "Only count real_value + deterministic envs toward --target; weak-oracle "
+            "and nondeterministic builds remain audited but are rejected from strict usable data"
+        ),
+    )
 
     rollout_export_parser = subcommands.add_parser(
         "rollout-export",
@@ -424,6 +432,7 @@ def _batch(args: argparse.Namespace) -> int:
         venv_cache_dir=args.venv_cache_dir,
         determinism_runs=args.determinism_runs,
         min_semantic_helpers=args.min_semantic_helpers,
+        require_real_value=args.require_real_value,
     )
     _print_json({"output_dir": str(Path(args.output_dir).resolve()), "summary": manifest["summary"]})
     return 0
