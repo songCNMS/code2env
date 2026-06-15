@@ -17,3 +17,4 @@
 9. 技术事实(task046)：default batch 不应 generic synthesize `Path` required params；否则 Path writer 函数可能在 golden/smoke 阶段写入 source tree，安全做法是默认 unsupported skip，除非 symbol-specific safe policy 显式处理。
 10. 技术事实(task047)：strict usable batch gating should be opt-in (`--require-real-value`) so default build/target behavior stays compatible while strict mode counts only deterministic `real_value` envs and audits weak-oracle rejections.
 11. 技术事实(task047)：`helper_trace_complete` only proves helper coverage/order; rollout trace quality also needs per-helper success metadata plus `helper_calls_successful`/`helper_trace_valid` to expose failed helper calls such as `argument_unavailable` TypeErrors.
+12. 流程(task049)：artifact-only任务若在ready后追加metadata commit，必须用最终PR head刷新summary/JSONL证据，并避免在history_log里复用已有Session编号。

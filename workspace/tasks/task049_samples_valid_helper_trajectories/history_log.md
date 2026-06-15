@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - History Log
 
-<!-- METADATA:SESSION=4 -->
+<!-- METADATA:SESSION=5 -->
 
 ## Session 0 - 2026-06-15 UTC - Task created by team lead
 
@@ -123,3 +123,49 @@
   fix the artifact generation/golden-answer comparison or provide a blocker
   breakdown without accepted false positives. Worker_2 remains gated and has
   not been asked to validate yet.
+
+## Session 6 - 2026-06-15 UTC - Worker_1 ready handoff after gate fix
+
+- Worker_1 merged latest `origin/main` at `47fa0ff` into PR #36 after lead
+  recorded the failed artifact gate, keeping the branch metadata-only with no
+  product-code changes.
+- Worker_1 fixed the artifact generation procedure by computing the SIMPA
+  real-value golden/determinism with a documented 30 second subprocess timeout
+  before package build; the previous `TimeoutExpired` weak oracle is not treated
+  as accepted.
+- Canonical artifacts now exist under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`:
+  `accepted_valid_helper_trajectories.jsonl`, `summary.json`, `summary.md`,
+  `rollouts/rollouts.jsonl`, `rollout_exports/`, `batch_no_install_audit/manifest.json`,
+  `generate_task049_artifacts.py`, and `validate_task049_outputs.py`.
+- Accepted JSONL contains one record: `code2env.simpa.utils.calculate.rotation.2b54724b.v1`
+  / `simpa.utils.calculate:rotation`, with 3 semantic helpers
+  `rotation_x`, `rotation_y`, `rotation_z`.
+- Accepted record predicates all pass: `helper_trace_complete=true`,
+  `helper_calls_successful=true`, `helper_trace_valid=true`,
+  `all_source_tool_returns_ok=true`, `final_correct=true`,
+  `golden_status=real_value`, and `determinism=deterministic`.
+- Broad current-code no-install strict batch audit over sample-derived Session20
+  worktrees scanned 12063 candidates, with semantic_gate_passed 83, build_ok 30,
+  smoke_ok 1, real_value 1, strict_usable 1, weak_oracle 29, and
+  skipped_insufficient_semantic_helpers 2825.
+- Incorporated worker4 audit-support blocker counts in canonical summary:
+  semantic_gate_passed 83, built envs 30, strict usable 1, old accepted-like 0,
+  built weak-oracle 29, strict-real helper-return rejected 1, untyped required
+  parameter 44, unsupported annotation/type 8, unsafe side-effect/network/filesystem 1.
+- Focused predicate passed:
+  `PYTHONPATH=/home/leisong/codes/work-agents/intern_code2env_worker_1/code2env python3 .../validate_task049_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`
+  -> ok, records=1.
+- Full verification passed: `python3 -m pytest -q` -> 182 passed, 1 skipped.
+
+## Session 7 - 2026-06-15 UTC - Self-merge authorized
+
+- Team lead approved PR #36 for standard self-merge after W2 independent
+  validation passed at exact head `0b9a519405086ddcab7ede93220158f82d0985df`.
+- W2 validated focused predicate exit 0, accepted_count=1, accepted record
+  helper/source/final flags true, coherent blocker breakdown for fewer than 5
+  accepted records, and reused full pytest 182 passed / 1 skipped with
+  metadata-only delta proof from `befdea6` to `0b9a519`.
+- Worker marked task049 `Completed` and worker status `Idle` before self-merge.
+- PR scope remains metadata-only with no product-code changes and no default
+  behavior impact.

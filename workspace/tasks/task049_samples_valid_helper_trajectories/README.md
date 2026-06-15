@@ -1,6 +1,6 @@
 # task049_samples_valid_helper_trajectories - Sample valid helper-return trajectories
 
-<!-- METADATA:STATUS=Open,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## Background
 

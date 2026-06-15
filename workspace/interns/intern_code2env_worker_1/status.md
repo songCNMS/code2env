@@ -10,10 +10,45 @@
 | Team | code2env |
 | Current Task |  |
 | PR |  |
-| Session | 3 |
+| Session | 5 |
 
 ## Recent Progress
 
+- Session 5 task049 self-merge authorization received after W2 PASS at exact
+  PR #36 head `0b9a519405086ddcab7ede93220158f82d0985df`; completion metadata
+  prepared with no product-code changes.
+- Task049 final accepted count remains 1 with SIMPA
+  `simpa.utils.calculate:rotation`; focused predicate passed and full pytest
+  evidence is `python3 -m pytest -q` -> 182 passed, 1 skipped.
+- Session 4 task049 ready handoff: PR #36 metadata push completed after canonical
+  artifacts were generated; no product-code changes are included in the branch.
+- Formal ready report contents are prepared for mailbox with exact PR head,
+  focused predicate result, full pytest result, artifact paths, accepted count 1,
+  blocker breakdown, default behavior impact, and residual risks.
+- Session 3 task049 canonical artifacts generated under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`;
+  accepted count is 1, with SIMPA `simpa.utils.calculate:rotation` passing
+  helper trace complete/successful/valid, all source returns ok, final correct,
+  real_value, and deterministic.
+- Task049 focused predicate:
+  `python3 .../validate_task049_outputs.py --jsonl .../accepted_valid_helper_trajectories.jsonl --summary .../summary.json`
+  -> ok, records=1, env `code2env.simpa.utils.calculate.rotation.2b54724b.v1`.
+- Task049 full verification: `python3 -m pytest -q` -> 182 passed, 1 skipped.
+- Task049 blocker summary incorporates w4 audit counts: semantic_gate_passed 83,
+  built envs 30, strict usable 1, old accepted-like 0, weak-oracle built 29,
+  strict-real helper-return rejected 1, untyped 44, unsupported type 8, unsafe 1.
+- Session 2 task049 checkpoint: fetched and merged latest `origin/main` at
+  `3522114`; PR #36 remains the canonical JSONL branch for
+  `task049_samples_valid_helper_trajectories`.
+- Current task049 data-run plan: run a no-install strict batch blocker audit over
+  sample-derived Session20 worktrees, then regenerate the SIMPA
+  `simpa.utils.calculate:rotation` real-value subfunction rollout with current
+  code and the Session24 dependency venv.
+- Expected task049 artifacts:
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/accepted_valid_helper_trajectories.jsonl`,
+  `summary.json`, `summary.md`, `rollouts/rollouts.jsonl`,
+  `rollout_exports/`, and `validate_task049_outputs.py`.
+- Session 1 accepted task049_samples_valid_helper_trajectories; PR #36 opened for sample corpus valid helper-return trajectory generation.
 - Session 3 task047 merge authorization received after W2 validation PASS; completion metadata prepared for PR #33 squash merge with no product-code changes after validated head `e48507e`.
 - Session 2 task047 implementation/evidence is pushed to PR #33: explicit `--require-real-value` strict usable batch mode plus helper-call success/strict trace-quality metadata.
 - Task047 focused verification: `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` -> 48 passed; full `python3 -m pytest -q` -> 178 passed, 1 skipped.
