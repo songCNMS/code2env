@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=15 -->
+<!-- METADATA:SESSION=16 -->
 
 ## Session 0 - Created with team lead
 
@@ -507,3 +507,33 @@
   `call_entrypoint`.
 - Coordinator recorded accepted_shortfall=4 and the blocker breakdown in
   coordinator status/history/knowledge. No new worker action is required.
+
+## Session 16 - task050 dependency-aware samples dispatch
+
+- Received user `/goal` and coordinator fallback peer for
+  `task050_dependency_aware_samples_valid_trajectories`.
+- Created active goal for task050 in Codex goal state.
+- Read the full handoff at
+  `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories_goal.md`.
+- Confirmed shared workspace `origin/main` was at least task049 merge commit
+  `438d13a12111c78422721bbf3dea5482ccf829b4`; current shared main was
+  `57b18f56a5e94f77527929a3b020b1041c7fe7eb` before task050 docs.
+- Evaluated active workers: worker_1, worker_2, and worker_4 reported Idle;
+  worker_3 still reported Working on `task032_qa_session3_fixes`; worker_5 still
+  reported Working on `task041_rerun_rollouts_v3`.
+- Created standard task docs under
+  `workspace/tasks/task050_dependency_aware_samples_valid_trajectories/` and
+  prepared artifact root
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/`.
+- Pushed shared main commit `2051380` with task050 README/history/task_knowledge.
+- After mailbox pre-checks with unread_count=0 before each peer send, notified
+  worker_1 as implementation/data owner, worker_4 as dependency/blocker audit
+  support, and worker_2 as independent tester. Worker_4 was explicitly told not
+  to produce a competing final JSONL.
+- Recorded the worker notifications in task050 history and pushed shared main
+  commit `486adb4`.
+- Rationale for not using all workers: workers 3 and 5 still advertise older
+  Working tasks, and task050 has one canonical accepted JSONL. Worker_1 owns
+  generation, worker_4 audits dependency/blocker categories in parallel, and
+  worker_2 remains independent for exact-head artifact validation.
+- Current state: waiting for worker acceptance mailboxes and initial run plans.

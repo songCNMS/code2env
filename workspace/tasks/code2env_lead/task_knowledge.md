@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=15 -->
+<!-- METADATA:SESSION=16 -->
 
 ## Knowledge Entries
 
@@ -44,3 +44,4 @@
 35. peer send `delivered` 只证明传输成功，不证明 worker 已消费任务；关键路径要用 mailbox、worker status、artifact 文件、进程或 PR/head 等客观信号复查，若 owner/audit worker 仍 Idle 且无 artifact，应及时发 checkpoint follow-up。
 36. valid helper-trajectory 数据集的 accepted gate 必须把 final correctness 当硬门槛；即使 SIMPA/helper trace flags 接近可用，只要 `final_correct` 不是 true，就不能写入 canonical JSONL，只能修正 golden/answer 比对或进入 blocker breakdown。
 37. 数据集任务在 ready 后若又追加 metadata-only completion commits，需要让 tester 明确证明最终 PR head/merge commit 相对已测 head 的 `code2env/` 和 `tests/` diff 为空，并至少重跑 focused artifact predicate，避免 summary `code_head` 与测试报告 head 漂移。
+38. dependency-aware 样本重跑任务要把 dependency install run 与 no-install audit 分开标注；accepted-data run 不能使用 `--no-install-deps`，但可以用 no-install 结果做 blocker prioritization。若 accepted_count 仍低，blocker taxonomy 必须区分 install failure、system-only deps、package metadata/import path、CLI/stdout envelope、untyped/unsupported params、side-effect sandbox、helper-arg synthesis。
