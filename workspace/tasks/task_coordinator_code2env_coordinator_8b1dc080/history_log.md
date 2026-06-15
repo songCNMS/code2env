@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=22 -->
+<!-- METADATA:SESSION=23 -->
 
 ## Session 0 - Created with coordinator
 
@@ -190,3 +190,11 @@
 - 生成结果：`trajectory_examples.jsonl` 共 5 lines，5/5 `qualified=true`、5/5 `final_correct=true`、5/5 `helper_trace_complete=true`，全部为 5 轮 trajectory；5/5 `helper_trace_valid=false`，因为 helper calls 均为空参数或环境错误，符合“完整轨迹但非高质量真实子函数执行”的 caveat。
 - 主要产物：`../outputs/session22_trajectory_examples/review.md`、`summary.json`、`trajectory_examples.jsonl`、per-env full rollout JSON `rollouts/`、export records `export/`、打包文件 `session22_trajectory_examples_bundle.tgz`。
 - 结论：如果数据目标转为“完整多轮 trajectory”而非“strict runnable correctness”，现有代码已经能用 weak-oracle EnvPackage 扩大样本；但标签必须明确区分 `oracle_kind=weak_oracle`、`functional_correctness_untrusted`、`helper_trace_valid=false`，避免把异常复现当作真实功能正确。
+
+## Session 23 - Relaxed trajectory JSONL sent to Feishu
+
+- 按用户要求“生成 relaxed trajectory 的 jsonl 文件，并发送到飞书中”，重新运行 `../outputs/session22_trajectory_examples/generate_trajectory_examples.py`，基于 `origin/main` verify head `f551ee88654b1bcb604ebf11361a279310e52e19` 生成 5 条 sample repo relaxed trajectories。
+- 本轮发送文件复制到 `../outputs/session23_relaxed_trajectory_feishu/relaxed_trajectory_examples.jsonl`，结果为 5 lines、约 24K；同步复制 review 文档到 `../outputs/session23_relaxed_trajectory_feishu/review.md`，发送结果写入 `../outputs/session23_relaxed_trajectory_feishu/feishu_send_result.json`。
+- JSONL 内容概要：5/5 `qualified=true`、5/5 `final_correct=true`、5/5 `helper_trace_complete=true`，每条为 5 轮 helper -> entrypoint -> submit trajectory；样例包含 4 条 weak-oracle env 和 1 条 real_value baseline。
+- 通过 FeishuAPI `upload_file` + `send_file` 发送到 `intern_code2env_coordinator` 飞书会话 chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`；file_key `file_v3_0012m_6f3f9a18-5a2a-43bc-a6db-b4e19a7b054g`，文件消息 ID `om_x100b6dce0be00cacb32ddea660ad7b6`。
+- 发送确认文本到同一会话，文本消息 ID `om_x100b6dce0bf1d4a4b3c930f4b8336aa`；文本中明确 weak-oracle `final_correct` 仅表示匹配捕获 oracle，不代表真实功能正确。

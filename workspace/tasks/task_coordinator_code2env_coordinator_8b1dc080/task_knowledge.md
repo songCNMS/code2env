@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=22 -->
+<!-- METADATA:SESSION=23 -->
 
 ## Knowledge Entries
 
@@ -32,3 +32,4 @@
 26. Session 21 对 Session20 的 29 个 non-strict built env 归因：全部因为 golden 执行落到 weak-oracle exception，主因是缺依赖/运行环境（`bpy`、`torch`、`matplotlib`、`django`、`languages`）、缺 package metadata、缺输入文件或 CLI/stdout 干扰 executor JSON；没有 nondeterministic 导致的 non-strict built env。后续提升 strict usable 数量应优先做 dependency/runtime fixture/CLI-output 隔离。
 27. 如果目标转为“完整多轮 trajectory 数据”而非 strict runnable correctness，则 weak-oracle EnvPackage 可以纳入：`rollout --llm-mode mock --trace-mode subfunctions` 能生成 helper -> entrypoint -> submit 的完整轨迹。数据标签必须区分 `trajectory_complete/correct_against_stored_oracle` 与 `functional_correctness_trusted`；weak-oracle 的 `final_correct=true` 只表示提交答案匹配捕获异常。
 28. Session22 样例说明现有 mock trace 足以生成多轮轨迹，但 `helper_trace_valid=false` 很常见；如果训练目标只需要工具调用序列可接受，若训练目标需要真实子函数执行质量，则仍需 helper argument synthesis 和 helper success gate。
+29. Session23 relaxed trajectory JSONL 飞书发送记录：本地文件 `../outputs/session23_relaxed_trajectory_feishu/relaxed_trajectory_examples.jsonl`，飞书文件消息 ID `om_x100b6dce0be00cacb32ddea660ad7b6`。以后复查该批数据时应同时查看 `review.md` 和 JSONL 中的 weak-oracle 标签。
