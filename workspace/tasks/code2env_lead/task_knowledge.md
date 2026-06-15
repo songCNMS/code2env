@@ -42,3 +42,4 @@
 33. 改派后原 owner PR 即使后来出现产品代码，也不能自动恢复为验收目标；没有 owner-ready mailbox、测试/artifact report 且 PR dirty 时，只能作为新 owner 可参考的材料，tester 仍按 lead 明确的 current owner exact head 验证。
 34. 样本数据集生成类任务需要一个 canonical output owner，避免多个 worker 产生互相竞争的 JSONL；可并行使用一个支持 worker 做候选/blocker audit，并保留另一个 worker 做 exact-head/artifact 独立验证。
 35. peer send `delivered` 只证明传输成功，不证明 worker 已消费任务；关键路径要用 mailbox、worker status、artifact 文件、进程或 PR/head 等客观信号复查，若 owner/audit worker 仍 Idle 且无 artifact，应及时发 checkpoint follow-up。
+36. valid helper-trajectory 数据集的 accepted gate 必须把 final correctness 当硬门槛；即使 SIMPA/helper trace flags 接近可用，只要 `final_correct` 不是 true，就不能写入 canonical JSONL，只能修正 golden/answer 比对或进入 blocker breakdown。

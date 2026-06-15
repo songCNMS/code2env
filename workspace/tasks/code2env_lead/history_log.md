@@ -449,3 +449,21 @@
 - After mailbox pre-check, lead peer-sent worker_1 the worker_4 audit artifact
   paths and key counts for incorporation into the canonical summary/blocker
   breakdown. Worker_2 remains gated on worker_1 ready artifacts.
+- Continued objective-state audit after no new mailbox: PR #36 still points at
+  `331831d243b6395b4469db0d45b299318747d604`, is open/dirty, and contains only
+  workspace/task metadata. The task049 artifact root now contains worker_1's
+  generation script, validation script, batch audit packages/specs, and stdout,
+  but still lacks the canonical `accepted_valid_helper_trajectories.jsonl` and
+  `summary.json`/`.md`.
+- Observed worker_1's generation process finish. The stdout
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/generate_task049_artifacts.stdout`
+  ends with `AssertionError: final_correct is not true` from
+  `assert_valid_record(canonical)` while building the SIMPA anchor. This record
+  cannot be accepted because task049 requires final real-value correctness in
+  addition to helper trace flags.
+- After another mailbox pre-check with unread_count=0, lead peer-sent worker_1
+  a follow-up requiring either a corrected artifact generation/golden-answer
+  comparison or a real blocker breakdown without false-positive accepted
+  records. Worker_2 remains gated and was not triggered because the ready JSONL,
+  summary, exact ready head, focused predicate result, and full pytest evidence
+  are still missing.

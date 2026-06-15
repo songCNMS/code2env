@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 14 |
 
-最近进展：Session14 继续推进 task049。w1 mailbox `w1-task049-checkpoint-331831d` 已 mark-read：w1 已接受 canonical JSONL owner，开 PR#36 head `331831d243b6395b4469db0d45b299318747d604`，当前仅 metadata/in-progress，计划 no-product-code data run 并产出 `accepted_valid_helper_trajectories.jsonl`、summary 和 validation script。w4 mailbox `task049-w4-candidate-blocker-audit-3522114-v2` 已 mark-read：w4 audit artifacts 已在 worker4_audit/，给出 blocker counts 和 SIMPA anchor。已把 w4 audit paths 转给 w1 纳入 canonical summary。当前等待 w1 ready artifacts；manage task 保持 Working。
+最近进展：Session14 继续推进 task049。已复查 lead mailbox（无未读）、PR#36 和 artifact root：PR#36 仍为 metadata-only/in-progress，head `331831d243b6395b4469db0d45b299318747d604`；w1 的 artifact 生成脚本已退出但未产出 `accepted_valid_helper_trajectories.jsonl`/`summary.json`，stdout 失败点为 `AssertionError: final_correct is not true`。已在发送前再次确认 mailbox 无未读，并 peer send w1 要求修正 golden/answer correctness 或给出 blocker breakdown；w2 仍 gated，未触发独立验证。manage task 保持 Working。
