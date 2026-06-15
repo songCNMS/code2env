@@ -73,3 +73,35 @@
   with PR/head, product-code expectation, first dependency-aware commands,
   dedicated venv cache path, expected JSONL/summary paths, and immediate
   blockers.
+
+## Session 3 - 2026-06-15 UTC - Implementation owner accepted
+
+- Worker_1 sent mailbox `w1-task050-acceptance-63c9b06`, which team lead marked
+  read. Worker_1 accepted implementation/data ownership for PR #37:
+  `https://github.com/songCNMS/code2env/pull/37`, branch
+  `intern_code2env_worker_1/task050_dependency_aware_samples_valid_trajectories`,
+  head `63c9b068264a633408822fe76d33cb45829bf960`.
+- Worker_1 stated product-code changes are not expected initially and this is
+  primarily data/artifact generation; product code will only change if the
+  dependency-aware rerun exposes a narrow product bug.
+- Worker_1's planned accepted-data run will use dedicated venv cache
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/venv_cache`
+  and will not pass `--no-install-deps`. No-install mode, if used, will be
+  audit-only.
+- Worker_1's planned first batch command includes `--min-semantic-helpers 3`,
+  `--require-real-value`, `--determinism-runs 2`, and an output directory under
+  the task050 artifact root.
+- Expected owner outputs are
+  `accepted_valid_helper_trajectories.jsonl`, `summary.json`, `summary.md`,
+  `rollouts/rollouts.jsonl`, `rollout_exports/`,
+  `dependency_batch/manifest.json`, dependency install/status evidence, and
+  `validate_task050_outputs.py`.
+- Immediate owner blockers: none reported. Known risks remain dependency
+  installation cost/flakiness, system-only dependencies, package metadata/import
+  path failures, CLI/stdout envelope failures, untyped or unsupported params,
+  side-effect/network sandbox blockers, and helper-argument synthesis gaps.
+- PR #37 currently reports `mergeStateStatus=DIRTY` against `main`. After a
+  mailbox pre-check with unread_count=0, team lead peer-sent worker_1 a
+  checkpoint requiring sync with latest `origin/main` before declaring a
+  ready-for-test exact head. Worker_2 must not validate until worker_1 sends a
+  clean ready mailbox with exact head and artifact report.
