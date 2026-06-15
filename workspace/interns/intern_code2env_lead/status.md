@@ -12,4 +12,4 @@
 | PR | N/A |
 | Session | 17 |
 
-最近进展：Session17 继续推进 task050。复查 mailbox 无未读；PR#37 已前进到 head `7cc126949fd2415f9273f6e5bff03e0901ba74ff` 但仍为 DIRTY，artifact root 目前只有空目录、无 accepted JSONL/summary/manifest。已分别通知 w1 同步 latest main 并继续 dependency-aware accepted-data run，通知 w4 产出 blocker audit JSON/MD；w2 仍保留为 ready exact head 后的独立验证者。manage task 保持 Working。
+最近进展：Session17 继续推进 task050。复查 mailbox 无未读；PR#37 已同步为 CLEAN，head `1d6077a17c69ac7d35e5248c8ce0adac870bbc02`，但 artifact root 仍无 accepted JSONL/summary/manifest/audit 文件，也无 ready mailbox。已向 w1 发送 heartbeat，要求回报 batch running/blocked/ready 三选一；已向 w4 发送 audit heartbeat，要求回报 running/blocked/complete 三选一。w2 仍保留为 ready exact head 后的独立验证者。manage task 保持 Working。

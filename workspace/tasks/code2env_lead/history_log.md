@@ -613,3 +613,25 @@
 - Current state: waiting for worker_1 artifacts and clean ready exact head, plus
   worker_4 blocker audit artifact. Worker_2 remains reserved for independent
   validation after worker_1's ready mailbox.
+- Continuation check: lead rechecked mailbox, PR #37, artifact root, worker
+  statuses, active processes, and shared main. Mailbox had no unread messages.
+  Shared main remained `b08774bdcefa02127251e84eefc6a64ad368fb83`. PR #37
+  advanced to clean head `1d6077a17c69ac7d35e5248c8ce0adac870bbc02`.
+- Worker_1 status reports the branch is synced through `b08774b` and the
+  install-enabled dependency-aware batch is still in progress, but lead-side
+  artifact inspection found no task050 files yet under the artifact root.
+- Worker_4 status still reports Idle and no files exist under
+  `worker4_audit/`. Workers 3 and 5 still report older Working tasks, so lead
+  kept current assignments: worker_1 owns canonical data generation, worker_4
+  owns blocker audit support, and worker_2 remains independent tester.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a
+  heartbeat request requiring one of: running batch evidence with command/status
+  path; blocked/failure report with category; or ready-for-test report with
+  exact head, artifacts, predicates, source helper/entrypoint ok evidence,
+  no weak-oracle confirmation, and tests/reuse rationale.
+- After a second mailbox pre-check with unread_count=0, lead peer-sent worker_4
+  an audit heartbeat request requiring one of: audit running evidence, blocked
+  report, or completed `worker4_dependency_blocker_audit.json` and `.md`.
+- Current state: PR #37 is clean but not ready because required artifacts and
+  ready mailbox are absent. Worker_2 validation is still gated on worker_1's
+  exact-head ready report.
