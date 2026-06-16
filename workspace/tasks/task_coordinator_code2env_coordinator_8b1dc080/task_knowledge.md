@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=26 -->
+<!-- METADATA:SESSION=27 -->
 
 ## Knowledge Entries
 
@@ -48,3 +48,4 @@
 42. task050 handoff 已下发给 `intern_code2env_lead`：当前 `code2env batch` 默认可安装依赖，但 task049 no-install audit 仍把 dependency-heavy candidates 排到 weak-oracle/blockers；下一步应使用 dependency-aware rerun、专用 venv cache 和严格 task049 入选门槛提升 accepted 数量，若仍不足 3 条则产出细粒度 dependency/runtime blocker breakdown。
 43. task050 已进入 worker 执行阶段但未完成：标准 docs 在 shared main `f8fad5b`，PR #37 head `63c9b06` 当前仍是进度/metadata 状态；复验应等 w1 ready-for-test exact head 与 artifacts 后，再看 w2 independent exact-head validation，而不是把当前 PR head 当完成验收。
 44. task050 已在 PR #37 merge 到 `main` commit `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`：dependency-aware install-enabled rerun 证明安装依赖本身没有增加 accepted valid helper-return records，accepted_count 仍为 0；唯一 strict usable env 被严格拒绝是因为 helper source returns 失败，而不是 final correctness 失败。后续样本增长瓶颈更集中在 network/side-effect helper handling、helper argument synthesis、CLI/stdout envelope 和 untyped/unsupported params。
+45. task051 handoff 已下发给 `intern_code2env_lead`：当前 helper safety 只看直接 helper risk flags，未传播 `helper -> fetch_json -> urllib Request/urlopen` 这类 transitive network side-effect；strict trace 数据需要 executable helper gate，把 network/sandboxed 或参数不可合成的 helpers 提前 skipped/rejected 并记录 precise reason，而不是在 rollout 中强制调用后产生 failed source returns。

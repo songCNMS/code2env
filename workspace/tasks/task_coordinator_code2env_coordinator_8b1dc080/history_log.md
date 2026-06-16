@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=26 -->
+<!-- METADATA:SESSION=27 -->
 
 ## Session 0 - Created with coordinator
 
@@ -313,3 +313,12 @@
 - worker_2 独立验证结论为 PASS：exact head `36127f7573a1b30837097c777813e078293a7d05` 与 drift 至 `26ca35bd9eb628164ec87e7516858edeb36bdd72` 均被核对为 metadata-only，且 `code2env/` 与 tests diff 为空；full pytest 未重跑的理由是 PR 为 data/metadata-only，沿用既有产品 baseline `182 passed, 1 skipped`。
 - blocker breakdown 已记录：`dependency_install_failed=0`、`system_only_dependency=10`、`package_metadata_or_import_path=9`、`cli_stdout_executor_envelope=9`、`untyped_or_unsupported_required_params=28`、`side_effect_or_network_sandbox=169`、`helper_argument_synthesis_unavailable=1`、`runtime_timeout_or_execution_failure=1`。default behavior impact 为 none；残余风险为 targeted rerun、blocker categories 可重叠、accepted_count 仍为 0。
 - coordinator 已通过 peer send 回信确认复核通过，返回 `{"status":"delivered"}`。
+
+## Session 27 - Trace helper executability handoff
+
+- 按用户“执行下一步”要求，继续推进 task050 后的核心瓶颈：dependency-aware rerun 已证明单纯安装依赖不能增加 accepted valid helper-return records，剩余关键问题是 required trace helpers 本身不可执行或不该作为 sandbox-safe helper 被强制调用。
+- coordinator 复查 task050 artifact `summary.json` 与 strict usable rollout：`scripts.check-versions:check_language_version` 的 `final_correct=true`、`helper_trace_complete=true`，但 `helper_calls_successful=false`、`helper_trace_valid=false`、`all_source_tool_returns_ok=false`；`call_get_docker_latest_version` 缺少 `image/tag_filter` 参数，`call_get_github_latest_version` 被 sandbox network policy 拒绝。
+- coordinator 复查代码路径：`code2env/spec.py:_partition_helpers` 只看直接 helper candidate 的 `possible_side_effect` risk flags；`get_docker_latest_version` 和 `get_github_latest_version` 经 `fetch_json -> urllib.request.Request/urlopen` 间接触发网络调用，但 transitive side-effect 没有传播，导致它们被暴露成 `side_effects="none"` 的 dedicated required helpers。
+- 写出 handoff 文件 `../outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate_goal.md`，建议任务 id `task051_trace_helper_executability_gate`。目标：产品化 strict trace helper executability gate，改进 transitive network/side-effect helper classification、trace required-helper preflight、executable helper count metadata 和 precise skip/rejection reasons。
+- 验收口径写入 handoff：不放宽 accepted-data gates；focused tests 覆盖 transitive network helper、pure helper 兼容、unmappable arg preflight、default-mode compatibility；产品代码变更需跑 full `python3 -m pytest -q`；必须复验 task050 strict env 并给出 before/after 解释。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task051_trace_helper_executability_gate` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session27_trace_helper_executability/task051_handoff_delivery.json`。

@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 26 |
+| Session | 27 |
 
 ## 最近进展
 
@@ -49,3 +49,4 @@
 - Session 25：按用户“执行下一步”要求，将 task049 accepted 数量不足的依赖/runtime 阻塞拆成 `task050_dependency_aware_samples_valid_trajectories` 下发给 lead；handoff 写入 `../outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories_goal.md`，goal API timeout，peer send 兜底已 delivered。
 - Session 26：收到 lead 关于 `task050_dependency_aware_samples_valid_trajectories` 的阶段性进展回报；已确认标准 task docs 在 shared main `f8fad5b`，PR #37 head 为 `63c9b06`，w1 为 implementation/data owner、w4 为 blocker audit support、w2 预留 exact-head 独立验证，当前尚未完成 merge。
 - Session 26（完成）：收到并复核 `task050_dependency_aware_samples_valid_trajectories` 完成回报；PR #37 已 merge 到 `main`（merge commit `f01e4b1`），dependency-aware install-enabled rerun 仍为 accepted_count=0，validator `ok=true`，唯一 strict usable env 因 helper source returns 失败被严格门槛拒绝。
+- Session 27：按用户“执行下一步”要求，将 task050 暴露的 helper executability 瓶颈拆成 `task051_trace_helper_executability_gate` 下发给 lead；handoff 写入 `../outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate_goal.md`，goal API timeout，peer send 兜底已 delivered。
