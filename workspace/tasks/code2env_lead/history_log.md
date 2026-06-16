@@ -997,3 +997,26 @@
 - Current state: waiting for worker_1 to commit/push product implementation,
   run focused/full tests, produce task050 before/after evidence, and report an
   exact synced ready head before worker_2 validation starts.
+- Goal continuation refresh: mailbox unread_count=0; PR #38 remote still points
+  to bootstrap head `89007b221d237061b1599d6196e19670e8d54603`, open/non-draft
+  and DIRTY, while task051 artifact root now contains
+  `task050_strict_env_reproduction/task050_strict_env_reproduction.json` and
+  `.md`.
+- Lead read the new task050 strict-env reproduction artifacts. The JSON/MD show
+  the old rollout required `call_get_current_version_from_csv`,
+  `call_get_docker_latest_version`, and `call_get_github_latest_version` with
+  `helper_trace_complete=true` but helper/source return failures; current
+  regenerated output exposes only `call_get_current_version_from_csv`, skips
+  alpine/docker/github with network/transitive side-effect reasons, and reports
+  min3 decision `insufficient_executable_semantic_helpers:1/3`.
+- Worker_1 local worktree still has uncommitted product diff in
+  `code2env/batch.py`, `code2env/rollout.py`, `code2env/spec.py`,
+  `tests/test_batch.py`, and `tests/test_rollout.py`; local log shows the
+  rebased acceptance commits `a3c1f4a`/`98737cb`, but PR #38 remote has not been
+  pushed past the old acceptance head.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a
+  ready-handoff checkpoint: commit/push product implementation to PR #38, sync
+  with `origin/main`, run focused tests and full `python3 -m pytest -q`, and
+  report exact pushed head, reproduction JSON/MD paths, default behavior impact,
+  and residual risks. Worker_2 validation remains blocked on that exact pushed
+  head, not on local uncommitted changes.
