@@ -917,6 +917,11 @@
 - To avoid further dirtying the implementation PR, lead recorded this
   checkpoint only in the lead branch rather than pushing another shared main
   task-history commit.
+- After mailbox pre-check with unread_count=0, lead peer-sent coordinator a
+  task051 accepted/dispatched progress report. The report named shared main
+  commits `0c5ad34` and `6dd9ae7`, assignments for worker_1/worker_4/worker_2,
+  PR #38 head `89007b221d237061b1599d6196e19670e8d54603`, current
+  DIRTY/bootstrap-only state, and the gating condition before tester launch.
 - Current state: waiting for worker_1 product implementation, focused/full test
   results, task050 before/after artifact paths, and exact ready head before
   triggering worker_2 validation.
