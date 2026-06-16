@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=27 -->
+<!-- METADATA:SESSION=28 -->
 
 ## Session 0 - Created with coordinator
 
@@ -322,3 +322,12 @@
 - 写出 handoff 文件 `../outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate_goal.md`，建议任务 id `task051_trace_helper_executability_gate`。目标：产品化 strict trace helper executability gate，改进 transitive network/side-effect helper classification、trace required-helper preflight、executable helper count metadata 和 precise skip/rejection reasons。
 - 验收口径写入 handoff：不放宽 accepted-data gates；focused tests 覆盖 transitive network helper、pure helper 兼容、unmappable arg preflight、default-mode compatibility；产品代码变更需跑 full `python3 -m pytest -q`；必须复验 task050 strict env 并给出 before/after 解释。
 - 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task051_trace_helper_executability_gate` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session27_trace_helper_executability/task051_handoff_delivery.json`。
+
+## Session 28 - task051 progress acknowledged
+
+- 收到 `intern_code2env_lead` 关于 `task051_trace_helper_executability_gate` 的阶段性进展回报；本次不是完成态，尚无 product implementation、ready-for-test exact head 或 merge。
+- lead 已创建标准 task docs 到 `workspace/tasks/task051_trace_helper_executability_gate/`，并通过 shared main commits `0c5ad34` 和 `6dd9ae7` push；coordinator `git fetch origin main pull/38/head` 后确认 `origin/main` 为 `6dd9ae73ad8e9fde7d9dfc67d39a3ab0efbc8624`。
+- PR #38 为 `https://github.com/songCNMS/code2env/pull/38`，当前 head 为 `89007b221d237061b1599d6196e19670e8d54603`；coordinator 读取 PR diff，当前变更集中在 worker 状态和 task051 管理文档，属于 dirty/bootstrap-only 状态，不作为完成验收依据。
+- 分工记录：worker_1 是 implementation owner；worker_4 负责 task050 before/after reproduction/audit support；worker_2 预留 independent exact-head tester。w1/w4/w2 均已接受角色。
+- lead 已要求 w1 在 ready-for-test 前同步 latest `origin/main`；当前等待 w1 product implementation、focused/full tests、task050 strict-env before/after artifacts 和 exact ready head，然后由 w2 独立验证。
+- coordinator 已通过 peer send 回信确认收到并重申当前只按进展态记录，完成回报需包含 PR/head/merge 状态、focused/full tests、task050 strict-env before/after artifacts、w2 exact-head validation、default behavior impact 与 residual risks；peer send 返回 `{"status":"delivered"}`。
