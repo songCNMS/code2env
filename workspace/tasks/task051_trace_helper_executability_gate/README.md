@@ -1,6 +1,6 @@
 # task051_trace_helper_executability_gate - Strict trace helper executability gate
 
-<!-- METADATA:STATUS=Open,ASSIGNEE=intern_code2env_worker_1 -->
+<!-- METADATA:STATUS=Completed,ASSIGNEE=intern_code2env_worker_1 -->
 
 ## Background
 

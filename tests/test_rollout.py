@@ -79,7 +79,17 @@ def rotation(angles):
     return {
         "axes": [x["axis"], y["axis"], z["axis"]],
         "total": round(x["value"] + y["value"] + z["value"], 6),
-    }
+}
+"""
+
+
+UNMAPPABLE_TRACE_SAMPLE = """
+def helper_needs_payload(payload):
+    return payload["name"].upper()
+
+
+def format_unmappable(name):
+    return {"display": helper_needs_payload({"name": name})}
 """
 
 
@@ -131,6 +141,25 @@ def _build_typed_trace_env(temp_dir: Path) -> Code2Env:
     spec_path = temp_dir / "typed_trace_env_spec.json"
     write_json(spec_path, spec.to_dict())
     package_root = build_env_package(spec_path, temp_dir / "typed_trace_generated")
+    return Code2Env(package_root / "env_spec.json")
+
+
+def _build_unmappable_trace_env(temp_dir: Path) -> Code2Env:
+    repo = temp_dir / "unmappable_trace_repo"
+    repo.mkdir(parents=True, exist_ok=True)
+    (repo / "unmappable_trace_sample.py").write_text(
+        UNMAPPABLE_TRACE_SAMPLE.lstrip(),
+        encoding="utf-8",
+    )
+    snapshot = ingest_repo(str(repo))
+    spec = draft_env_spec(
+        snapshot,
+        symbol="unmappable_trace_sample:format_unmappable",
+        fixture={"args": ["ada"], "kwargs": {}},
+    )
+    spec_path = temp_dir / "unmappable_trace_env_spec.json"
+    write_json(spec_path, spec.to_dict())
+    package_root = build_env_package(spec_path, temp_dir / "unmappable_trace_generated")
     return Code2Env(package_root / "env_spec.json")
 
 
@@ -390,6 +419,50 @@ class SubfunctionTraceModeTest(unittest.TestCase):
             self.assertTrue(trace["entrypoint_after_helpers"])
             self.assertTrue(result["qualified"])
             self.assertTrue(result["final"]["correct"])
+
+    def test_trace_plan_skips_unmappable_helper_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            env = _build_unmappable_trace_env(Path(temp))
+            plan = build_subfunction_trace_plan(env)
+
+            self.assertEqual(plan["required_helper_tools"], [])
+            self.assertEqual(
+                plan["skipped_helpers"],
+                [
+                    {
+                        "helper": "helper_needs_payload",
+                        "tool": "call_helper_needs_payload",
+                        "reason": "argument_unavailable:payload",
+                    }
+                ],
+            )
+            self.assertEqual(plan["dedicated_semantic_helper_count"], 1)
+            self.assertEqual(plan["executable_required_helper_count"], 0)
+            self.assertEqual(
+                plan["skipped_helper_count_by_reason"],
+                {"argument_unavailable": 1},
+            )
+
+            result = run_rollout(
+                env,
+                ScriptedTraceSolveChat(env),
+                primary_source="mock",
+                max_rounds=8,
+                trace_mode="subfunctions",
+            )
+            self.assertEqual(
+                [step["action"]["tool"] for step in result["steps"]],
+                ["call_entrypoint", "submit_answer"],
+            )
+            trace = result["subfunction_trace"]
+            self.assertTrue(trace["helper_trace_complete"])
+            self.assertTrue(trace["helper_calls_successful"])
+            self.assertTrue(trace["helper_trace_valid"])
+            self.assertEqual(trace["executable_required_helper_count"], 0)
+            self.assertEqual(
+                trace["skipped_helper_count_by_reason"],
+                {"argument_unavailable": 1},
+            )
 
     def test_trace_rollout_synthesizes_typed_fixture_helper_args(self) -> None:
         if importlib.util.find_spec("numpy") is None:

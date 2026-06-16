@@ -60,7 +60,7 @@ from code2env.runtime import Code2Env
 from code2env.spec import (
     MAX_SEMANTIC_HELPER_TOOLS,
     draft_env_spec,
-    semantic_helpers_for_candidate,
+    trace_helper_executability_for_candidate,
 )
 
 # Annotation name -> synthesised JSON value for scalar parameter types.
@@ -136,6 +136,8 @@ def generate_batch(
     accepted_total = 0
     semantic_gate_passed = 0
     skipped_insufficient_semantic_helpers = 0
+    executable_semantic_gate_passed = 0
+    skipped_insufficient_executable_semantic_helpers = 0
 
     for repo in repos:
         snapshot = ingest_repo(repo, cache_dir=cache_dir)
@@ -154,6 +156,8 @@ def generate_batch(
                 "nondeterministic": 0,
                 "semantic_gate_passed": 0,
                 "skipped_insufficient_semantic_helpers": 0,
+                "executable_semantic_gate_passed": 0,
+                "skipped_insufficient_executable_semantic_helpers": 0,
             },
         )
         # One venv per repo: install runtime deps so golden answers are real values.
@@ -185,21 +189,39 @@ def generate_batch(
                 skipped.append({"symbol": candidate.symbol, "repo": repo_label, "reason": skip_reason})
                 continue
 
-            semantic_helpers = semantic_helpers_for_candidate(candidate, candidates)
-            semantic_helper_count = len(semantic_helpers)
-            if semantic_helper_count < min_semantic_helpers:
+            helper_preflight = trace_helper_executability_for_candidate(candidate, candidates)
+            semantic_helpers = list(helper_preflight["semantic_helpers"])
+            semantic_helper_count = int(helper_preflight["dedicated_semantic_helper_count"])
+            executable_helper_count = int(helper_preflight["executable_semantic_helper_count"])
+            if executable_helper_count < min_semantic_helpers:
+                reason_prefix = (
+                    "insufficient_executable_semantic_helpers"
+                    if helper_preflight["skipped_helpers"]
+                    else "insufficient_semantic_helpers"
+                )
                 skipped_insufficient_semantic_helpers += 1
                 by_repo[repo_label]["skipped_insufficient_semantic_helpers"] += 1
+                if reason_prefix == "insufficient_executable_semantic_helpers":
+                    skipped_insufficient_executable_semantic_helpers += 1
+                    by_repo[repo_label]["skipped_insufficient_executable_semantic_helpers"] += 1
                 skipped.append(
                     {
                         "symbol": candidate.symbol,
                         "repo": repo_label,
                         "reason": (
-                            f"insufficient_semantic_helpers:"
-                            f"{semantic_helper_count}/{min_semantic_helpers}"
+                            f"{reason_prefix}:"
+                            f"{executable_helper_count}/{min_semantic_helpers}"
                         ),
                         "semantic_helper_count": semantic_helper_count,
                         "semantic_helpers": semantic_helpers,
+                        "executable_semantic_helper_count": executable_helper_count,
+                        "executable_semantic_helpers": helper_preflight[
+                            "executable_semantic_helpers"
+                        ],
+                        "skipped_helpers": helper_preflight["skipped_helpers"],
+                        "skipped_helper_count_by_reason": helper_preflight[
+                            "skipped_helper_count_by_reason"
+                        ],
                     }
                 )
                 continue
@@ -234,6 +256,44 @@ def generate_batch(
                 )
                 continue
 
+            helper_preflight = trace_helper_executability_for_candidate(
+                candidate,
+                candidates,
+                fixture=fixture["value"],
+            )
+            semantic_helpers = list(helper_preflight["semantic_helpers"])
+            semantic_helper_count = int(helper_preflight["dedicated_semantic_helper_count"])
+            executable_helper_count = int(helper_preflight["executable_semantic_helper_count"])
+            if executable_helper_count < min_semantic_helpers:
+                skipped_insufficient_semantic_helpers += 1
+                skipped_insufficient_executable_semantic_helpers += 1
+                by_repo[repo_label]["skipped_insufficient_semantic_helpers"] += 1
+                by_repo[repo_label]["skipped_insufficient_executable_semantic_helpers"] += 1
+                skipped.append(
+                    {
+                        "symbol": candidate.symbol,
+                        "repo": repo_label,
+                        "reason": (
+                            "insufficient_executable_semantic_helpers:"
+                            f"{executable_helper_count}/{min_semantic_helpers}"
+                        ),
+                        "semantic_helper_count": semantic_helper_count,
+                        "semantic_helpers": semantic_helpers,
+                        "executable_semantic_helper_count": executable_helper_count,
+                        "executable_semantic_helpers": helper_preflight[
+                            "executable_semantic_helpers"
+                        ],
+                        "skipped_helpers": helper_preflight["skipped_helpers"],
+                        "skipped_helper_count_by_reason": helper_preflight[
+                            "skipped_helper_count_by_reason"
+                        ],
+                    }
+                )
+                continue
+
+            executable_semantic_gate_passed += 1
+            by_repo[repo_label]["executable_semantic_gate_passed"] += 1
+
             env_record = _generate_one(
                 snapshot=snapshot,
                 candidate=candidate,
@@ -246,6 +306,7 @@ def generate_batch(
                 run_smoke=run_smoke,
                 determinism_runs=determinism_runs,
                 semantic_helpers=semantic_helpers,
+                helper_preflight=helper_preflight,
             )
             envs.append(env_record)
             if env_record["build_ok"]:
@@ -301,6 +362,8 @@ def generate_batch(
         "min_semantic_helpers": min_semantic_helpers,
         "semantic_gate_passed": semantic_gate_passed,
         "skipped_insufficient_semantic_helpers": skipped_insufficient_semantic_helpers,
+        "executable_semantic_gate_passed": executable_semantic_gate_passed,
+        "skipped_insufficient_executable_semantic_helpers": skipped_insufficient_executable_semantic_helpers,
         "by_repo": by_repo,
     }
     manifest = {
@@ -328,8 +391,10 @@ def _generate_one(
     run_smoke: bool,
     determinism_runs: int = 3,
     semantic_helpers: list[str] | None = None,
+    helper_preflight: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     semantic_helpers = list(semantic_helpers or [])
+    helper_preflight = dict(helper_preflight or {})
     fixture_rich_params = rich_fixture_audit(fixture["value"])
     record: dict[str, Any] = {
         "env_id": None,
@@ -352,6 +417,16 @@ def _generate_one(
         "golden_error_message": None,
         "semantic_helper_count": len(semantic_helpers),
         "semantic_helpers": semantic_helpers,
+        "executable_semantic_helper_count": int(
+            helper_preflight.get("executable_semantic_helper_count", len(semantic_helpers))
+        ),
+        "executable_semantic_helpers": list(
+            helper_preflight.get("executable_semantic_helpers", semantic_helpers)
+        ),
+        "skipped_trace_helpers": list(helper_preflight.get("skipped_helpers", [])),
+        "skipped_trace_helper_count_by_reason": dict(
+            helper_preflight.get("skipped_helper_count_by_reason", {})
+        ),
         "deps_status": repo_env["deps_status"],
         "deps_installed": repo_env["installed"],
         "spec_path": None,

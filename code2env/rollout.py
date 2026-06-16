@@ -180,11 +180,14 @@ def build_subfunction_trace_plan(env: Code2Env) -> dict[str, Any]:
     semantic_tools = _semantic_helper_tools(env)
     helper_candidates = _helper_candidates(env)
     side_effect_helpers = _side_effect_helpers(env)
+    side_effect_reasons = _side_effect_helper_reasons(env)
 
     required: list[str] = []
     seen_helpers: set[str] = set()
     skipped: list[dict[str, str]] = []
     skipped_helpers: set[str] = set()
+    helper_fixture_indices: dict[str, int] = {}
+    helper_ordinals: dict[str, int] = {}
 
     def add_required(helper: str) -> None:
         if helper in seen_helpers:
@@ -192,8 +195,14 @@ def build_subfunction_trace_plan(env: Code2Env) -> dict[str, Any]:
         tool_name = semantic_tools.get(helper)
         if tool_name is None:
             return
+        helper_index = _helper_fixture_index(helper)
+        skip_reason = _trace_helper_skip_reason(env, tool_name, helper_index)
+        if skip_reason:
+            add_skipped(helper, skip_reason)
+            return
         required.append(tool_name)
         seen_helpers.add(helper)
+        helper_fixture_indices[tool_name] = helper_index
 
     def add_skipped(helper: str, reason: str) -> None:
         if helper in seen_helpers or helper in skipped_helpers:
@@ -201,31 +210,50 @@ def build_subfunction_trace_plan(env: Code2Env) -> dict[str, Any]:
         skipped.append({"helper": helper, "tool": f"{HELPER_TOOL_PREFIX}{helper}", "reason": reason})
         skipped_helpers.add(helper)
 
+    def _helper_fixture_index(helper: str) -> int:
+        if helper not in helper_ordinals:
+            helper_ordinals[helper] = len(helper_ordinals)
+        return helper_ordinals[helper]
+
     for callee in _entrypoint_step_callees(env):
+        if callee in semantic_tools or callee in side_effect_helpers or callee in helper_candidates:
+            _helper_fixture_index(callee)
         if callee in semantic_tools:
             add_required(callee)
         elif callee in side_effect_helpers:
-            add_skipped(callee, "side_effect_helper_not_exposed")
+            add_skipped(callee, side_effect_reasons.get(callee, "side_effect_helper_not_exposed"))
         elif callee in helper_candidates:
             add_skipped(callee, "direct_semantic_tool_unavailable")
 
     # Legacy or hand-authored specs may expose semantic helper tools without the
     # entrypoint step decomposition. Keep those useful tools in spec order.
     for helper in semantic_tools:
+        _helper_fixture_index(helper)
         add_required(helper)
 
     for helper in helper_candidates:
+        _helper_fixture_index(helper)
         if helper not in semantic_tools:
-            reason = "side_effect_helper_not_exposed" if helper in side_effect_helpers else "direct_semantic_tool_unavailable"
+            reason = (
+                side_effect_reasons.get(helper, "side_effect_helper_not_exposed")
+                if helper in side_effect_helpers
+                else "direct_semantic_tool_unavailable"
+            )
             add_skipped(helper, reason)
     for helper in side_effect_helpers:
+        _helper_fixture_index(helper)
         if helper not in semantic_tools:
-            add_skipped(helper, "side_effect_helper_not_exposed")
+            add_skipped(helper, side_effect_reasons.get(helper, "side_effect_helper_not_exposed"))
 
     return {
         "trace_mode": TRACE_MODE_SUBFUNCTIONS,
         "required_helper_tools": required,
         "skipped_helpers": skipped,
+        "dedicated_semantic_helper_count": len(semantic_tools),
+        "executable_required_helper_count": len(required),
+        "skipped_helper_count": len(skipped),
+        "skipped_helper_count_by_reason": _skipped_helper_counts(skipped),
+        "helper_fixture_indices": helper_fixture_indices,
     }
 
 
@@ -330,6 +358,10 @@ def build_subfunction_trace_metadata(trace_plan: dict[str, Any], steps: list[dic
         "failed_helper_tools": [item["tool"] for item in helper_results if not item["success"]],
         "entrypoint_after_helpers": entrypoint_after_helpers,
         "skipped_helpers": list(trace_plan.get("skipped_helpers", [])),
+        "dedicated_semantic_helper_count": trace_plan.get("dedicated_semantic_helper_count", len(required)),
+        "executable_required_helper_count": trace_plan.get("executable_required_helper_count", len(required)),
+        "skipped_helper_count": trace_plan.get("skipped_helper_count", len(trace_plan.get("skipped_helpers", []))),
+        "skipped_helper_count_by_reason": dict(trace_plan.get("skipped_helper_count_by_reason", {})),
         "missing_helper_tools": missing,
     }
 
@@ -465,6 +497,51 @@ def _side_effect_helpers(env: Code2Env) -> list[str]:
     return [item for item in raw if isinstance(item, str)] if isinstance(raw, list) else []
 
 
+def _side_effect_helper_reasons(env: Code2Env) -> dict[str, str]:
+    entrypoint = _tool_by_name(env, CALL_ENTRYPOINT_TOOL)
+    if entrypoint is None:
+        return {}
+    raw = entrypoint.provenance.get("sandboxed_side_effect_helper_reasons", {})
+    if not isinstance(raw, dict):
+        return {}
+    return {str(helper): str(reason) for helper, reason in raw.items() if isinstance(reason, str)}
+
+
+def _trace_helper_skip_reason(env: Code2Env, tool_name: str, helper_index: int) -> str | None:
+    tool = _tool_by_name(env, tool_name)
+    if tool is None:
+        return "direct_semantic_tool_unavailable"
+    if tool.side_effects != "none":
+        return "side_effect_helper_not_exposed"
+    payload, provenance = _synthesize_helper_payload(env, tool_name, helper_index)
+    if payload is not None or provenance is None:
+        return None
+    if provenance.get("source") != "unavailable":
+        return None
+    reason = provenance.get("reason")
+    if isinstance(reason, str) and reason.startswith("fixture_mapping_unavailable:"):
+        return f"argument_unavailable:{reason.split(':', 1)[1]}"
+    if isinstance(reason, str) and reason.startswith("helper_signature_unavailable:"):
+        return "argument_unavailable:helper_signature"
+    return "argument_unavailable"
+
+
+def _skipped_helper_counts(skipped: list[dict[str, str]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in skipped:
+        reason = _skip_reason_family(item.get("reason", "unknown"))
+        counts[reason] = counts.get(reason, 0) + 1
+    return counts
+
+
+def _skip_reason_family(reason: str) -> str:
+    if reason.startswith("transitive_side_effect:"):
+        return "transitive_side_effect"
+    if reason.startswith("argument_unavailable:"):
+        return "argument_unavailable"
+    return reason
+
+
 def _helper_name_from_symbol(symbol: str) -> str:
     return symbol.rsplit(":", 1)[-1].split(".")[-1]
 
@@ -592,7 +669,12 @@ def synthesize_trace_helper_arguments(
     if (isinstance(args, list) and args) or (isinstance(kwargs, dict) and kwargs) or extra_keys:
         return action, _argument_provenance(tool_name, "model_supplied")
 
-    helper_index = required_tools.index(tool_name)
+    helper_indices = trace_plan.get("helper_fixture_indices", {})
+    helper_index = (
+        helper_indices.get(tool_name, required_tools.index(tool_name))
+        if isinstance(helper_indices, dict)
+        else required_tools.index(tool_name)
+    )
     payload, provenance = _synthesize_helper_payload(env, tool_name, helper_index)
     if payload is None:
         return action, provenance
