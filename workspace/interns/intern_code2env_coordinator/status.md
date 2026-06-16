@@ -10,7 +10,7 @@
 | Team | N/A |
 | Current Task | task_coordinator_code2env_coordinator_8b1dc080 |
 | PR | #28 |
-| Session | 28 |
+| Session | 29 |
 
 ## 最近进展
 
@@ -51,3 +51,4 @@
 - Session 26（完成）：收到并复核 `task050_dependency_aware_samples_valid_trajectories` 完成回报；PR #37 已 merge 到 `main`（merge commit `f01e4b1`），dependency-aware install-enabled rerun 仍为 accepted_count=0，validator `ok=true`，唯一 strict usable env 因 helper source returns 失败被严格门槛拒绝。
 - Session 27：按用户“执行下一步”要求，将 task050 暴露的 helper executability 瓶颈拆成 `task051_trace_helper_executability_gate` 下发给 lead；handoff 写入 `../outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate_goal.md`，goal API timeout，peer send 兜底已 delivered。
 - Session 28：收到 lead 关于 `task051_trace_helper_executability_gate` 的阶段性进展回报；已确认标准 task docs 在 shared main `6dd9ae7`，PR #38 head 为 `89007b2`，当前仍是 bootstrap-only/未完成态，w1 负责实现、w4 支持 before/after audit、w2 预留 exact-head 独立验证。
+- Session 29：收到并复核 `task051_trace_helper_executability_gate` 完成回报；PR #38 已 merge 到 `main`（merge commit `b4e499e`），coordinator 在 merge commit 上复跑 focused tests `52 passed in 45.81s`，并核对 task050 strict env post-fix 为 executable helper count=1、min3 gate `insufficient_executable_semantic_helpers:1/3`。

@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - Task Knowledge
 
-<!-- METADATA:SESSION=28 -->
+<!-- METADATA:SESSION=29 -->
 
 ## Knowledge Entries
 
@@ -50,3 +50,4 @@
 44. task050 已在 PR #37 merge 到 `main` commit `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`：dependency-aware install-enabled rerun 证明安装依赖本身没有增加 accepted valid helper-return records，accepted_count 仍为 0；唯一 strict usable env 被严格拒绝是因为 helper source returns 失败，而不是 final correctness 失败。后续样本增长瓶颈更集中在 network/side-effect helper handling、helper argument synthesis、CLI/stdout envelope 和 untyped/unsupported params。
 45. task051 handoff 已下发给 `intern_code2env_lead`：当前 helper safety 只看直接 helper risk flags，未传播 `helper -> fetch_json -> urllib Request/urlopen` 这类 transitive network side-effect；strict trace 数据需要 executable helper gate，把 network/sandboxed 或参数不可合成的 helpers 提前 skipped/rejected 并记录 precise reason，而不是在 rollout 中强制调用后产生 failed source returns。
 46. task051 已进入 worker 执行阶段但未完成：标准 docs 在 shared main `6dd9ae7`，PR #38 head `89007b2` 仍是 bootstrap-only/metadata 状态；复验应等待 w1 product implementation 的 exact ready head、focused/full tests、task050 before/after artifacts，以及 w2 independent exact-head validation。
+47. task051 已在 PR #38 merge 到 `main` commit `b4e499e4862d5723042fb40a5d5251b2d8df5d2e`：strict trace 现在能把 transitive network/sandboxed 或参数不可合成 helpers 从 required helper set 中提前剔除，并用 executable helper count 与 `insufficient_executable_semantic_helpers` 解释 min3 rejection；这提升了拒绝原因质量，但不会把少于 3 个 executable helpers 的 env 计入 accepted JSONL。

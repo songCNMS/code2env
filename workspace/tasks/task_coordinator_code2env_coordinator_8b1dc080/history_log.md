@@ -1,6 +1,6 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=28 -->
+<!-- METADATA:SESSION=29 -->
 
 ## Session 0 - Created with coordinator
 
@@ -331,3 +331,16 @@
 - 分工记录：worker_1 是 implementation owner；worker_4 负责 task050 before/after reproduction/audit support；worker_2 预留 independent exact-head tester。w1/w4/w2 均已接受角色。
 - lead 已要求 w1 在 ready-for-test 前同步 latest `origin/main`；当前等待 w1 product implementation、focused/full tests、task050 strict-env before/after artifacts 和 exact ready head，然后由 w2 独立验证。
 - coordinator 已通过 peer send 回信确认收到并重申当前只按进展态记录，完成回报需包含 PR/head/merge 状态、focused/full tests、task050 strict-env before/after artifacts、w2 exact-head validation、default behavior impact 与 residual risks；peer send 返回 `{"status":"delivered"}`。
+
+## Session 29 - task051 completion verified
+
+- 收到 `intern_code2env_lead` 完成回报：`task051_trace_helper_executability_gate` 已完成并 merge；PR #38 `https://github.com/songCNMS/code2env/pull/38` merge 到 `main`，merge commit / `origin/main` 为 `b4e499e4862d5723042fb40a5d5251b2d8df5d2e`，final pre-merge head 为 `0ea82b6ebf39a0d45dbbfc109f18937b285238b0`，product head 为 `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`。
+- coordinator 复验 merge 状态：`git fetch origin main +pull/38/head` 后确认 `origin/main=b4e499e4862d5723042fb40a5d5251b2d8df5d2e`、`origin/pr/38=0ea82b6ebf39a0d45dbbfc109f18937b285238b0`；merge commit 修改产品文件 `code2env/spec.py`、`code2env/rollout.py`、`code2env/batch.py` 和 tests，同时包含 worker/task metadata。
+- 实现摘要已核对：新增 recursive transitive network/side-effect helper classification、strict subfunction trace executable-helper preflight/skip metadata、executable min-helper batch gate metadata，以及 `insufficient_executable_semantic_helpers` rejection。
+- artifact 复核路径：`/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate/`；关键文件包括 `task050_strict_env_reproduction/task050_strict_env_reproduction.json` / `.md`、`worker4_audit/worker4_trace_helper_executability_audit.json` / `.md`、`test_logs/full_pytest.log`、`focused_batch_rollout_files.log`、`focused_semantic_rollout.log`。
+- task050 strict env before/after 复核通过：旧行为 `final_correct=true`、`helper_trace_complete=true`，但 helper/source return 严格字段失败；post-fix `candidate_semantic_helper_count=3`、`executable_semantic_helper_count=1`，required helper 只剩 `call_get_current_version_from_csv`，`get_docker_latest_version` 和 `get_github_latest_version` 被记录为 `transitive_side_effect:fetch_json:network_sandboxed`，docker helper 还记录 `argument_unavailable:image` 和 `argument_unavailable:tag_filter`，min3 gate 拒绝原因为 `insufficient_executable_semantic_helpers:1/3`。
+- lead/w1/w2 报告的测试结果：w1 focused narrow `17 passed`，focused files `52 passed`，full `python3 -m pytest -q` 为 `184 passed, 1 skipped`；w2 在 product head 独立运行 `tests/test_batch.py tests/test_rollout.py` 为 `52 passed`，full pytest 为 `184 passed, 1 skipped`，latest validated head focused rerun为 `52 passed`。
+- coordinator 在 detached merge-commit worktree `../debug/code2env_main_task051_verify` 复跑 focused tests：`python3 -m pytest -q tests/test_batch.py tests/test_rollout.py`，结果 `52 passed in 45.81s`。
+- 默认行为影响符合验收：default rollout 仍保持 black-box unless `trace_mode=subfunctions`；default batch `min_semantic_helpers=0` 保持兼容；accepted-data predicates 未放宽。
+- 残余风险已记录：static/intra-module side-effect propagation 可能漏掉动态 alias 或 cross-module helper chains；argument preflight 仍保守；当可执行 helper 少于 3 个时 accepted JSONL 仍可能为 0。
+- coordinator 已通过 peer send 回信确认复核通过，返回 `{"status":"delivered"}`。
