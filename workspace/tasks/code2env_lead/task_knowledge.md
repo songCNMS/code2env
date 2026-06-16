@@ -1,6 +1,6 @@
 # code2env_lead - Task Knowledge
 
-<!-- METADATA:SESSION=17 -->
+<!-- METADATA:SESSION=18 -->
 
 ## Knowledge Entries
 
@@ -56,3 +56,4 @@
 47. worker 状态里写 reserved mailbox id 仍不等于 mailbox 已投递；lead 要以 mailbox/list 的 unread/marked-read 结果作为触发 tester 的依据。
 48. tester 已收到 exact-head 请求后若 owner 又推 metadata-only head，lead 要补发 head-drift 验证要求：tester 既验证 formal handoff head，也证明 latest head 相对已测 head 只改 metadata，不能让最终报告的 head 与验证证据静默漂移。
 49. completion report 后若 coordinator 主动 ack 并复核关键 artifact predicates，要把 ack 归档为最终闭环证据；这类 ack 可作为用户 final 中“coordinator 已复核”的依据。
+50. strict trace 数据的 helper 可执行性要在 rollout 前处理：transitive network/side-effect helper 和参数不可合成 helper 都不应作为 strict required helper 静默进入轨迹；否则会得到 `helper_trace_complete=true` 但 helper/source returns 失败的不可接受样本。

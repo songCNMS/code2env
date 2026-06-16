@@ -1,6 +1,6 @@
 # code2env_lead - History Log
 
-<!-- METADATA:SESSION=17 -->
+<!-- METADATA:SESSION=18 -->
 
 ## Session 0 - Created with team lead
 
@@ -864,3 +864,41 @@
   all_source_tool_returns_ok=false due to docker helper missing args and github
   helper network-disabled failure, with call_entrypoint ok.
 - Coordinator records are being updated. No further worker action is required.
+
+## Session 18 - task051 trace helper executability gate dispatch
+
+- Received user `/goal` for `task051_trace_helper_executability_gate` and
+  coordinator fallback peer handoff for the same task.
+- Created a new active goal for task051.
+- Read full handoff:
+  `/home/leisong/codes/work-agents/intern_code2env_coordinator/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate_goal.md`.
+- Goal: productize strict trace helper executability gate without loosening
+  accepted-data predicates. The task is rooted in task050's single strict usable
+  env `scripts.check-versions:check_language_version`, where
+  `final_correct=true` and `helper_trace_complete=true` but
+  `helper_calls_successful=false`, `helper_trace_valid=false`, and
+  `all_source_tool_returns_ok=false`.
+- Required product direction recorded: transitive side-effect/network helper
+  classification, trace required-helper preflight for argument availability and
+  sandbox/network safety, executable helper count/skipped-reason metadata,
+  focused tests, full pytest, and task050 before/after reproduction.
+- Checked worker availability: worker_1, worker_2, and worker_4 were Idle;
+  worker_3 still reported Working on `task032_qa_session3_fixes`; worker_5 still
+  reported Working on `task041_rerun_rollouts_v3`.
+- Updated shared workspace to latest `origin/main`, fast-forwarding through
+  task050 merge commit `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`.
+- Created standard task docs under
+  `workspace/tasks/task051_trace_helper_executability_gate/` and artifact root
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate/`.
+- Pushed shared main commit `0c5ad34` with task051 README/history/task_knowledge.
+- After mailbox pre-checks with unread_count=0 before each peer send, notified:
+  worker_1 as implementation owner, worker_4 as reproduction/audit support, and
+  worker_2 as independent tester.
+- Recorded worker notifications in task051 shared history and pushed shared main
+  commit `6dd9ae7`.
+- Assignment rationale: worker_1 owns product implementation because it has
+  immediate task050 context; worker_4 supports task050 before/after audit without
+  competing product implementation; worker_2 remains independent tester. Workers
+  3 and 5 were not assigned because their status still advertises older Working
+  tasks.
+- Current state: waiting for worker acceptance/progress mailboxes.
