@@ -1020,3 +1020,26 @@
   report exact pushed head, reproduction JSON/MD paths, default behavior impact,
   and residual risks. Worker_2 validation remains blocked on that exact pushed
   head, not on local uncommitted changes.
+- Goal continuation refresh: mailbox unread_count=0; PR #38 remote remains
+  `89007b221d237061b1599d6196e19670e8d54603`, open/non-draft, DIRTY, and
+  mergeable=CONFLICTING. Remote worker_1 branch is still the old bootstrap head.
+- Task051 artifact root now contains focused test logs. Read-only inspection
+  found `focused_semantic_rollout.log` reports `17 passed in 21.56s` and
+  `focused_batch_rollout_files.log` reports `52 passed in 44.74s`.
+- A process check saw worker_1's focused
+  `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` run while it
+  was active, then confirmed it finished. No full pytest process or full pytest
+  log was visible afterwards.
+- Worker_1 local worktree still has uncommitted product diff in
+  `code2env/batch.py`, `code2env/rollout.py`, `code2env/spec.py`,
+  `tests/test_batch.py`, and `tests/test_rollout.py`; remote PR #38 has not
+  received a product commit.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 a focused
+  closeout checkpoint naming the remaining owner blockers: full
+  `python3 -m pytest -q`, commit/push synced PR #38 product head, and mailbox
+  ready report with exact pushed head, focused/full test commands and results,
+  task050 reproduction JSON/MD paths, default behavior impact, and residual
+  risks.
+- Current state: still waiting for a pushed ready head; worker_2 validation is
+  not triggered because local uncommitted code and focused logs are not enough
+  evidence for exact-head validation.
