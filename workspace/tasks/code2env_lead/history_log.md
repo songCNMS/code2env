@@ -901,4 +901,22 @@
   competing product implementation; worker_2 remains independent tester. Workers
   3 and 5 were not assigned because their status still advertises older Working
   tasks.
-- Current state: waiting for worker acceptance/progress mailboxes.
+- Received and processed worker acceptance/progress mailboxes:
+  worker_1 accepted implementation owner, opened PR #38
+  `https://github.com/songCNMS/code2env/pull/38` on branch
+  `intern_code2env_worker_1/task051_trace_helper_executability_gate`, current
+  head `89007b221d237061b1599d6196e19670e8d54603`; worker_4 accepted audit
+  support only, with planned artifacts under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate/worker4_audit/`;
+  worker_2 accepted independent tester reservation and will validate w1's exact
+  ready head.
+- Read-only PR check found PR #38 open/non-draft with mergeStateStatus=DIRTY.
+  Because shared main had already advanced after w1's bootstrap head, lead
+  peer-sent worker_1 a checkpoint after mailbox pre-check with unread_count=0,
+  requiring sync with latest `origin/main` before declaring ready-for-test.
+- To avoid further dirtying the implementation PR, lead recorded this
+  checkpoint only in the lead branch rather than pushing another shared main
+  task-history commit.
+- Current state: waiting for worker_1 product implementation, focused/full test
+  results, task050 before/after artifact paths, and exact ready head before
+  triggering worker_2 validation.
