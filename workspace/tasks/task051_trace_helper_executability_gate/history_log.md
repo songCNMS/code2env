@@ -29,3 +29,16 @@
 ## Current State
 
 - Waiting for worker acceptance/progress mailboxes.
+
+## Session 1 - Worker notifications sent
+
+- Lead checked mailbox before each peer send; unread_count was 0 each time.
+- Peer-sent worker_1 implementation owner assignment:
+  product code changes, focused/full tests, and task050 strict env reproduction.
+- Peer-sent worker_4 reproduction/audit support assignment:
+  task050 before/after helper executability evidence and audit artifacts only,
+  without competing product implementation.
+- Peer-sent worker_2 independent tester reservation:
+  wait for worker_1 exact ready head, then validate focused/full tests,
+  reproduction artifacts, default compatibility, and residual risks.
+- Current state: waiting for worker acceptance/progress mailboxes.
