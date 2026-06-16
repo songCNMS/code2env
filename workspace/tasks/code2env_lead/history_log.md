@@ -1043,3 +1043,44 @@
 - Current state: still waiting for a pushed ready head; worker_2 validation is
   not triggered because local uncommitted code and focused logs are not enough
   evidence for exact-head validation.
+- Worker_1 then pushed PR #38 product head
+  `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`; GitHub reported PR #38
+  open/non-draft and CLEAN/MERGEABLE at that head. PR diff includes product
+  files `code2env/spec.py`, `code2env/rollout.py`, `code2env/batch.py`, focused
+  tests `tests/test_batch.py`, `tests/test_rollout.py`, and workspace metadata.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_2 the
+  independent validation request for exact PR #38 head
+  `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`, including focused/full test
+  requirements and task050 strict-env artifact predicates.
+- Received and marked-read worker_1 ready mailbox
+  `w1-task051-ready-for-test-796dc4f`: exact pushed head
+  `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`, base synced to
+  `origin/main=6dd9ae73ad8e9fde7d9dfc67d39a3ab0efbc8624`, focused narrow tests
+  `17 passed`, focused files tests `52 passed`, full `python3 -m pytest -q`
+  `184 passed, 1 skipped`, task050 reproduction JSON/MD paths, default behavior
+  impact, and residual risks.
+- Read-only inspection of `full_pytest.log` confirmed
+  `184 passed, 1 skipped in 90.35s`; updated task050 reproduction JSON confirms
+  old helper-return failure and new min3 rejection
+  `insufficient_executable_semantic_helpers:1/3`.
+- Received and marked-read worker_1 ready head update
+  `w1-task051-ready-head-update-389a429`: latest pushed head
+  `389a429d17c15b5d637e5b83b4a7a8c6717d4686` with previous product head
+  `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`; worker_1 reported the delta as
+  metadata-only for stop-hook history/status repairs.
+- Lead fetched both heads and verified `796dc4f..389a429` changes only
+  `workspace/interns/intern_code2env_worker_1/status.md` and
+  `workspace/tasks/task051_trace_helper_executability_gate/history_log.md`; no
+  `code2env/` or `tests/` diff. GitHub reported latest PR #38 head
+  `389a429d17c15b5d637e5b83b4a7a8c6717d4686` CLEAN/MERGEABLE.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_2 a
+  latest-head update requiring validation of `389a429d17c15b5d637e5b83b4a7a8c6717d4686`
+  plus explicit head-drift proof from `796dc4f`.
+- Worker_2 local workspace was observed at detached product head `796dc4f`, but
+  no validation mailbox or artifacts were visible after the first polling
+  window. After mailbox pre-check with unread_count=0, lead peer-sent worker_2 a
+  validation checkpoint requiring PASS/FAIL, exact heads checked, focused/full
+  pytest results, task050 artifact predicate checks, default impact, residual
+  risks, or a blocker.
+- Current state: waiting for worker_2 independent validation PASS/FAIL before
+  any merge decision.
