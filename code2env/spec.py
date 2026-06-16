@@ -11,6 +11,7 @@ from code2env.envdeps import golden_status_for
 from code2env.executor import run_symbol_subprocess
 from code2env.indexer import find_candidate, index_repo, links_for_candidate
 from code2env.models import EnvSpec, FunctionCandidate, RepoSnapshot, TestLink, ToolSpec
+from code2env.rich_fixtures import fixture_component_descriptor
 
 
 def draft_env_spec(
@@ -239,6 +240,18 @@ def _task_from_candidate(candidate: FunctionCandidate) -> dict[str, Any]:
 # the backward-compatible call_helper that leaves room for this many named,
 # semantic direct-callee tools before hitting the upper bound of 8.
 MAX_SEMANTIC_HELPER_TOOLS = 3
+_NETWORK_SIDE_EFFECT_CALLS = {
+    "Request",
+    "urlopen",
+    "urlretrieve",
+    "requests",
+}
+_NETWORK_SIDE_EFFECT_PREFIXES = (
+    "requests.",
+    "urllib.request.",
+    "urllib3.",
+    "http.client.",
+)
 _TOOL_RESULT_SCHEMA = {
     "type": "object",
     "required": ["ok"],
@@ -267,6 +280,8 @@ def _tools_from_candidate(
         "line_end": candidate.end_lineno,
     }
     pure_helpers, side_effect_helpers = _partition_helpers(candidate, by_symbol)
+    helper_executability = trace_helper_executability_for_candidate(candidate, candidates)
+    side_effect_reasons = _helper_side_effect_reasons(candidate, by_symbol)
 
     tools: list[ToolSpec] = [
         ToolSpec(
@@ -309,6 +324,8 @@ def _tools_from_candidate(
                 # Side-effecting helpers are not exposed as direct tools; recorded here
                 # so reviewers can route them through a sandbox adapter later.
                 "sandboxed_side_effect_helpers": side_effect_helpers,
+                "sandboxed_side_effect_helper_reasons": side_effect_reasons,
+                "helper_executability": helper_executability,
             },
         ),
     ]
@@ -369,9 +386,78 @@ def semantic_helpers_for_candidate(
 ) -> list[str]:
     """Return helper names that final ToolSpec generation exposes as call_<helper>."""
 
+    return list(trace_helper_executability_for_candidate(candidate, candidates)["semantic_helpers"])
+
+
+def trace_helper_executability_for_candidate(
+    candidate: FunctionCandidate,
+    candidates: list[FunctionCandidate] | None = None,
+    *,
+    fixture: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return auditable strict trace helper executability metadata.
+
+    ``semantic_helpers`` are the dedicated side-effect-safe helpers that spec
+    generation exposes as ``call_<helper>``. ``executable_semantic_helpers`` is
+    fixture-aware when a fixture is supplied and excludes helpers whose required
+    arguments cannot be mapped without model fabrication.
+    """
+
     by_symbol = {item.symbol: item for item in (candidates or [])}
-    pure_helpers, _ = _partition_helpers(candidate, by_symbol)
-    return pure_helpers[:MAX_SEMANTIC_HELPER_TOOLS]
+    candidate_semantic_helpers = _candidate_semantic_helpers(candidate, by_symbol)
+    side_effect_reasons = _helper_side_effect_reasons(candidate, by_symbol)
+    semantic_helpers = [
+        helper for helper in candidate_semantic_helpers if helper not in side_effect_reasons
+    ][:MAX_SEMANTIC_HELPER_TOOLS]
+
+    skipped: list[dict[str, Any]] = []
+    for helper_index, helper in enumerate(candidate_semantic_helpers):
+        reason = side_effect_reasons.get(helper)
+        if reason:
+            item: dict[str, Any] = {"helper": helper, "tool": f"call_{helper}", "reason": reason}
+            argument_reasons = _helper_argument_skip_reasons(
+                candidate,
+                helper,
+                by_symbol,
+                fixture=fixture,
+                helper_index=helper_index,
+            )
+            if argument_reasons:
+                item["additional_reasons"] = argument_reasons
+            skipped.append(item)
+
+    executable_helpers: list[str] = []
+    for helper_index, helper in enumerate(semantic_helpers):
+        argument_reasons = _helper_argument_skip_reasons(
+            candidate,
+            helper,
+            by_symbol,
+            fixture=fixture,
+            helper_index=helper_index,
+        )
+        if argument_reasons:
+            skipped.append(
+                {
+                    "helper": helper,
+                    "tool": f"call_{helper}",
+                    "reason": argument_reasons[0],
+                    "additional_reasons": argument_reasons,
+                }
+            )
+        else:
+            executable_helpers.append(helper)
+
+    return {
+        "candidate_semantic_helper_count": len(candidate_semantic_helpers),
+        "candidate_semantic_helpers": candidate_semantic_helpers,
+        "dedicated_semantic_helper_count": len(semantic_helpers),
+        "semantic_helpers": semantic_helpers,
+        "executable_semantic_helper_count": len(executable_helpers),
+        "executable_semantic_helpers": executable_helpers,
+        "skipped_helper_count": len(skipped),
+        "skipped_helper_count_by_reason": _reason_counts(skipped),
+        "skipped_helpers": skipped,
+    }
 
 
 def _partition_helpers(
@@ -385,14 +471,226 @@ def _partition_helpers(
 
     pure: list[str] = []
     side_effecting: list[str] = []
+    side_effect_reasons = _helper_side_effect_reasons(candidate, by_symbol)
     for helper in candidate.helper_candidates:
-        helper_candidate = by_symbol.get(f"{candidate.module}:{helper}")
-        if helper_candidate and "possible_side_effect" in helper_candidate.risk_flags:
+        if helper in side_effect_reasons:
             side_effecting.append(helper)
         else:
             pure.append(helper)
     pure.sort(key=lambda name: (-_helper_step_count(candidate, name), name))
     return pure, side_effecting
+
+
+def _candidate_semantic_helpers(
+    candidate: FunctionCandidate,
+    by_symbol: dict[str, FunctionCandidate],
+) -> list[str]:
+    """Helpers considered for strict trace before transitive filtering.
+
+    Direct side-effect helpers were already excluded from legacy dedicated tools.
+    Keeping them out here makes the strict trace denominator match the helpers
+    that could otherwise have become direct ``call_<helper>`` tools.
+    """
+
+    direct_side_effect_reasons = _direct_side_effect_reasons(candidate, by_symbol)
+    helpers = [
+        helper
+        for helper in candidate.helper_candidates
+        if helper not in direct_side_effect_reasons
+    ]
+    helpers.sort(key=lambda name: (-_helper_step_count(candidate, name), name))
+    return helpers[:MAX_SEMANTIC_HELPER_TOOLS]
+
+
+def _direct_side_effect_reasons(
+    candidate: FunctionCandidate,
+    by_symbol: dict[str, FunctionCandidate],
+) -> dict[str, str]:
+    reasons: dict[str, str] = {}
+    for helper in candidate.helper_candidates:
+        helper_candidate = by_symbol.get(f"{candidate.module}:{helper}")
+        if helper_candidate is None:
+            continue
+        reason = _direct_helper_side_effect_reason(helper_candidate)
+        if reason:
+            reasons[helper] = reason
+    return reasons
+
+
+def _helper_side_effect_reasons(
+    candidate: FunctionCandidate,
+    by_symbol: dict[str, FunctionCandidate],
+) -> dict[str, str]:
+    cache: dict[str, str | None] = {}
+    reasons: dict[str, str] = {}
+    for helper in candidate.helper_candidates:
+        reason = _helper_side_effect_reason(candidate.module, helper, by_symbol, cache, [])
+        if reason:
+            reasons[helper] = reason
+    return reasons
+
+
+def _helper_side_effect_reason(
+    module: str,
+    helper: str,
+    by_symbol: dict[str, FunctionCandidate],
+    cache: dict[str, str | None],
+    stack: list[str],
+) -> str | None:
+    if helper in cache:
+        return cache[helper]
+    if helper in stack:
+        return None
+
+    helper_candidate = by_symbol.get(f"{module}:{helper}")
+    if helper_candidate is None:
+        cache[helper] = None
+        return None
+
+    direct_reason = _direct_helper_side_effect_reason(helper_candidate)
+    if direct_reason:
+        cache[helper] = direct_reason
+        return direct_reason
+
+    stack.append(helper)
+    try:
+        for call in helper_candidate.calls:
+            callee = _same_module_helper_name(module, call, by_symbol)
+            if callee is None:
+                continue
+            callee_reason = _helper_side_effect_reason(
+                module, callee, by_symbol, cache, stack
+            )
+            if callee_reason:
+                reason = f"transitive_side_effect:{callee}:{_reason_family(callee_reason)}"
+                cache[helper] = reason
+                return reason
+    finally:
+        stack.pop()
+
+    cache[helper] = None
+    return None
+
+
+def _direct_helper_side_effect_reason(candidate: FunctionCandidate) -> str | None:
+    if any(_call_is_network_side_effect(call) for call in candidate.calls):
+        return "network_sandboxed"
+    if "possible_side_effect" in candidate.risk_flags:
+        return "side_effect_sandboxed"
+    return None
+
+
+def _call_is_network_side_effect(call: str) -> bool:
+    name = call.strip()
+    if not name:
+        return False
+    if name in _NETWORK_SIDE_EFFECT_CALLS:
+        return True
+    return name.startswith(_NETWORK_SIDE_EFFECT_PREFIXES)
+
+
+def _same_module_helper_name(
+    module: str, call: str, by_symbol: dict[str, FunctionCandidate]
+) -> str | None:
+    if f"{module}:{call}" in by_symbol:
+        return call
+    if "." in call:
+        tail = call.rsplit(".", 1)[-1]
+        if f"{module}:{tail}" in by_symbol:
+            return tail
+    return None
+
+
+def _helper_argument_skip_reasons(
+    candidate: FunctionCandidate,
+    helper: str,
+    by_symbol: dict[str, FunctionCandidate],
+    *,
+    fixture: dict[str, Any] | None,
+    helper_index: int,
+) -> list[str]:
+    if fixture is None:
+        return []
+    helper_candidate = by_symbol.get(f"{candidate.module}:{helper}")
+    if helper_candidate is None:
+        return ["argument_unavailable:helper_signature"]
+
+    required_positional = _required_positional_params(helper_candidate)
+    if not required_positional:
+        return []
+
+    fixture_args = fixture.get("args", []) if isinstance(fixture, dict) else []
+    fixture_kwargs = fixture.get("kwargs", {}) if isinstance(fixture, dict) else {}
+    fixture_args = fixture_args if isinstance(fixture_args, list) else []
+    fixture_kwargs = fixture_kwargs if isinstance(fixture_kwargs, dict) else {}
+
+    reasons: list[str] = []
+    for param in required_positional:
+        if _fixture_has_value_for_param(param, fixture_args, fixture_kwargs, candidate.args):
+            continue
+        if len(required_positional) == 1 and _fixture_has_helper_index_value(
+            helper_index, fixture_args
+        ):
+            continue
+        reasons.append(f"argument_unavailable:{param}")
+    return reasons
+
+
+def _required_positional_params(candidate: FunctionCandidate) -> list[str]:
+    if candidate.defaults_count:
+        return candidate.args[: len(candidate.args) - candidate.defaults_count]
+    return list(candidate.args)
+
+
+def _fixture_has_value_for_param(
+    param: str,
+    fixture_args: list[Any],
+    fixture_kwargs: dict[str, Any],
+    entrypoint_positional: list[str],
+) -> bool:
+    if param in fixture_kwargs:
+        return True
+    if param not in entrypoint_positional:
+        return False
+    index = entrypoint_positional.index(param)
+    return index < len(fixture_args)
+
+
+def _fixture_has_helper_index_value(helper_index: int, fixture_args: list[Any]) -> bool:
+    if len(fixture_args) > 1:
+        return helper_index < len(fixture_args)
+    if len(fixture_args) != 1:
+        return False
+    found, _, _ = fixture_component_descriptor(fixture_args[0], helper_index)
+    return found
+
+
+def _reason_counts(skipped: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in skipped:
+        for reason in _all_skip_reasons(item):
+            family = _reason_family(reason)
+            counts[family] = counts.get(family, 0) + 1
+    return counts
+
+
+def _all_skip_reasons(item: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    reason = item.get("reason")
+    if isinstance(reason, str):
+        reasons.append(reason)
+    additional = item.get("additional_reasons")
+    if isinstance(additional, list):
+        reasons.extend(reason for reason in additional if isinstance(reason, str))
+    return reasons or ["unknown"]
+
+
+def _reason_family(reason: str) -> str:
+    if reason.startswith("transitive_side_effect:"):
+        return "transitive_side_effect"
+    if reason.startswith("argument_unavailable:"):
+        return "argument_unavailable"
+    return reason
 
 
 def _helper_step_count(candidate: FunctionCandidate, helper: str) -> int:

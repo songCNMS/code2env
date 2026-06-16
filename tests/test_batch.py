@@ -10,7 +10,10 @@ from code2env import cli
 from code2env.batch import _disqualify, generate_batch, synthesize_fixture
 from code2env.indexer import find_candidate, index_repo
 from code2env.ingest import ingest_repo
-from code2env.spec import MAX_SEMANTIC_HELPER_TOOLS
+from code2env.spec import (
+    MAX_SEMANTIC_HELPER_TOOLS,
+    trace_helper_executability_for_candidate,
+)
 
 
 def _func(source: str) -> ast.FunctionDef:
@@ -165,6 +168,8 @@ class BatchPipelineTest(unittest.TestCase):
                     "min_semantic_helpers",
                     "semantic_gate_passed",
                     "skipped_insufficient_semantic_helpers",
+                    "executable_semantic_gate_passed",
+                    "skipped_insufficient_executable_semantic_helpers",
                     "by_repo",
                 },
             )
@@ -184,6 +189,8 @@ class BatchPipelineTest(unittest.TestCase):
             self.assertEqual(summary["min_semantic_helpers"], 0)
             self.assertEqual(summary["semantic_gate_passed"], 4)
             self.assertEqual(summary["skipped_insufficient_semantic_helpers"], 0)
+            self.assertEqual(summary["executable_semantic_gate_passed"], 3)
+            self.assertEqual(summary["skipped_insufficient_executable_semantic_helpers"], 0)
             self.assertEqual(
                 summary["by_repo"][str(repo)],
                 {
@@ -197,6 +204,8 @@ class BatchPipelineTest(unittest.TestCase):
                     "nondeterministic": 0,
                     "semantic_gate_passed": 4,
                     "skipped_insufficient_semantic_helpers": 0,
+                    "executable_semantic_gate_passed": 3,
+                    "skipped_insufficient_executable_semantic_helpers": 0,
                     "deps_status": "no_deps",
                 },
             )
@@ -233,6 +242,10 @@ class BatchPipelineTest(unittest.TestCase):
                 "golden_error_message",
                 "semantic_helper_count",
                 "semantic_helpers",
+                "executable_semantic_helper_count",
+                "executable_semantic_helpers",
+                "skipped_trace_helpers",
+                "skipped_trace_helper_count_by_reason",
                 "deps_status",
                 "deps_installed",
                 "spec_path",
@@ -250,6 +263,10 @@ class BatchPipelineTest(unittest.TestCase):
                 self.assertIsNone(env["strict_rejection_reason"])
                 self.assertIsInstance(env["semantic_helper_count"], int)
                 self.assertIsInstance(env["semantic_helpers"], list)
+                self.assertIsInstance(env["executable_semantic_helper_count"], int)
+                self.assertIsInstance(env["executable_semantic_helpers"], list)
+                self.assertIsInstance(env["skipped_trace_helpers"], list)
+                self.assertIsInstance(env["skipped_trace_helper_count_by_reason"], dict)
                 self.assertIsInstance(env["fixture_rich_params"], list)
                 self.assertEqual(env["deps_status"], "no_deps")
                 self.assertTrue(Path(env["spec_path"]).exists())
@@ -397,6 +414,11 @@ def entry_three(value: int) -> str:
             self.assertEqual(env["semantic_helpers"], ["clean", "render", "scale"])
             self.assertEqual(manifest["summary"]["semantic_gate_passed"], 1)
             self.assertEqual(manifest["summary"]["skipped_insufficient_semantic_helpers"], 3)
+            self.assertEqual(manifest["summary"]["executable_semantic_gate_passed"], 1)
+            self.assertEqual(
+                manifest["summary"]["skipped_insufficient_executable_semantic_helpers"],
+                0,
+            )
 
     def test_candidate_with_two_safe_helpers_is_skipped_for_min_three(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -431,6 +453,7 @@ def entry_two(value: int) -> int:
             self.assertEqual(skipped["reason"], "insufficient_semantic_helpers:2/3")
             self.assertEqual(skipped["semantic_helper_count"], 2)
             self.assertEqual(skipped["semantic_helpers"], ["clean", "scale"])
+            self.assertEqual(skipped["executable_semantic_helper_count"], 2)
 
     def test_side_effect_helper_does_not_count_toward_minimum(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -472,6 +495,78 @@ def entry_three_raw(value: int) -> int:
             )
             self.assertEqual(skipped["reason"], "insufficient_semantic_helpers:2/3")
             self.assertEqual(skipped["semantic_helpers"], ["clean", "scale"])
+            self.assertEqual(skipped["executable_semantic_helper_count"], 2)
+            self.assertEqual(skipped["skipped_helper_count_by_reason"], {})
+
+    def test_transitive_network_helper_does_not_count_toward_executable_minimum(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo = self._write_repo(
+                Path(temp_dir) / "lib",
+                """
+from urllib.request import Request, urlopen
+
+
+def fetch_json(url: str) -> dict:
+    request = Request(url)
+    with urlopen(request) as response:
+        return {"status": response.status}
+
+
+def current(language: str, csv_versions: dict) -> str:
+    return csv_versions.get(language, "0")
+
+
+def docker(image: str, tag_filter: str) -> str:
+    data = fetch_json("https://example.invalid/docker/" + image)
+    return str(data.get(tag_filter, "0"))
+
+
+def github(repo: str) -> str:
+    data = fetch_json("https://example.invalid/repos/" + repo)
+    return str(data.get("tag", "0"))
+
+
+def entry(language: str, config: dict, csv_versions: dict) -> dict:
+    baseline = current(language, csv_versions)
+    if config.get("source") == "docker":
+        latest = docker(config.get("image", "python"), config.get("tag", "latest"))
+    else:
+        latest = github(config.get("repo", "python/cpython"))
+    return {"baseline": baseline, "latest": latest}
+""",
+            )
+            snapshot = ingest_repo(str(repo))
+            candidates = index_repo(snapshot)
+            candidate = find_candidate(candidates, "m:entry")
+            preflight = trace_helper_executability_for_candidate(candidate, candidates)
+
+            self.assertEqual(preflight["semantic_helpers"], ["current"])
+            self.assertEqual(preflight["executable_semantic_helper_count"], 1)
+            self.assertEqual(
+                preflight["skipped_helper_count_by_reason"],
+                {"transitive_side_effect": 2},
+            )
+            skipped_helpers = {item["helper"]: item["reason"] for item in preflight["skipped_helpers"]}
+            self.assertTrue(skipped_helpers["docker"].startswith("transitive_side_effect:fetch_json"))
+            self.assertTrue(skipped_helpers["github"].startswith("transitive_side_effect:fetch_json"))
+
+            manifest = generate_batch(
+                [str(repo)],
+                output_dir=Path(temp_dir) / "out",
+                min_semantic_helpers=3,
+                run_smoke=False,
+                generated_at="2026-06-15T00:00:00Z",
+            )
+            skipped = next(entry for entry in manifest["skipped"] if entry["symbol"] == "m:entry")
+            self.assertEqual(
+                skipped["reason"],
+                "insufficient_executable_semantic_helpers:1/3",
+            )
+            self.assertEqual(skipped["executable_semantic_helper_count"], 1)
+            self.assertEqual(
+                skipped["skipped_helper_count_by_reason"],
+                {"transitive_side_effect": 2},
+            )
 
     def test_default_omitted_gate_preserves_generation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

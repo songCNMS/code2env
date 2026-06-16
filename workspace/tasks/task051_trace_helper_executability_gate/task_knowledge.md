@@ -1,6 +1,6 @@
 # task051_trace_helper_executability_gate - Task Knowledge
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Knowledge Entries
 
@@ -18,3 +18,10 @@
    sandbox-safe dedicated helpers, and strict executable trace helpers. The
    strict accepted-data path should count only executable helpers toward the
    min-helper threshold.
+5. For task050 `scripts.check-versions:check_language_version`, direct-network
+   `get_alpine_latest_version` remains sandbox provenance, while the strict
+   trace candidate set should focus on the previous three required helpers:
+   `get_current_version_from_csv`, `get_docker_latest_version`, and
+   `get_github_latest_version`. Docker/GitHub must be rejected as executable
+   helpers because they transitively call `fetch_json -> Request/urlopen`; docker
+   should also record unavailable `image` and `tag_filter` fixture mappings.

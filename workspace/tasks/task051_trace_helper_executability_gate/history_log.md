@@ -1,6 +1,6 @@
 # task051_trace_helper_executability_gate - History Log
 
-<!-- METADATA:SESSION=2 -->
+<!-- METADATA:SESSION=3 -->
 
 ## Session 1 - 2026-06-15 UTC - Task created and dispatched
 
@@ -28,7 +28,8 @@
 
 ## Current State
 
-- Worker_1 accepted implementation ownership; PR #38 is open for product code.
+- Worker_1 implementation is pushed to PR #38 and ready for independent
+  validation after focused/full tests and task050 before/after reproduction.
 
 ## Session 1 - Worker notifications sent
 
@@ -61,3 +62,36 @@
 - Immediate blockers: none identified at acceptance; the main risk is keeping
   default black-box rollout behavior unchanged while adding strict trace
   executability metadata.
+
+## Session 3 - 2026-06-16 UTC - Worker_1 implementation ready
+
+- Rebasing/sync: worker_1 rebased PR #38 onto current `origin/main` after lead
+  reported the PR was dirty.
+- Product changes:
+  - `code2env/spec.py` now classifies helper side effects transitively, including
+    network primitives such as `Request`, `urlopen`, `urlretrieve`,
+    `requests.*`, and `urllib.request.*`;
+  - `code2env/rollout.py` now preflights strict subfunction trace helpers for
+    sandbox safety and fixture argument availability before adding them to the
+    required-helper sequence;
+  - `code2env/batch.py` now records executable helper counts/skipped reason
+    metadata and rejects min-helper strict trace data with
+    `insufficient_executable_semantic_helpers` when executable helpers fall
+    below the requested threshold.
+- Focused tests:
+  - `python3 -m pytest -q tests/test_batch.py::SemanticHelperGateTest tests/test_rollout.py::SubfunctionTraceModeTest`
+    -> 17 passed;
+  - `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py`
+    -> 52 passed.
+- Full verification: `python3 -m pytest -q` -> 184 passed, 1 skipped.
+- Task050 strict env before/after evidence was regenerated under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate/task050_strict_env_reproduction/`.
+  Current post-fix evidence reduces executable required helpers to
+  `call_get_current_version_from_csv`; docker/github are not required and the
+  min-3 strict gate rejects with
+  `insufficient_executable_semantic_helpers:1/3`.
+  Docker also records `argument_unavailable:image` and
+  `argument_unavailable:tag_filter`; docker/github record transitive
+  `fetch_json` network skip reasons.
+- Worker_4 audit artifacts were incorporated into the reproduction report:
+  `worker4_audit/worker4_trace_helper_executability_audit.json` and `.md`.
