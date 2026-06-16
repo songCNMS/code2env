@@ -942,3 +942,16 @@
   `origin/main` before ready-for-test; w2 remains reserved to validate the exact
   ready head with focused/full tests and task050 strict-env before/after
   artifacts; w4 remains audit support.
+- Goal continuation read-only refresh: mailbox unread_count=0; PR #38 remains at
+  head `89007b221d237061b1599d6196e19670e8d54603`, open/non-draft,
+  mergeStateStatus=DIRTY, updatedAt `2026-06-16T00:13:39Z`, and still contains
+  only the bootstrap/acceptance commits. The task051 artifact root has no files.
+- Remote branch check confirmed `origin/main=6dd9ae73ad8e9fde7d9dfc67d39a3ab0efbc8624`,
+  worker_1 task051 branch at `89007b221d237061b1599d6196e19670e8d54603`, and
+  worker_4 audit branch at `0c5ad34906cee4a7640933d6143a77092c573e8d`.
+- After mailbox pre-checks with unread_count=0, lead peer-sent worker_1 an
+  owner checkpoint requiring an immediate mailbox status with implementation
+  progress, ready-for-test exact head, or concrete blocker; lead also peer-sent
+  worker_4 an audit-support checkpoint requiring artifact paths or blocker.
+- Current state: waiting for worker mailbox responses; no tester launch until w1
+  provides a synced ready head and required test/artifact evidence.
