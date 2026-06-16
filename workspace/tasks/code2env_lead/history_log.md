@@ -955,3 +955,45 @@
   worker_4 an audit-support checkpoint requiring artifact paths or blocker.
 - Current state: waiting for worker mailbox responses; no tester launch until w1
   provides a synced ready head and required test/artifact evidence.
+- Worker availability check: all five workers reported online via
+  `/api/intern/check_online`. Worker status files still show worker_1,
+  worker_2, and worker_4 as Idle, worker_3 on `task032_qa_session3_fixes`, and
+  worker_5 on `task041_rerun_rollouts_v3`; objective ownership remains worker_1
+  implementation, worker_4 audit support, and worker_2 tester because worker_1's
+  local task051 worktree has active uncommitted product changes.
+- Read-only owner worktree check found worker_1 local branch
+  `intern_code2env_worker_1/task051_trace_helper_executability_gate` with
+  uncommitted modifications in `code2env/spec.py`, `code2env/rollout.py`,
+  `code2env/batch.py`, `tests/test_batch.py`, and `tests/test_rollout.py`
+  (591 insertions, 17 deletions). Shallow review showed the WIP direction covers
+  recursive helper executability classification, rollout preflight metadata,
+  batch executable-helper gate metadata, and focused tests, but no ready evidence
+  exists yet.
+- Received and marked-read worker_1 mailbox
+  `w1-task051-progress-session3-rebased-product-slice-v2`: implementation is in
+  progress, not ready for worker_2 validation; local branch has been rebased
+  onto latest `origin/main=6dd9ae7`; GitHub PR #38 will stay at the old
+  acceptance head until a WIP/product commit is pushed; no blocker requires lead
+  action.
+- Received and marked-read worker_4 mailbox
+  `task051-w4-audit-complete-6dd9ae7`: audit/reproduction support is complete,
+  no competing product implementation or accepted JSONL was produced, branch
+  `intern_code2env_worker_4/task051_trace_helper_executability_gate_audit` is at
+  `6dd9ae73ad8e9fde7d9dfc67d39a3ab0efbc8624`, and JSON/MD artifacts were
+  produced under
+  `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate/worker4_audit/`.
+- Lead verified the worker_4 JSON artifact with `python3 -m json.tool` and read
+  the MD summary. Key before evidence: task050 strict env had
+  `final_correct=true` and `helper_trace_complete=true` while
+  `helper_calls_successful=false`, `helper_trace_valid=false`, and
+  `all_source_tool_returns_ok=false`. Key after expectation: executable required
+  helpers should reduce to `call_get_current_version_from_csv`; docker/github
+  helpers should be skipped/rejected with precise transitive network and
+  argument-unavailable reasons; min3 strict data should reject with
+  `insufficient_executable_semantic_helpers` or equivalent metadata rather than
+  accepting failed helper returns.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 the
+  worker_4 artifact paths and required after expectations for the ready report.
+- Current state: waiting for worker_1 to commit/push product implementation,
+  run focused/full tests, produce task050 before/after evidence, and report an
+  exact synced ready head before worker_2 validation starts.

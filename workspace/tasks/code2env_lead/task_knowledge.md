@@ -58,3 +58,4 @@
 49. completion report 后若 coordinator 主动 ack 并复核关键 artifact predicates，要把 ack 归档为最终闭环证据；这类 ack 可作为用户 final 中“coordinator 已复核”的依据。
 50. strict trace 数据的 helper 可执行性要在 rollout 前处理：transitive network/side-effect helper 和参数不可合成 helper 都不应作为 strict required helper 静默进入轨迹；否则会得到 `helper_trace_complete=true` 但 helper/source returns 失败的不可接受样本。
 51. schema-heavy/product PR 已开后，lead checkpoint 应优先通过 peer/mailbox 协调并记在 lead 分支；除任务创建、关键分派、ready/完成稳定点外，不要继续推 shared main metadata，避免 implementation PR 反复 DIRTY 干扰 tester exact-head 验证。
+52. worker 本地未提交 product diff 只能作为 progress 信号，不是 ready evidence；触发 tester 仍必须等待 owner mailbox 明确给出 pushed exact head、focused/full tests、artifact paths 和默认行为/风险说明。
