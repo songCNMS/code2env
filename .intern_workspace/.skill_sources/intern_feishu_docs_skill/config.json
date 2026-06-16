@@ -1,0 +1,4 @@
+{
+  "redirect_uri": "https://chlxydl.github.io/echo_intern/echo.html",
+  "_comment": "redirect_uri 必须与飞书 app 后台白名单完全一致。主管开启 GitHub Pages 后若 URL 不一样，编辑这里 + 飞书后台保持一致。"
+}

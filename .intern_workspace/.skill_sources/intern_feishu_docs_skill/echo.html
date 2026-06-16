@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>飞书授权回调 - 复制 code 回群</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    margin: 0; padding: 20px; background: #f5f5f7; color: #1d1d1f;
+  }
+  .card {
+    max-width: 520px; margin: 20px auto; background: #fff; border-radius: 16px;
+    padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  .label { font-size: 14px; color: #86868b; margin: 16px 0 6px; }
+  .code-box {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 18px; word-break: break-all; background: #f5f5f7;
+    border: 1px solid #d2d2d7; border-radius: 10px; padding: 14px;
+    user-select: all; -webkit-user-select: all;
+  }
+  button {
+    width: 100%; margin-top: 14px; padding: 14px; font-size: 16px;
+    background: #0071e3; color: #fff; border: none; border-radius: 10px;
+    font-weight: 600;
+  }
+  button:active { background: #0058b8; }
+  .ok { color: #34c759; }
+  .err { color: #ff3b30; }
+  .hint {
+    font-size: 13px; color: #86868b; margin-top: 12px; line-height: 1.6;
+  }
+  .raw { font-size: 12px; color: #86868b; word-break: break-all; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>飞书授权回调</h1>
+  <div id="status"></div>
+  <div id="code-section" style="display:none">
+    <div class="label">授权码 code</div>
+    <div id="code" class="code-box"></div>
+    <div class="label">state</div>
+    <div id="state" class="code-box"></div>
+    <button id="copy-btn" onclick="copyAll()">复制完整回调（粘贴回飞书群）</button>
+    <div id="copy-msg" class="hint"></div>
+    <div class="hint">
+      提示：点击上方按钮复制后，回到飞书群直接长按粘贴发送。
+      脚本会从你粘贴的内容里提取 code 和 state。
+    </div>
+  </div>
+  <div class="raw" id="raw-url"></div>
+</div>
+<script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var code = params.get('code');
+    var state = params.get('state');
+    var err = params.get('error') || params.get('error_description');
+    var statusEl = document.getElementById('status');
+    document.getElementById('raw-url').textContent = 'URL: ' + window.location.href;
+    if (err) {
+      statusEl.innerHTML = '<span class="err">授权失败：' + err + '</span>';
+      return;
+    }
+    if (!code) {
+      statusEl.innerHTML = '<span class="err">URL 里没有 code 参数，检查 redirect_uri 配置</span>';
+      return;
+    }
+    statusEl.innerHTML = '<span class="ok">✓ 授权成功，请复制 code 回群</span>';
+    document.getElementById('code-section').style.display = 'block';
+    document.getElementById('code').textContent = code;
+    document.getElementById('state').textContent = state || '(none)';
+    window.copyAll = function () {
+      var payload = 'FEISHU_OAUTH code=' + code + ' state=' + (state || '');
+      var msg = document.getElementById('copy-msg');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(payload).then(function () {
+          msg.innerHTML = '<span class="ok">✓ 已复制，回飞书群粘贴即可</span>';
+        }, function () {
+          fallbackCopy(payload, msg);
+        });
+      } else {
+        fallbackCopy(payload, msg);
+      }
+    };
+    function fallbackCopy(text, msg) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      msg.innerHTML = ok
+        ? '<span class="ok">✓ 已复制，回飞书群粘贴即可</span>'
+        : '<span class="err">自动复制失败，请手动长按 code 选择复制</span>';
+    }
+  })();
+</script>
+</body>
+</html>
