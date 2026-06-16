@@ -20,6 +20,8 @@
   `python3 -m pytest -q` passed with `184 passed, 1 skipped`, and task050
   strict-env before/after evidence now rejects min3 as
   `insufficient_executable_semantic_helpers:1/3`.
+- Session 3 metadata correction: task051 history duplicate Session 1 heading was
+  renamed after ready handoff; no product code or test evidence changed.
 - Session 2 accepted task051_trace_helper_executability_gate; PR #38 opened for
   strict trace helper executability gate implementation, focused/full tests, and
   task050 strict-env before/after reproduction artifacts.

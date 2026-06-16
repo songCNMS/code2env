@@ -31,7 +31,7 @@
 - Worker_1 implementation is pushed to PR #38 and ready for independent
   validation after focused/full tests and task050 before/after reproduction.
 
-## Session 1 - Worker notifications sent
+## Worker notifications sent
 
 - Lead checked mailbox before each peer send; unread_count was 0 each time.
 - Peer-sent worker_1 implementation owner assignment:
@@ -95,3 +95,6 @@
   `fetch_json` network skip reasons.
 - Worker_4 audit artifacts were incorporated into the reproduction report:
   `worker4_audit/worker4_trace_helper_executability_audit.json` and `.md`.
+- Metadata correction after ready handoff: renamed the duplicate
+  `Session 1 - Worker notifications sent` heading to avoid duplicated session
+  numbering; no product code or test artifacts changed.
