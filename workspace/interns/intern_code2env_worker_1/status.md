@@ -1,19 +1,22 @@
 # intern_code2env_worker_1 - 状态
 
-<!-- METADATA:STATUS=Idle,TASK=,ROLE=worker,TEAM_ID=code2env -->
+<!-- METADATA:STATUS=Working,TASK=task051_trace_helper_executability_gate,ROLE=worker,TEAM_ID=code2env -->
 
 | 字段 | 值 |
 |------|-----|
 | Name | intern_code2env_worker_1 |
-| Status | Idle |
+| Status | Working |
 | Role | worker |
 | Team | code2env |
-| Current Task |  |
-| PR |  |
-| Session | 8 |
+| Current Task | task051_trace_helper_executability_gate |
+| PR | https://github.com/songCNMS/code2env/pull/38 |
+| Session | 2 |
 
 ## Recent Progress
 
+- Session 2 accepted task051_trace_helper_executability_gate; PR #38 opened for
+  strict trace helper executability gate implementation, focused/full tests, and
+  task050 strict-env before/after reproduction artifacts.
 - Session 8 task050 merge authorization: worker_2 validation PASS processed by
   lead; completion metadata prepared before self-merge with no product-code
   changes.

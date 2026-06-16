@@ -1,6 +1,6 @@
 # task051_trace_helper_executability_gate - History Log
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Session 1 - 2026-06-15 UTC - Task created and dispatched
 
@@ -28,7 +28,7 @@
 
 ## Current State
 
-- Waiting for worker acceptance/progress mailboxes.
+- Worker_1 accepted implementation ownership; PR #38 is open for product code.
 
 ## Session 1 - Worker notifications sent
 
@@ -41,4 +41,23 @@
 - Peer-sent worker_2 independent tester reservation:
   wait for worker_1 exact ready head, then validate focused/full tests,
   reproduction artifacts, default compatibility, and residual risks.
-- Current state: waiting for worker acceptance/progress mailboxes.
+- Current state: worker_1 acceptance received; implementation branch/PR are open.
+
+## Session 2 - 2026-06-15 UTC - Worker_1 accepted implementation
+
+- Worker `intern_code2env_worker_1` synced to shared main
+  `0c5ad34906cee4a7640933d6143a77092c573e8d` and created branch
+  `intern_code2env_worker_1/task051_trace_helper_executability_gate`.
+- Opened PR https://github.com/songCNMS/code2env/pull/38 against `main`.
+- Initial implementation plan:
+  1. add transitive helper side-effect/network classification in the helper
+     partition/spec path;
+  2. add strict trace helper preflight for argument availability and sandbox
+     safety;
+  3. surface executable helper counts and skipped-helper reason metadata for
+     strict accepted-data filtering;
+  4. add focused tests plus full `python3 -m pytest -q`;
+  5. reproduce task050 strict env before/after under the Session27 artifact root.
+- Immediate blockers: none identified at acceptance; the main risk is keeping
+  default black-box rollout behavior unchanged while adding strict trace
+  executability metadata.

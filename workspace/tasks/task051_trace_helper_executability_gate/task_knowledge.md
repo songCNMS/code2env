@@ -1,6 +1,6 @@
 # task051_trace_helper_executability_gate - Task Knowledge
 
-<!-- METADATA:SESSION=1 -->
+<!-- METADATA:SESSION=2 -->
 
 ## Knowledge Entries
 
@@ -14,3 +14,7 @@
 3. The task050 strict env target is
    `code2env.scripts.check-versions.check_language_version.21a74cc9.v1`; its
    before evidence is failed docker/github helper source returns.
+4. Acceptance should distinguish three helper sets: candidate semantic helpers,
+   sandbox-safe dedicated helpers, and strict executable trace helpers. The
+   strict accepted-data path should count only executable helpers toward the
+   min-helper threshold.
