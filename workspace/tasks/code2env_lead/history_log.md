@@ -1084,3 +1084,44 @@
   risks, or a blocker.
 - Current state: waiting for worker_2 independent validation PASS/FAIL before
   any merge decision.
+- Received and marked-read worker_2 validation mailbox
+  `worker2-task051-pr38-validation-pass-389a429-20260615-01`: PASS.
+- Worker_2 validated latest PR #38 head
+  `389a429d17c15b5d637e5b83b4a7a8c6717d4686` and product head
+  `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`; PR state was open/non-draft,
+  CLEAN, and MERGEABLE.
+- Worker_2 confirmed `796dc4f..389a429` is metadata-only, changing only
+  `workspace/interns/intern_code2env_worker_1/status.md` and
+  `workspace/tasks/task051_trace_helper_executability_gate/history_log.md`, with
+  empty `code2env/` and `tests/` diff.
+- Worker_2 test results: at product head `796dc4f`,
+  `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` -> 52 passed
+  in 46.06s; full `python3 -m pytest -q` -> 184 passed, 1 skipped in 91.26s.
+  At latest head `389a429`, focused
+  `python3 -m pytest -q tests/test_batch.py tests/test_rollout.py` -> 52 passed
+  in 44.84s.
+- Worker_2 artifact predicate checks passed for task050 strict env: old rollout
+  had `helper_trace_complete=true` and `final_correct=true` but
+  `helper_calls_successful=false`, `helper_trace_valid=false`, and
+  `all_source_tool_returns_ok=false`; post-fix reproduction has candidate
+  semantic helpers=3, executable helper count=1, required helper only
+  `call_get_current_version_from_csv`, docker/github skipped with
+  `transitive_side_effect:fetch_json:network_sandboxed`, docker additionally
+  records `argument_unavailable:image` and `argument_unavailable:tag_filter`,
+  and min3 gate rejects with `insufficient_executable_semantic_helpers:1/3`.
+- Worker_2 residual risks: static/intra-module transitive detection can miss
+  dynamic aliases or cross-module helper chains; validation covers task050 target
+  plus synthetic tests rather than a broad full sample rerun; accepted JSONL can
+  remain zero when fewer than three executable helpers remain.
+- Lead rechecked PR #38 after PASS: latest head
+  `389a429d17c15b5d637e5b83b4a7a8c6717d4686`, open/non-draft,
+  CLEAN/MERGEABLE, GitGuardian check successful, origin branch at the same head
+  and `origin/main=6dd9ae73ad8e9fde7d9dfc67d39a3ab0efbc8624`.
+- After mailbox pre-check with unread_count=0, lead peer-sent worker_1 merge
+  authorization for PR #38. Worker_1 was instructed not to change product code
+  before merge and to report merge commit, final PR state, tests/artifacts
+  summary, default behavior impact, residual risks, and confirmation that
+  `origin/main` includes the merge.
+- Thirty seconds after authorization, mailbox remained empty and GitHub still
+  reported PR #38 open with no merge commit. Current state: waiting for worker_1
+  self-merge and merge-completion mailbox.
