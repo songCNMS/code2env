@@ -1,6 +1,6 @@
 # task051_trace_helper_executability_gate - History Log
 
-<!-- METADATA:SESSION=3 -->
+<!-- METADATA:SESSION=4 -->
 
 ## Session 1 - 2026-06-15 UTC - Task created and dispatched
 
@@ -28,8 +28,8 @@
 
 ## Current State
 
-- Worker_1 implementation is pushed to PR #38 and ready for independent
-  validation after focused/full tests and task050 before/after reproduction.
+- Worker_1 completed implementation and validation handoff for PR #38; W2
+  independent validation passed and lead authorized self-merge.
 
 ## Worker notifications sent
 
@@ -98,3 +98,20 @@
 - Metadata correction after ready handoff: renamed the duplicate
   `Session 1 - Worker notifications sent` heading to avoid duplicated session
   numbering; no product code or test artifacts changed.
+
+## Session 4 - 2026-06-16 UTC - Merge authorization and completion metadata
+
+- Lead authorized self-merge for PR #38 after W2 independent validation PASS at
+  latest head `389a429d17c15b5d637e5b83b4a7a8c6717d4686`.
+- W2 validation summary from lead:
+  - product head `796dc4f190a2e129ceaae0ffbf4cf82cb214882e` passed focused
+    `tests/test_batch.py tests/test_rollout.py` with 52 passed and full
+    `python3 -m pytest -q` with 184 passed, 1 skipped;
+  - latest head `389a429d17c15b5d637e5b83b4a7a8c6717d4686` reran focused tests
+    with 52 passed;
+  - delta `796dc4f..389a429` was metadata-only with no `code2env/` or `tests/`
+    diff;
+  - task050 before/after artifact predicates passed.
+- Completion metadata prepared before self-merge: task README set to Completed
+  and worker status set to Idle/empty task. No product code changed after
+  validation.
