@@ -1,6 +1,6 @@
 # task041_rerun_rollouts_v3 - v3 重跑:确定性可用集 → rollouts_v3 + report_v3
 
-<!-- METADATA:STATUS=Open,ASSIGNEE= -->
+<!-- METADATA:STATUS=InProgress,ASSIGNEE=intern_code2env_worker_5 -->
 
 ## 背景
 
