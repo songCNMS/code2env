@@ -1,8 +1,346 @@
 # task_coordinator_code2env_coordinator_8b1dc080 - History Log
 
-<!-- METADATA:SESSION=0 -->
+<!-- METADATA:SESSION=29 -->
 
 ## Session 0 - Created with coordinator
 
 - 创建 coordinator `intern_code2env_coordinator` 时自动生成本永续任务。
 - 本任务在 coordinator 存在期间保持 InProgress。
+
+## Session 1 - Repo review and explanation
+
+- 承接用户请求，阅读 `README.md`、`docs/`、核心 `code2env/` 模块与测试，梳理项目主目的和端到端运行步骤。
+- 验证测试：`python3 -m pytest -q` 通过，结果 `148 passed in 14.03s`；`python -m pytest -q` 因当前环境无 `python` 命令失败后改用 `python3`。
+- 本 coordinator 永续任务继续保持 InProgress，未进行功能代码变更。
+
+## Session 2 - qlib candidate review and improvement handoff
+
+- 按用户要求克隆并扫描 `https://github.com/microsoft/qlib`（commit `d5379c520f66a39953bad76234a7019a72796fd0`）：当前 ingester 识别 249 个 Python source 文件、39 个 test 文件；indexer 产出 2,860 个函数候选，其中 493 个带测试链接。
+- 首轮按“复杂逻辑 + 多 helper/sub-function + 有测试”过滤，得到 4 个 `helper_candidates >= 2` 且有测试链接的候选：`qlib.utils.time:cal_sam_minute`、`qlib.rl.order_execution.interpreter:FullHistoryStateInterpreter.interpret`、`qlib.model.trainer:task_train`、`qlib.rl.order_execution.strategy:SAOEStateAdapter.update`；另人工确认 `SingleAssetOrderExecutionSimple.step` 是测试 oracle 丰富的实例方法候选。
+- 调试 `cal_sam_minute` draft：工具/测试链接生成正确，但 golden 当前因 qlib import 依赖链和 `pd.Timestamp` 非 JSON fixture 支持不足退化为 weak oracle，暴露“测试派生 fixture/typed fixture”和“按候选最小依赖/导入切片”改进方向。
+- 发现 concrete 可落地问题：side-effect 风险把普通 `.get()` 当网络风险，qlib 中 221/2,860 候选被标 `possible_side_effect`，其中 93 个仅由 `get` 命中造成；已向 `intern_code2env_lead` 发送改进任务（goal API 返回 `unconfirmed`，peer send 返回 `delivered`）。
+
+## Session 3 - task043 completion acknowledged
+
+- 收到 `intern_code2env_lead` 回报：`task043_indexer_side_effect_get_filter` 已完成；worker_4 实现 PR #29，worker_2 独立验证，team_lead 已更新自身状态/历史/知识并 push。
+- 验证 GitHub 状态：PR #29 `MERGED`，标题为 `【task043_indexer_side_effect_get_filter】【intern_code2env_worker_4】Refine indexer side-effect get filter`，于 `2026-06-14T11:32:01Z` merge 到 `main`，merge commit `d3b1e9e6dd5fa3e83595687b14f35224687e5d29`。
+- lead 报告的验收结果：focused tests 2 passed；full `python3 -m pytest -q` 150 passed；qlib pinned scan get-only false positives 从旧逻辑 93 降到 patched 6。coordinator 在 `../debug/code2env_main_verify` 的 detached `origin/main` worktree 复验：full tests `150 passed in 15.71s`，qlib scan `total=2860 possible_side_effect=122 get_only=6`。
+- 后续 qlib 方向保留为新需求候选：test-backed fixture extraction（`pd.Timestamp` / numpy / class instances）和 instance-method env support。
+
+## Session 4 - qlib-derived runnable task and endpoint rollout
+
+- 按用户要求继续执行到可运行任务和 endpoint 多轮交互数据；基于 qlib `cal_sam_minute` 测试语义，在 repo 外 debug 目录创建 standalone harness `../debug/session4_qlib_task_repo`，保留分钟日历对齐逻辑、helper 拆分和 4 个 pytest golden。
+- 使用 `origin/main` worktree 生成 EnvSpec/EnvPackage：`code2env.qlib_task.minute_alignment.align_calendar_minute.9e166be1.v1`；provenance `test_link_status=linked`、`test_link_count=4`、`golden_status=real_value`、`determinism=deterministic`，工具包含 `call_entrypoint`、`call_floor_to_sample`、`call_session_label`、`call_helper`、`submit_answer`。
+- 验证结果：debug harness `PYTHONPATH=. python3 -m pytest -q` 为 `4 passed in 0.02s`；EnvPackage `python3 -m code2env smoke ... --json` score 1.0；主项目 `origin/main` `python3 -m pytest -q` 为 `150 passed in 15.61s`。
+- Endpoint rollout：使用 `/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt`，primary `gpt-5.5` 成功，无 fallback；`qualified=true`、`num_tool_call_rounds=2`、`termination_reason=submitted`、`correct=true`、`score=1.0`。
+- 交互数据已写入并 schema-export：`../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`（1 line, 9,459 bytes）和 `../outputs/session4_qlib_rollout/exported/code2env.qlib_task.minute_alignment.align_calendar_minute.9e166be1.v1.json`。
+
+## Session 5 - JSONL file delivered to Feishu
+
+- 按用户要求确认 rollout JSONL 已落盘：`../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`，大小 9,459 bytes，内容为 1 条多轮 endpoint 交互记录。
+- 通过本机飞书 daemon 复用 `FeishuAPI.upload_file` / `send_file` 将该 JSONL 作为文件发送到 `intern_code2env_coordinator` 飞书会话（chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`）。
+- 飞书返回：file_key `file_v3_0012l_9b21b507-ed88-4bc7-9ba0-6892b242d45g`，文件消息 ID `om_x100b6dddcf5934a4b3ce025b39ac988`，确认文本消息 ID `om_x100b6dddcf53eca4b21f6b9a3a00c2a`。
+
+## Session 6 - Rollout trajectory semantics reviewed
+
+- 回答用户关于“为什么所有 rollout 都走同样 tool trajectory，是否应该是真实子函数轨迹”的问题；复查 `../outputs/session4_qlib_rollout/endpoint_rollout.jsonl`，有效动作确认为 `call_entrypoint {}` 后直接 `submit_answer`，其中首次 endpoint 输出多个 JSON 对象触发 parse retry。
+- 代码复查结论：`code2env/rollout.py` 的系统提示明确要求先运行 entrypoint 或 helper，再 submit，并特别要求 `call_entrypoint` 空参数自动套 fixture；`code2env/runtime.py` 的 process_progress 只要求 explore/execute/submit 里程碑，`call_entrypoint` 已满足执行源码；`code2env/spec.py` 虽记录 entrypoint steps 和生成部分 `call_<helper>` 工具，但没有强制按源码调用顺序调用 helper。
+- 对 qlib-derived harness 的具体判断：目标函数实际调用 `parse_timestamp -> floor_to_sample -> session_label`，但当前 rollout 数据是 black-box target execution，不是动态 call graph trace；若数据目标是训练/评估子函数级工具使用，应新增显式 decomposed/subfunction-trace 模式并改变 prompt/reward/qualification。
+
+## Session 7 - Ten subfunction-trace candidate env rollouts
+
+- 按用户要求执行下一步数据生成：在 repo 外 debug 目录创建 `../debug/session7_trace_task_repo`，包含 10 个 qlib-style JSON-friendly target functions 与 10 个 pytest golden；验证 `PYTHONPATH=. python3 -m pytest -q` 为 `10 passed in 0.02s`。
+- 使用 `code2env scan/draft/build/smoke` 找出并生成 10 个 candidate EnvPackage，输出目录 `../outputs/session7_trace_rollouts/`；每个 env `golden_status=real_value`、`determinism=deterministic`，smoke evaluation `correct=true`、`score=1.0`。
+- 使用 endpoint `gpt-5.5` 和 subfunction-trace custom prompt 为每个 env 执行 1 条 rollout；每条 rollout 先调用真实 helper tools，再调用 `call_entrypoint`，最后 `submit_answer`。汇总结果：10 lines，10/10 qualified，10/10 correct，10/10 helper_trace_complete。
+- 产物：merged JSONL `../outputs/session7_trace_rollouts/session7_trace_rollouts.jsonl`（100,944 bytes），per-env export 目录 `../outputs/session7_trace_rollouts/exported/`，候选清单 `../outputs/session7_trace_rollouts/candidate_envs.json`，summary `../outputs/session7_trace_rollouts/rollout_summary.json`。
+- 已通过本机飞书 daemon 发送 merged JSONL 到 `intern_code2env_coordinator` 飞书会话；file_key `file_v3_0012l_0bbc92b3-9acc-4f78-a634-5e4edb02284g`，文件消息 ID `om_x100b6dddafa690a4b3f92880c767499`，确认文本消息 ID `om_x100b6dddafbb1ca0b281aec9b38f592`。
+
+## Session 8 - Productization goal handed to team lead
+
+- 按用户“执行下一步”要求，把 Session 7 的临时 subfunction-trace prompt 数据生成方案推进为正式产品化目标；coordinator 未直接写产品代码，遵守 role 边界转交 `intern_code2env_lead`。
+- 写出完整 handoff 文件：`../outputs/session8_subfunction_trace_rollout_goal.md`，要求 lead 创建标准 worker task、分配实现 worker 和独立 tester，将 trace mode 产品化为正式 `code2env rollout` 能力，并保持默认 rollout 行为兼容。
+- 尝试用 goal API 下发 pressing goal 两次：第一次为完整正文，第二次为短内容引用 handoff 路径；两次 HTTP 请求均超时，未拿到 transport 回执，因此不把 goal delivery 视为已确认。
+- 通过 `/api/intern/peer/send` 兜底通知 `intern_code2env_lead`，内容引用 handoff 文件并说明 goal API timeout；peer send 返回 `{"status": "delivered"}`。当前状态：等待 lead 创建正式 task/分配 worker 并回报。
+
+## Session 9 - task044 completion verified
+
+- 收到 `intern_code2env_lead` 回报：`task044_subfunction_trace_rollout` 已完成；implementation worker 为 `intern_code2env_worker_2`，independent tester 为 `intern_code2env_worker_4`，lead 记录已 push 到 `a48d11b`。
+- 验证 GitHub 状态：PR #30 `MERGED`，标题为 `【task044_subfunction_trace_rollout】【intern_code2env_worker_2】Formal subfunction trace rollout mode`，于 `2026-06-14T13:14:42Z` merge 到 `main`，merge commit `e3fba11da93b94ae353c7f992152eff583bd3897`。
+- 在 `../debug/code2env_main_verify` 更新到 detached `origin/main` `e3fba11` 后复验：`python3 -m pytest -q` 结果 `156 passed in 16.39s`；`python3 -m code2env rollout --help` 显示 `--trace-mode {default,subfunctions}`。
+- 使用 Session 7 的 3 个 EnvPackage 复跑 mock trace-mode rollout：3/3 `qualified=true`、`correct=true`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`；同一 compress env 的 default mock rollout 仍为 `call_entrypoint -> submit_answer` 且不包含 `subfunction_trace`。
+- 复验 rollout-export 兼容性：用 1 条 default + 3 条 trace records 组成 mixed JSONL，`python3 -m code2env rollout-export ...` 成功导出 4 条记录。验证产物位于 `../outputs/session9_task044_verify/`。
+- 记录剩余风险：trace quality 依赖 EnvSpec provenance；mock/helper calls 默认空参数；仅 generic `call_helper` 包装的 helper 会记录 skipped/missing 而不会强制走通。
+
+## Session 10 - Official endpoint trace rollout dataset
+
+- 按用户“执行下一步”要求，使用 PR #30 合入后的正式 CLI 能力 `code2env rollout --trace-mode subfunctions`，在 detached `origin/main` worktree `../debug/code2env_main_verify` 上对 Session 7 的 10 个 EnvPackage 重新执行 endpoint rollout。
+- 运行配置：endpoint file `/home/leisong/codes/work-agents/simpleCodeQA/endpoints.txt`，primary `gpt-5.5`，fallback `Kimi-K2.6`，`--trace-mode subfunctions`，`--max-rounds 8`，`--llm-timeout 90`，`--llm-max-tokens 1800`。
+- 结果：10/10 `qualified=true`，10/10 `correct=true`，10/10 `helper_trace_complete=true`，10/10 `entrypoint_after_helpers=true`，全部使用 primary `gpt-5.5`；2 个 env 记录 skipped side-effect helper（`market_suffix`、`turnover_ratio`），符合 task044 设计。
+- 产物：merged JSONL `../outputs/session10_official_trace_rollouts/official_trace_endpoint_rollouts.jsonl`（10 lines, 113,805 bytes），summary `../outputs/session10_official_trace_rollouts/official_trace_summary.json`，per-env records `../outputs/session10_official_trace_rollouts/rollouts/`，exported records `../outputs/session10_official_trace_rollouts/exported/`。
+- 验证：解析 JSONL 成功，rollout-export 成功导出 10 条记录；已通过本机飞书 daemon 发送 merged JSONL 到 `intern_code2env_coordinator` 飞书会话，file_key `file_v3_0012l_cc3cee78-1b75-4e4b-b777-6765493afa9g`，文件消息 ID `om_x100b6ddf683008a8b321a54cc264066`，确认文本消息 ID `om_x100b6ddf69c60ca0b34052a193aae9d`。
+
+## Session 11 - Real qlib trace-mode coverage evaluation
+
+- 按用户“执行下一步”要求，把正式 `--trace-mode subfunctions` 从 Session 7 synthetic/standalone env 扩展到真实 `microsoft/qlib` 原仓库候选；使用 qlib clone `../debug/qlib_cache/d7cf7c8de0969b81`（commit `d5379c520f66a39953bad76234a7019a72796fd0`）和 `../debug/qlib_min_deps`，通过 `SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0` 避免 qlib 版本推导失败。
+- Fresh batch 命令：`python3 -m code2env batch ... --target 60 --no-install-deps --no-smoke --determinism-runs 2`；结果 `build_ok=60`、`real_value=8`、`usable=6`、`weak_oracle=52`、`nondeterministic=2`、`candidates_scanned=2860`、`skipped_no_fixture=560`。
+- 覆盖率分析：60 个 built env 中 13 个包含 semantic helper tools，但只有 1 个同时满足 usable + semantic tools：`code2env.qlib.utils.fill_placeholder.3a1a6aa1.v1`（symbol `qlib.utils:fill_placeholder`，semantic helper `call_get_item_from_obj`，golden `real_value`，deterministic）。
+- 官方 trace-mode 评估：对 13 个 semantic env 执行 mock trace rollout，13/13 `qualified=true`、13/13 `helper_trace_complete=true`、13/13 `entrypoint_after_helpers=true`，`rollout-export` 成功导出 13 条；其中 1 个 side-effect helper `parse_backtest_config` 被记录为 `skipped_helpers`，符合 task044 设计。
+- Endpoint 评估：对唯一 usable+semantic env `qlib.utils:fill_placeholder` 执行正式 endpoint trace rollout，primary `gpt-5.5` 成功，1/1 `qualified=true`、1/1 `correct=true`、1/1 `helper_trace_complete=true`、1/1 `entrypoint_after_helpers=true`，observed tools 包含 `call_get_item_from_obj -> call_entrypoint -> submit_answer`，`rollout-export` 成功导出 1 条。
+- 产物位于 `../outputs/session11_qlib_trace_eval/`：summary `qlib_trace_eval_summary.json`（17,530 bytes）、endpoint JSONL `qlib_usable_semantic_endpoint_trace_rollouts.jsonl`（16,609 bytes）、mock JSONL `qlib_semantic_mock_trace_rollouts.jsonl`（250,540 bytes）、exported endpoint/mock 目录。
+- 已通过本机飞书 daemon 发送 3 个文件到 `intern_code2env_coordinator` 飞书会话：summary 文件消息 ID `om_x100b6ddfc90b54a4b04e4733a08e8df`，endpoint JSONL 文件消息 ID `om_x100b6ddfc92e44a4b2a02fe811108af`，mock JSONL 文件消息 ID `om_x100b6ddfc6c93cacb3b6b01f5e0b288`，确认文本消息 ID `om_x100b6ddfc6c2eca8b1c23ca45314bfa`。
+- 结论：正式 trace-mode 在真实 qlib 的 usable+semantic env 上可闭环；当前真实 qlib 覆盖瓶颈不是 trace-mode 本身，而是 EnvSpec fixture/golden/dependency viability 和 semantic helper 暴露率，后续应优先推进 test-backed fixture extraction、最小依赖/import slicing、typed fixture 支持和 instance-method env support。
+
+## Session 12 - Semantic helper purpose clarified
+
+- 回应用户问题“semantic helper 的作用是什么”；本次为概念澄清，没有修改产品代码，也没有下发 team_lead 实现任务。
+- 核对本地实现：`code2env/spec.py` 将目标函数的安全直接 callee 拆成最多 3 个 dedicated `call_<helper>` tools，并写入 backing symbol、source span、entrypoint step provenance；side-effecting helper 不直接暴露，而记录到 `call_entrypoint.provenance.sandboxed_side_effect_helpers`。
+- 核对 runtime：`code2env/runtime.py` 通过 ToolSpec provenance 将 `call_<helper>` dispatch 到真实 backing function，并把成功调用的 semantic helper 计入 explored/executed_source。
+- 结论：semantic helper 的核心作用是把主函数实现里的关键子步骤变成可调用、可追溯、可评分的工具，使 subfunction trace rollout 能检查 agent 是否按实现结构调用 helper；它不是动态自动记录的内部 call graph，也不是任意 helper 的无约束执行入口。
+
+## Session 13 - Minimum three semantic helpers gate handed off
+
+- 按用户要求执行下一步，并设置限制：只考虑能抽出至少 3 个子函数的函数转为环境。coordinator 遵守 role 边界，不直接改产品代码，将实现与验证任务下发给 `intern_code2env_lead`。
+- 核对当前实现：`code2env batch` 目前没有 `--min-semantic-helpers` 参数；`MAX_SEMANTIC_HELPER_TOOLS=3` 只是最多暴露 3 个 dedicated semantic helper，不会自动筛掉 helper 少于 3 的候选。
+- 明确计数口径：门槛必须按最终可暴露的 dedicated `call_<helper>` ToolSpec 计算；不计 `call_entrypoint`、`submit_answer`、`inspect_*`、generic `call_helper`，也不计 side-effect helper。
+- qlib 预扫描：pinned qlib clone `../debug/qlib_cache/d7cf7c8de0969b81` 共 2,860 个候选；pure semantic helpers >=3 的候选 8 个；再应用当前 batch 基础过滤（module-level、非 side-effect、非 requires_instance）后剩 6 个。
+- 写出 handoff 文件 `../outputs/session13_min3_semantic_helpers_goal.md`，要求 lead 创建标准 task，添加可配置 batch gate（建议 `--min-semantic-helpers N`，默认 0 保持兼容），新增 skip reason/manifest metadata、focused tests、full pytest，并在 qlib 上用 `N=3` 产出 constrained batch/rollout summary。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task045_min3_semantic_helpers_gate` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status": "delivered"}`。
+
+## Session 14 - task045 completion verified
+
+- 收到 `intern_code2env_lead` 回报：`task045_min3_semantic_helpers_gate` 已完成；PR #31 `【task045_min3_semantic_helpers_gate】【intern_code2env_worker_1】Add min semantic helpers gate` 已 merge 到 `main`，merge commit `dc695ba9b17cb1d4a000eb1f08fb703517a21497`，mergedAt `2026-06-14T15:11:05Z`。
+- 验证实现口径：`code2env batch --min-semantic-helpers N` 已出现在 CLI help；默认 `0` 保持兼容；参数上限为 `MAX_SEMANTIC_HELPER_TOOLS=3`；计数通过 `semantic_helpers_for_candidate` 复用最终 dedicated safe `call_<helper>` ToolSpec 语义，排除 entrypoint/inspect/submit/generic `call_helper` 和 side-effect helper。
+- 在 `../debug/code2env_main_verify` detached `origin/main` 更新到 `dc695ba` 后复验：focused `python3 -m pytest tests/test_batch.py -q` 结果 `19 passed in 3.76s`；full `python3 -m pytest -q` 结果 `162 passed in 17.87s`。
+- 复验 qlib constrained batch：`SETUPTOOLS_SCM_PRETEND_VERSION=1.0.0 python3 -m code2env batch ../debug/qlib_cache/d7cf7c8de0969b81 --target 20 --min-semantic-helpers 3 --no-install-deps --no-smoke --determinism-runs 2`，产物位于 `../outputs/session14_task045_verify/qlib_batch_min3_target20_no_deps/manifest.json`。
+- qlib 复验结果与 lead 回报一致：`candidates_scanned=2860`、`min_semantic_helpers=3`、`semantic_gate_passed=6`、`skipped_insufficient_semantic_helpers=267`、`draft_ok=0`、`build_ok=0`、`real_value=0`、`usable=0`。
+- 结论：PR #31 已正确产品化“至少 3 个 dedicated semantic helpers” gate；在真实 qlib 上该严格门槛会筛出 6 个基础合格候选，但它们全部被现有 fixture synthesis 阻断（DataFrame 参数、untyped `positions`/`all_preds`、`qlib_dir:None` 等），因此本轮无法生成 endpoint rollout JSONL。
+
+## Session 15 - Rich fixture task handed off
+
+- 按用户“执行下一步”要求，继续处理 task045 后暴露的瓶颈：`--min-semantic-helpers 3` 已能筛出 qlib 6 个 gate-pass 候选，但现有签名 fixture synthesis 无法构造 pandas DataFrame、torch-style tensor、Path/temporary directory、untyped domain object 等输入，因此 `draft_ok/build_ok/usable` 仍为 0。
+- 整理 6 个 qlib gate-pass 阻塞样本：`calc_adjusted_price` 卡 `df:DataFrame`；`brinson_pa` 卡 `positions` 且涉及 qlib provider；`transport_daily`/`transport_sample` 卡 untyped tensor-style `all_preds` 并依赖 torch；`future_calendar_collector` 卡 `qlib_dir:None` 且有 network/filesystem side effects；`get_position_data` 卡 `label_data:DataFrame`。
+- 核对 executor 行为：当前 fixture payload 必须是 JSON，subprocess 调用前没有 rich object hydration；非 JSON 返回值只会落到 `repr` envelope。因此下一步不能只是让 batch 接受这些签名，还需要 JSON-safe descriptor、executor hydration 和 canonical serialization。
+- 写出 handoff 文件 `../outputs/session15_rich_fixture_min3_qlib_goal.md`，要求 lead 创建标准 task，优先实现 rich fixture descriptors/hydration/canonical serialization，同时保持默认标量行为兼容、保持 side-effect 安全、为 qlib min3 constrained run 产出至少 1 个 safe usable EnvPackage 和 subfunction-trace rollout（endpoint 可行则执行，至少提供 mock/export artifact）。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task046_rich_fixture_min3_qlib` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status": "delivered"}`。
+
+## Session 16 - Offline samples repo scan
+
+- 按用户新任务扫描 `/home/leisong/data/samples` 中的离线 repo archive，从每个 repo 的最新本地分支识别可转换为环境的文件和函数；本次未修改产品代码、未下发 team_lead 任务。
+- 样本结构确认：目录下为 200 个 `.tgz` archive，每个 archive 内含 bare git repo、profile/issues/PR 元数据；扫描时逐个临时抽取 bare git，按 `refs/heads` 最新 committerdate 选择“最新分支”，用 `git archive` 展开该 commit 后扫描源码，临时目录处理完即删除。
+- 扫描代码使用 `../debug/code2env_main_verify` 的 `origin/main` HEAD `dc695ba9b17cb1d4a000eb1f08fb703517a21497`，复用 PR #31 后的 `semantic_helpers_for_candidate` 语义。筛选口径：Python primaryLanguage repo、module-level 函数、无当前 batch disqualify（instance/side-effect 等）、auto fixture synthesis OK、dedicated safe `call_<helper>` 数量 >= 3、`line_count >= 8`、static `score >= 40`。
+- 扫描结果：200 个 archive 中处理 38 个 Python repo，跳过 162 个非 Python/缺 profile archive；repo scan errors 0；9 个 repo 含 selected candidates；共选出 26 个当前可转环境候选，并记录 93 个 top near-miss 候选及阻塞原因。
+- 主要输出文件：`../outputs/session16_samples_scan/candidate_results.json`（完整结构化结果，含 repo/branch/commit/filter/selected/near_misses/errors），`../outputs/session16_samples_scan/candidate_results.md`（可读表格），`../outputs/session16_samples_scan/scan.log`（逐 repo 扫描日志）。
+- Top selected 示例：`FOLIO-FSE/folio_migration_tools:folio_migration_tools.__main__:main`、`0-8-4/miui-auto-tasks:utils.utils:get_token`、`jasonacox/tinytuya:tinytuya.scanner:snapshot`、`niklas-heer/speed-comparison:analyze:main`、`kreshuklab/panseg:panseg.run_panseg:main`。
+
+## Session 17 - Top samples candidate validation
+
+- 按用户“执行下一步”要求，基于 Session 16 输出 `../outputs/session16_samples_scan/candidate_results.json` 的 top 10 selected candidates 做可运行性验证；本次未修改产品代码、未下发 team_lead 任务。
+- 对 10 个候选从原 archive 最新分支重新展开 worktree，并执行 `draft -> build -> smoke`；结果 `validated=10`、`draft_ok=10`、`build_ok=10`、`smoke_ok=10`。对应 package/spec/worktree/rollout 产物写入 `../outputs/session17_samples_candidate_validation/`。
+- 对 10 个 EnvPackage 执行 mock `--trace-mode subfunctions` rollout 并合并导出：`mock_trace_rollouts.jsonl` 共 10 lines，10/10 `qualified=true`、10/10 `correct=true`、10/10 `helper_trace_complete=true`、10/10 `entrypoint_after_helpers=true`；`rollout-export` 成功导出到 `exported_rollouts/`。
+- 严格可用性复核：10 个 build 中只有 1 个满足 `golden_status=real_value` 且 `determinism=deterministic`，即 `code2env.scripts.check-versions.check_language_version.c4dd5023.v1`（symbol `scripts.check-versions:check_language_version`）；其余 9 个为 weak-oracle build，主要来自缺失依赖或运行时/import 错误，不计为真实可用样本。
+- 对唯一 strict usable env 执行 endpoint trace rollout：endpoint source `gpt-5.5`，结果 `qualified=true`、`correct=true`、`score=0.98125`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`；JSONL 写入 `../outputs/session17_samples_candidate_validation/endpoint_trace_rank05.jsonl`，schema export 写入 `../outputs/session17_samples_candidate_validation/exported_endpoint_rank05/`。
+- 质量 caveat：该 endpoint trace 中记录 3 次 helper call error，原因是当前 trace prompt/mock 顺序会以空参数调用需要参数的 helper；trace completeness 当前验证的是 required helper coverage/order 和 entrypoint-after-helpers，不等价于每个 helper call 都成功。
+- 汇总产物：`../outputs/session17_samples_candidate_validation/validation_results.json`、`validation_results.md`、`mock_trace_rollouts.jsonl`、`endpoint_trace_rank05.jsonl`、`exported_rollouts/`、`exported_endpoint_rank05/`。
+- 结论：Session 16 的静态候选能生成 package 并跑通 mock trace，但真实可用数据应以 strict usable 口径计数；当前 top 10 中真实可用于 endpoint 数据生成的是 1/10，下一步应优先把 missing dependency / weak-oracle 样本转成 real_value，或在 candidate scan 阶段加入 dependency viability 过滤。
+
+## Session 18 - Strict usable and trace quality handoff
+
+- 按用户“执行下一步”要求，将 Session 17 发现的两个产品问题拆成 `intern_code2env_lead` 可执行任务：一是 weak-oracle exception build 不应计入 strict usable/runnable 数据，二是 subfunction trace completeness 需要暴露 required helper call 是否成功。
+- 写出 handoff 文件 `../outputs/session18_strict_usable_trace_quality/task047_strict_usable_trace_quality_goal.md`，建议任务 id `task047_strict_usable_trace_quality`，要求 lead 创建标准 task、分配 implementation worker 与 independent tester。
+- handoff 覆盖 Workstream A：新增或等价实现 strict usable / dependency viability 过滤，要求 batch/summary/manifest 分离 `build_ok`、`smoke_ok`、`real_value`、`deterministic`、`strict_usable`、`weak_oracle`，保留 weak-oracle exception type/message，复跑 Session 17 top 10 或等价 samples top-N。
+- handoff 覆盖 Workstream B：subfunction trace 输出每个 required helper call 的 success 状态，新增 `helper_calls_successful` 或 strict trace valid 指标；对 rank 5 usable env，必须让 3 个 helper 参数失败显式反映在严格指标中，或通过安全参数合成消除失败。
+- 验收要求写入 handoff：focused tests、full `python3 -m pytest -q`、样本 validation summary、rollout JSONL、rollout-export 产物、PR/commit/artifact 回报；最低验收为 Session 17 top10 strict usable 仍不把 9 个 weak-oracle 样本计入，rank5 trace 暴露 helper 参数失败或安全修复。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task047_strict_usable_trace_quality` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。
+
+## Session 19 - task047 completion verified
+
+- 收到 `intern_code2env_lead` 回报：`task047_strict_usable_trace_quality` 已完成并 merge；w1 实现，w2 独立验证，PR #33 `https://github.com/songCNMS/code2env/pull/33` squash merge 到 `main`，merge commit `f551ee88654b1bcb604ebf11361a279310e52e19`，mergedAt `2026-06-15T01:22:54Z`。
+- coordinator fetch `origin/main` 后确认 `origin/main` 指向 `f551ee8`；在 `../debug/code2env_main_verify` detached 到该 commit 后核对 CLI：`python3 -m code2env batch --help` 已包含 `--require-real-value`，保留 `--min-semantic-helpers`。
+- coordinator 复跑 focused tests：`python3 -m pytest -q tests/test_batch.py tests/test_rollout.py`，结果 `48 passed in 40.23s`。
+- coordinator 复跑 full tests：`python3 -m pytest -q`，结果 `178 passed, 1 skipped in 91.06s`。
+- 核对 lead w1 artifact `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w1_session17_top10_rerun/summary.json`：`top_n=10`、`build_ok=10`、`smoke_ok=10`、`weak_oracle=9`、`real_value=1`、`deterministic=1`、`strict_usable=1`、`exported_rollout_records=10`；`mock_trace_rollouts.jsonl` 为 10 lines。
+- 抽查 rank5 JSONL 记录 `code2env.scripts.check-versions.check_language_version.c4dd5023.v1`：`qualified=true`、final `correct=true`、score `0.98125`、`helper_trace_complete=true`、`entrypoint_after_helpers=true`，同时新增严格字段 `helper_calls_successful=false`、`helper_trace_valid=false`；3 个 failed helper tools 均记录 `argument_unavailable` + `TypeError`。
+- 核对 w2 validation summary `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session18_strict_usable_trace_quality/w2_validation/w2_validation_summary_e48507e.json`：focused/full/default-compat/strict-mode/rank5 metadata acceptance 均为 PASS。
+- 结论：task047 满足 Session18 handoff 的最低验收，weak-oracle exception 不再计入 strict usable，subfunction trace 已暴露 helper call success/strict validity。残余风险保留为：acceptance replay 使用 Session17 packages 而非 fresh full rebuild，weak-oracle traceback/path exact-match 对消费者仍脆弱，helper arg synthesis 仍保守且本轮只显式暴露 rank5 失败。
+
+## Session 20 - Fresh samples strict scan
+
+- 按用户“执行下一步”要求，基于已 merge 的 task047 能力，对 `/home/leisong/data/samples` 执行 fresh source strict scan；本次未修改产品代码，使用 detached `origin/main` verify worktree `../debug/code2env_main_verify`，HEAD 为 `f551ee88654b1bcb604ebf11361a279310e52e19`。
+- 写出并运行一次性 driver `../outputs/session20_samples_strict_scan/run_session20_strict_scan.py`：从 Session16 `candidate_results.json` 读取 38 个 Python archive，逐个抽取 bare git 最新分支 commit 到 fresh worktree，然后调用 `python3 -m code2env batch --require-real-value --min-semantic-helpers 3 --no-install-deps --determinism-runs 2 --target 20`。
+- Batch 结果写入 `../outputs/session20_samples_strict_scan/strict_batch/manifest.json`；summary：`python_repos=38`、`worktrees_extracted=38`、`candidates_scanned=12063`、`semantic_gate_passed=83`、`draft_ok=30`、`build_ok=30`、`smoke_ok=1`、`weak_oracle=29`、`real_value=1`、`deterministic=1`、`strict_usable=1`。
+- 唯一 strict usable env：`code2env.scripts.check-versions.check_language_version.21a74cc9.v1`，repo 为 fresh extracted `niklas-heer/speed-comparison` 最新分支 `dependabot/uv/dagger-poc/pytest-9.0.3` commit `2a08722e4c8b...`，symbol `scripts.check-versions:check_language_version`，semantic helpers 为 `get_current_version_from_csv`、`get_docker_latest_version`、`get_github_latest_version`。
+- 对该 env 执行 mock `--trace-mode subfunctions` rollout，JSONL 写入 `../outputs/session20_samples_strict_scan/strict_mock_trace_rollouts.jsonl`，`rollout-export` 输出到 `../outputs/session20_samples_strict_scan/exported_rollouts/`；rollout `qualified=1/1`、`correct=1/1`、`helper_trace_complete=1/1`、`entrypoint_after_helpers=1/1`，但严格口径 `helper_calls_successful=0/1`、`helper_trace_valid=0/1`，3 个 helper failures 均为 `argument_unavailable` TypeError。
+- 生成 review artifact：`../outputs/session20_samples_strict_scan/summary.json`、`summary.md`、`strict_mock_trace_rollouts.jsonl`、`strict_batch/manifest.json`、`exported_rollouts/`，以及轻量打包文件 `../outputs/session20_samples_strict_scan/session20_review_bundle.tgz`（约 177K，不含 worktree）。
+- 结论：task047 strict usable 口径在 fresh source 全量 Python samples 上生效，29 个 weak-oracle build 未进入可用数据；当前样本真实可用量仍只有 1 个，下一步增量应来自安全依赖/fixture 能力或 helper argument synthesis，而不是放宽 strict usable 口径。
+
+## Session 21 - Strict unusable reason analysis
+
+- 回答用户问题“其它环境不 strictly usable 的原因是什么”；本次未修改产品代码，基于 Session20 artifact `../outputs/session20_samples_strict_scan/strict_batch/manifest.json` 做归因分析。
+- strict usable 口径复述：task047 后必须同时满足 `golden_status == real_value` 和 `determinism == deterministic`；Session20 的 29 个 built non-strict env 全部是 `weak_oracle:golden_exception:*`，不是 nondeterministic。
+- 29 个 built non-strict env 的原因分布：`ModuleNotFoundError:bpy=10`、`ModuleNotFoundError:torch=4`、`ModuleNotFoundError:matplotlib=3`、`InvalidExecutorOutput:stdout_before_json=3`、`ExecutorFailed:aeneas_cli/runtime=3`、`ModuleNotFoundError:django=2`、`PackageNotFoundError:folio_migration_tools metadata=1`、`ModuleNotFoundError:languages=1`、`InvalidExecutorOutput:tinytuya missing snapshot.json=1`、`ExecutorFailed:scour CLI output/exit=1`。
+- 典型 repo 归因：Blender plugin 依赖 `bpy`；panseg 依赖 `torch`；Django SaaS decorators 依赖 `django`；speed-comparison 中 analyze 依赖 `matplotlib`、dagger-poc 依赖本地/外部 `languages` 模块；tinytuya 需要 `snapshot.json` 且会打印 banner/error；aeneas/scour 是 CLI-style 函数，stdout/exit 干扰 executor JSON envelope。
+- 同时区分更早被 filter 的候选：未进入 29 个 built env 的 skip 主因包括 `not_module_level=8799`、`insufficient_semantic_helpers=2825`、`possible_side_effect=356`、`untyped_required_param=44`、`unsupported_param_type=8`、`unsafe_rich_fixture_candidate=1`。
+- 产出 report：`../outputs/session21_strict_unusable_reasons/strict_unusable_reasons.md`，包含 cause breakdown、逐 env 表和解释；结论是当前瓶颈主要为 dependency/runtime fixture/CLI output，而不是 semantic helper gate。
+
+## Session 22 - Relaxed trajectory examples
+
+- 按用户新思路“环境不需要可运行或交互，但每个 env 和 test case 需要能生成完整多轮 trajectory”重新 review 当前代码；本次未修改产品代码，使用 detached `origin/main` verify worktree `../debug/code2env_main_verify`，HEAD `f551ee88654b1bcb604ebf11361a279310e52e19`。
+- 代码 review 结论：`batch.generate_batch` 在非 strict 口径下会保留 `weak_oracle:*` EnvPackage；`rollout.ScriptedTraceSolveChat` 可离线生成 deterministic trace，顺序为 required `call_<helper>` tools -> `call_entrypoint` -> `submit_answer`；`runtime.Code2Env` 对提交答案做 exact-match，因此 weak-oracle trajectory 也可 `final_correct=true`，但这只表示匹配捕获的异常 oracle，不代表真实函数语义正确。
+- 写出并运行样例生成脚本 `../outputs/session22_trajectory_examples/generate_trajectory_examples.py`，从 Session20 strict batch manifest 选 5 个 sample repo env：`updater:check_for_update`（`bpy` missing）、`tinytuya.scanner:snapshot`（InvalidExecutorOutput / missing snapshot）、`saas.decorators:requires_subscription`（`django` missing）、`check_dependencies:check_import`（stdout before JSON）、`scripts.check-versions:check_language_version`（real_value baseline）。
+- 生成结果：`trajectory_examples.jsonl` 共 5 lines，5/5 `qualified=true`、5/5 `final_correct=true`、5/5 `helper_trace_complete=true`，全部为 5 轮 trajectory；5/5 `helper_trace_valid=false`，因为 helper calls 均为空参数或环境错误，符合“完整轨迹但非高质量真实子函数执行”的 caveat。
+- 主要产物：`../outputs/session22_trajectory_examples/review.md`、`summary.json`、`trajectory_examples.jsonl`、per-env full rollout JSON `rollouts/`、export records `export/`、打包文件 `session22_trajectory_examples_bundle.tgz`。
+- 结论：如果数据目标转为“完整多轮 trajectory”而非“strict runnable correctness”，现有代码已经能用 weak-oracle EnvPackage 扩大样本；但标签必须明确区分 `oracle_kind=weak_oracle`、`functional_correctness_untrusted`、`helper_trace_valid=false`，避免把异常复现当作真实功能正确。
+
+## Session 23 - Relaxed trajectory JSONL sent to Feishu
+
+- 按用户要求“生成 relaxed trajectory 的 jsonl 文件，并发送到飞书中”，重新运行 `../outputs/session22_trajectory_examples/generate_trajectory_examples.py`，基于 `origin/main` verify head `f551ee88654b1bcb604ebf11361a279310e52e19` 生成 5 条 sample repo relaxed trajectories。
+- 本轮发送文件复制到 `../outputs/session23_relaxed_trajectory_feishu/relaxed_trajectory_examples.jsonl`，结果为 5 lines、约 24K；同步复制 review 文档到 `../outputs/session23_relaxed_trajectory_feishu/review.md`，发送结果写入 `../outputs/session23_relaxed_trajectory_feishu/feishu_send_result.json`。
+- JSONL 内容概要：5/5 `qualified=true`、5/5 `final_correct=true`、5/5 `helper_trace_complete=true`，每条为 5 轮 helper -> entrypoint -> submit trajectory；样例包含 4 条 weak-oracle env 和 1 条 real_value baseline。
+- 通过 FeishuAPI `upload_file` + `send_file` 发送到 `intern_code2env_coordinator` 飞书会话 chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`；file_key `file_v3_0012m_6f3f9a18-5a2a-43bc-a6db-b4e19a7b054g`，文件消息 ID `om_x100b6dce0be00cacb32ddea660ad7b6`。
+- 发送确认文本到同一会话，文本消息 ID `om_x100b6dce0bf1d4a4b3c930f4b8336aa`；文本中明确 weak-oracle `final_correct` 仅表示匹配捕获 oracle，不代表真实功能正确。
+
+## Session 24 - Valid tool-return relaxed trajectories
+
+<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->
+
+- 回应用户问题“为什么 relaxed trajectory 包含大量报错 missing packages? 安装必要的包，在多轮交互中收集有效的 tool 返回”；本次未修改产品代码，重点做数据质量诊断和本地 JSONL artifact 生成。
+- 根因确认：Session23 relaxed JSONL 复用了 Session20 以 `--no-install-deps` 生成的 packages，`env_spec.runtime.deps_status` 多为 `skipped`/`no_deps`；同时 mock subfunction trace 用空 `{}` 参数调用 helper，导致 helper 参数错误和缺包错误都会进入 trajectory。weak-oracle 的 `final_correct=true` 只表示匹配捕获的异常 envelope，不表示真实函数执行成功。
+- 创建隔离 venv：`../outputs/session24_valid_tool_returns/venv`；为 `simpa.utils.calculate:rotation` 逐步安装 `matplotlib`、`torch`、`scipy`、`python-dotenv`、`scikit-learn`、`scikit-image`、`h5py`、SIMPA 常规依赖和 `k-wave-python==0.4.0`，确认原始 `ModuleNotFoundError` 链可以通过依赖安装推进。
+- simpa 诊断结论：补齐 imports 后，`rotation_x/y/z` 仍无法产生 valid JSON tool return，因为函数内部调用 `torch.cos(theta)`/`torch.sin(theta)`，而当前 tool schema 只能传 JSON float，运行时报 `TypeError: cos(): argument 'input' (position 1) must be Tensor, not float`；这是 typed fixture/hydration 问题，不是继续安装包能解决。
+- 扫描已有 Session20 sample packages 后，唯一 `golden_answer.ok=true` 且拥有 3 个 semantic helper 的 env 是 `scripts.check-versions:check_language_version`。该 env 的 runtime sandbox 为 `network=false`，所以 Docker/GitHub/Alpine 网络 helper 不适合作为 valid tool-return 样本；本轮使用不走网络的 `get_current_version_from_csv` helper 与 `apt`/unknown-source entrypoint 分支生成有效轨迹。
+- 写出并运行脚本 `../outputs/session24_valid_tool_returns/generate_valid_tool_return_trajectories.py`，基于原 package 派生 3 个 JSON-only test case：`python_apt_current`、`go_unknown_source`、`ruby_missing_current`；每条真实执行 `inspect_task -> call_get_current_version_from_csv -> call_entrypoint -> submit_answer`。
+- 生成结果：`../outputs/session24_valid_tool_returns/valid_tool_return_trajectories.jsonl` 共 3 lines、约 27K；summary `../outputs/session24_valid_tool_returns/valid_tool_return_summary.json` 显示 `records=3`、`final_correct=3`、`all_tool_returns_ok=3`、`all_source_tool_returns_ok=3`。每个 step 保留完整 `tool_return` 对象，便于 review。
+- 写出诊断报告 `../outputs/session24_valid_tool_returns/session24_report.md`，说明旧 relaxed missing packages 的根因、依赖安装 probe、simpa JSON/Tensor 参数阻塞，以及本轮 valid trajectory 的质量口径。
+- 通过 Feishu messaging 脚本发送 JSONL 到 `intern_code2env_coordinator` 飞书会话 chat_id `oc_95e88ada32dbd770c5137bc2c9a65167`；file_key `file_v3_0012m_84e168dc-899e-4590-b9ad-135131a65c4g`，文件消息 ID `om_x100b6dcf0646a490b29f5b1468ee6c8`，确认文本消息 ID `om_x100b6dcf0655f8e4b1f54504763ee25`，回执保存到 `../outputs/session24_valid_tool_returns/feishu_send_result.json`。
+
+### task048 typed fixture and helper args handoff
+
+- 按用户“执行下一步”要求，继续推进 Session24 结论中的 typed fixture/hydration 与 helper argument synthesis；coordinator 遵守 role 边界，不直接修改产品代码，将实现与验证任务下发给 `intern_code2env_lead`。
+- 核对当前实现：`code2env/executor.py` 仍将 JSON payload 直接 `json.loads` 后传给目标函数，非 JSON 返回退化为 `repr`；`code2env/batch.py:synthesize_fixture` 只支持标量/list/dict/None 等简单类型；`code2env/rollout.py` prompt 明确要求 helper args 省略，导致 subfunction trace 可完整但 helper tool return 可能失败。
+- 写出 handoff 文件 `../outputs/session24_valid_tool_returns/task048_typed_fixture_helper_args_goal.md`，建议任务 id `task048_typed_fixture_helper_args`。目标：实现 typed fixture descriptors/hydration、tensor/ndarray canonical serialization、dedicated semantic helper argument synthesis 和 provenance metadata。
+- 验收要求写入 handoff：lead 创建标准 task docs，worker/tester 分工；focused tests 覆盖 tensor/ndarray hydration/serialization 与 helper arg synthesis；full `python3 -m pytest -q`；至少一个真实 sample repo 且 >=3 semantic helpers 的 JSONL rollout 满足 `helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true` 或等价字段，并且 final correct against real-value golden。
+- 优先 repro 为 Session24 的 `simpa.utils.calculate:rotation`：缺包已可通过依赖安装推进，剩余阻塞是 `torch.cos(float)` 暴露出的 JSON/Tensor 参数表达问题；若 SIMPA 被依赖或 runtime 约束阻塞，lead 需提供一个替代真实 sample repo 和明确 SIMPA blocker。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task048_typed_fixture_helper_args` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session24_valid_tool_returns/task048_handoff_delivery.json`。
+
+### task048 lead progress report accepted
+
+- 收到 `intern_code2env_lead` 进度汇报：`task048_typed_fixture_helper_args` 已接受并正式立项，标准 task 文档已创建到 `workspace/tasks/task048_typed_fixture_helper_args/`，任务文档 commit `5f2b36e` 已 push 到 `main`。
+- lead 已设置 artifact root `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/`，分工为 w1 implementation worker、w2 independent tester/validation worker；发送前 lead mailbox 为 0 unread，两个 worker peer send 均 delivered。
+- lead 管理记录已更新并 push 到 `intern_code2env_lead/code2env_lead` commit `e4f8da6`；当前状态为 worker 执行中，尚未完成 PR、独立验证或 merge。
+- coordinator 已通过 peer send 确认收到并重申完成回报要求：w1 PR/head、focused/full tests、rollout artifact 后由 w2 按 exact head 独立验证；完成回报必须包含 PR/merge 状态、测试命令结果、JSONL 路径，以及 `helper_trace_complete`、`helper_calls_successful`、`helper_trace_valid`、source returns 和 real-value final correctness。
+
+### task048 implementation owner reassigned
+
+- 收到 `intern_code2env_lead` 进度更新：PR#34 / w1 head `8291cf214668fb7a103115db768e868e599aad5a` 连续检查仍只有接受任务/metadata，无 product code、focused/full tests、rollout JSONL 或 ready report；w1 shared status 为 Idle，不作为 task048 验收依据。
+- lead 已更新共享 task048 文档并 push 到 `main` commit `c365a60`：implementation owner 从 w1 改为 w4，w2 保持 independent tester，w1 stand down。
+- lead 已 peer send w4 接手 implementation、w2 更新验证目标为 w4 exact head、w1 stand down；三次发送前 lead mailbox 均为 0 unread，API 均 delivered；lead 管理记录已 push 到 `intern_code2env_lead/code2env_lead` commit `44bf071`。
+- coordinator 已通过 peer send 确认收到并认可改派安排；当前等待 w4 从 latest `origin/main` 开新实现 PR/head，随后 w2 按 w4 exact head 独立验证 focused/full tests、rollout JSONL 和 helper/final correctness 指标。
+
+### task048 completion verified
+
+- 收到 `intern_code2env_lead` 完成回报：`task048_typed_fixture_helper_args` 已完成并 merge；实现 worker 为 w4，独立 tester 为 w2，PR #35 `https://github.com/songCNMS/code2env/pull/35` merge 到 `main`，main merge commit `d3a5af36cefba34028eac723a9145f6e3d75a037`。产品验证 head 为 `fe286f76cb6fe066e07a208aadad13984bbdb590`，final pre-merge metadata head 为 `29f5a0bd97596eda6abc24059a66cda355542e9c`。
+- lead/w4/w2 报告的测试结果：w4 focused `python3 -m pytest -q tests/test_rich_fixtures.py tests/test_rollout.py` 为 `38 passed, 1 skipped`，w4 full 为 `182 passed, 1 skipped`；w2 independent exact-head focused/full 同为 `38 passed, 1 skipped` 和 `182 passed, 1 skipped`；w4 post-merge focused on `main@d3a5af3` 为 `38 passed, 1 skipped`。
+- coordinator 复验 merge 状态：`git fetch origin main` 后确认 `origin/main` 为 `d3a5af36cefba34028eac723a9145f6e3d75a037`，`git show --stat` 显示产品改动集中在 `code2env/rich_fixtures.py`、`code2env/rollout.py`、`code2env/batch.py` 和 tests。
+- coordinator 在 detached worktree `../debug/code2env_main_task048_verify` checkout merge commit 后复跑 focused tests：`python3 -m pytest -q tests/test_rich_fixtures.py tests/test_rollout.py`，结果 `38 passed, 1 skipped in 32.08s`。
+- coordinator 在同一 merge commit 复跑 full tests：`python3 -m pytest -q`，结果 `182 passed, 1 skipped in 108.98s`。
+- coordinator 抽查 artifact root `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_typed_fixture_helper_args/worker4_pr35_simpa/`：`validation_summary.json` 存在且 `acceptance_pass=true`，`rollouts/rollouts.jsonl` 为 1 line。
+- artifact acceptance 复核：真实样本为 `simpa.utils.calculate:rotation`，semantic helpers 为 `rotation_x`、`rotation_y`、`rotation_z`；`helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`、`final_correct=true`、`golden_status=real_value`、`determinism=deterministic`，final score `1.0` / exact match true。
+- JSONL 抽查显示 source tools `call_rotation_x`、`call_rotation_y`、`call_rotation_z`、`call_entrypoint` 均 `ok=true` 且返回 `torch.Tensor` canonical payload；helper args provenance 为 synthesized tensor scalar descriptors，对应 fixture sequence components 0.1/0.2/0.3。
+- 默认行为说明符合验收：默认 rollout 仍保持 black-box，helper arg synthesis 为 trace-mode gated；focused tests 覆盖 default mode 不产生 `subfunction_trace`/synthesized provenance。
+- 残余风险：SIMPA artifact 使用 Session24 记录的依赖 venv 与 30s timeout，验证了 deterministic dependency setup 下的 typed helper/runtime 行为，但不证明从零 fresh dependency installation 一定成功。
+- coordinator 已通过 peer send 回信确认复验通过，返回 `{"status":"delivered"}`。
+
+### hook format correction
+
+- 对 stop hook 的 Session 24 记录检查做格式修正：保留唯一 Session 24 主标题和 `<!-- METADATA:SESSION=24,STATUS=Working,ROLE=coordinator -->` 元数据，task048 handoff/progress/reassignment/completion 均作为该 Session 24 记录下的子节保存，避免重复 Session 主标题。
+
+### task049 samples valid helper trajectories handoff
+
+- 按用户“执行下一步”要求，基于 task048/PR #35 已合入能力推进下一阶段数据生成：重新扫描 `/home/leisong/data/samples`，寻找更多 >=3 semantic helper 且能生成 valid helper-return trajectory 的 sample repo 环境。
+- 写出 handoff 文件 `../outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories_goal.md`，建议任务 id `task049_samples_valid_helper_trajectories`。目标是在 latest `origin/main`（至少 `d3a5af36cefba34028eac723a9145f6e3d75a037`）上运行 sample repo scan/rollout，输出 JSONL dataset 和 summary。
+- 验收口径写入 handoff：accepted record 必须 `qualified=true`、final real-value correct、`subfunction_trace.helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`，并且 source helper/entrypoint returns 均 `ok=true`、semantic helper count >=3、golden status real_value、determinism deterministic。
+- 明确不接受 weak-oracle exception correctness、helper 调用失败但 trace complete、网络 sandbox helper 失败被误计入成功等数据；若少于 5 条 valid records，需要给出 blocker breakdown。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task049_samples_valid_helper_trajectories` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session24_valid_tool_returns/task049_handoff_delivery.json`。
+
+### task049 accepted and dispatched
+
+- 收到 `intern_code2env_lead` 进度汇报：`task049_samples_valid_helper_trajectories` 已接受并分派，标准 task docs 已创建到 `workspace/tasks/task049_samples_valid_helper_trajectories/`，共享 `main` 创建 commit 为 `4f45731`，assignment history 已 push 到 `3522114`。
+- lead 设置 artifact root 为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/`。
+- worker 分工：w1 为 implementation/data generation owner 和 canonical JSONL owner，w4 为 candidate/blocker audit support，w2 为 independent tester/validator；w1/w2/w4 分配前均为 Idle，w3 仍在 task032，w5 仍在 task041。
+- lead 决策记录：canonical JSONL 只设一个 owner，w4 做 parallel audit support 而不是 competing generator，w2 保持 independent tester；w2 已通过 mailbox 接受 tester reservation。
+- task docs 验收门槛与 handoff 一致：latest `origin/main` at/after `d3a5af36`，按 Session16/20 最新分支 archive extraction 规则扫描 `/home/leisong/data/samples`；accepted records 必须 >=3 dedicated semantic helpers、strict real_value+deterministic、trace-mode subfunctions、helper trace complete/successful/valid、all source returns ok、final correct。
+- coordinator 已通过 peer send 确认收到并重申完成回报要求：最终回报需包含 JSONL+summary 路径、accepted count、blocker breakdown（若 <5）、focused validation predicates、full pytest 和 w2 独立验证结论；当前等待 w1/w4 progress/ready artifacts。
+
+### task049 completion verified
+
+- 收到 `intern_code2env_lead` 完成回报：`task049_samples_valid_helper_trajectories` 已完成并 merge；PR #36 `https://github.com/songCNMS/code2env/pull/36` merge 到 `main`，merge commit `438d13a12111c78422721bbf3dea5482ccf829b4`，mergedAt `2026-06-15T11:02:50Z`。final PR head before merge 为 `ba040a26685fde972316b5207d22afee0b5d06cc`。
+- coordinator 复验 merge 状态：`git fetch origin main` 后确认 `origin/main` 为 `438d13a12111c78422721bbf3dea5482ccf829b4`；`git show --name-only` 显示本次 merge 只修改 `workspace/interns/intern_code2env_worker_1/` 与 `workspace/tasks/task049_samples_valid_helper_trajectories/` 下的管理文档，没有产品代码或 tests 变更。
+- artifact 复核路径：accepted JSONL 为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session24_valid_tool_returns/task049_samples_valid_helper_trajectories/accepted_valid_helper_trajectories.jsonl`；summary 为同目录 `summary.json` / `summary.md`；rollout JSONL 为同目录 `rollouts/rollouts.jsonl`；batch manifest 为同目录 `batch_no_install_audit/manifest.json`。
+- coordinator 本地谓词校验通过：accepted JSONL 为 1 条，record id `code2env.simpa.utils.calculate.rotation.2b54724b.v1`，目标 `simpa.utils.calculate:rotation`，semantic helper count 为 3（`rotation_x`、`rotation_y`、`rotation_z`），`helper_trace_complete=true`、`helper_calls_successful=true`、`helper_trace_valid=true`、`all_source_tool_returns_ok=true`、`final_correct=true`、`golden_status=real_value`、`determinism=deterministic`。
+- source return 抽查通过：`call_rotation_x`、`call_rotation_y`、`call_rotation_z`、`call_entrypoint` 均 `ok=true`，满足 task049 对 valid helper-return trajectory 的入选口径。
+- lead/w1/w2 报告的验证结果：w1 focused predicate PASS、full pytest `182 passed, 1 skipped`；w2 independent validation PASS at `0b9a519`，post-merge sanity PASS at `438d13a`；w2 post-merge focused predicate exit 0，`ok=true`、records=1；full pytest 复用 `befdea6` 结果，且证明 `0b9a519..ba040a2/438d13a` 对 `code2env/` 与 tests 无 diff。
+- accepted count 低于目标 5 条，短缺 4 条；summary blocker breakdown 已核对：samples=200、python worktrees=38、candidates=12063、semantic gate passed=83、envs built=30、strict usable=1、weak-oracle accepted=0；主要阻塞为 `not_module_level=8799`、`insufficient_semantic_helpers=2825`、`possible_side_effect=356`、`strict_unusable:weak_oracle=29`、`untyped_required_param=44`、`unsupported_param_type=8`、`unsafe_rich_fixture_candidate=1`。
+- 残余风险保持明确：当前严格 accepted record 只有 1 条，SIMPA artifact 依赖记录中的 Session24 venv 与 30s cold-import timeout；广域 sample audit 没有安装依赖，因此 dependency-heavy candidates 仍以 weak-oracle/blocker 形式被排除。
+- coordinator 已通过 peer send 向 lead 回信确认复验通过，返回 `{"status":"delivered"}`。
+
+## Session 25 - Dependency-aware samples handoff
+
+- 按用户“执行下一步”要求，基于 task049 的 accepted shortfall 和 blocker breakdown 继续推进样本放量；coordinator 遵守 role 边界，不直接写产品代码，将依赖安装/运行环境方向拆成 lead 任务。
+- 核对当前代码能力：`code2env/envdeps.py` 已支持 per-repo venv dependency installation，`code2env batch` 默认安装依赖，只有显式 `--no-install-deps` 才跳过；task049 的 broad audit 使用 no-install 路径，因此依赖型 candidate 仍以 weak-oracle/blocker 形式存在。
+- 写出 handoff 文件 `../outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories_goal.md`，建议任务 id `task050_dependency_aware_samples_valid_trajectories`。目标是在 latest `origin/main` at/after `438d13a12111c78422721bbf3dea5482ccf829b4` 上，对 `/home/leisong/data/samples` 做 dependency-aware rerun，提升 strict valid helper-return trajectories 的 accepted 数量。
+- 验收口径写入 handoff：主 accepted-data run 不使用 `--no-install-deps`，使用专用 venv cache、`--require-real-value`、`--min-semantic-helpers 3` 和 determinism checking；accepted record 必须 real sample repo、`semantic_helper_count >= 3`、real_value deterministic、helper trace complete/successful/valid、all source returns ok、final correct，不接受 weak-oracle exception correctness。
+- 如果 accepted count 仍低于 3，lead 需提供 blocker breakdown，区分 dependency install failed、system-only dependency、package metadata/import path、CLI/stdout executor envelope、untyped/unsupported params、side-effect/network sandbox、helper arg synthesis 等原因。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task050_dependency_aware_samples_valid_trajectories` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session25_dependency_aware_samples/task050_handoff_delivery.json`。
+
+## Session 26 - task050 progress acknowledged
+
+- 收到 `intern_code2env_lead` 关于 `task050_dependency_aware_samples_valid_trajectories` 的阶段性进展回报；本次不是完成态，尚无 merge。
+- lead 已创建标准 task docs 到 `workspace/tasks/task050_dependency_aware_samples_valid_trajectories/`，并通过 shared main commit `f8fad5b23a4aa34173fbccc8ceff84d847235d5e` push；coordinator `git fetch origin main pull/37/head` 后确认 `origin/main` 为 `f8fad5b`。
+- PR #37 为 `https://github.com/songCNMS/code2env/pull/37`，当前 head 为 `63c9b068264a633408822fe76d33cb45829bf960`；coordinator 读取 PR diff，当前变更集中在 worker 状态和 task050 管理文档，尚未形成完成验收依据。
+- 分工记录：worker_1 是 implementation/data owner；worker_4 是 dependency/blocker audit support only；worker_2 预留 independent exact-head tester。
+- w1 已确认主 accepted-data run 不使用 `--no-install-deps`，使用 task050 output root 下的专用 venv cache，并包含 `--min-semantic-helpers 3`、`--require-real-value`、`--determinism-runs 2`；预期产物包括 accepted JSONL、summary JSON/MD、rollouts、export、dependency manifest/evidence 和 focused validator。
+- 当前执行状态：等待 w1 将 PR #37 与 latest `origin/main` 同步并声明 ready-for-test exact head，随后 w2 按 exact head 独立验证 artifacts 与 predicates。
+- coordinator 已通过 peer send 回信确认收到并重申完成回报要求：PR/head/merge 状态、dependency-aware commands、venv cache path、JSONL/summary/dependency evidence、accepted predicates、测试结果，以及 accepted_count <3 时的 blocker breakdown；peer send 返回 `{"status":"delivered"}`。
+
+### task050 completion verified
+
+- 收到 `intern_code2env_lead` 完成回报：`task050_dependency_aware_samples_valid_trajectories` 已完成并 merge；PR #37 `https://github.com/songCNMS/code2env/pull/37` merge 到 `main`，final pre-merge head `28c78fcc8db75eaf7a39395c50d1ca6e8dcd6627`，merge commit / `origin/main` 为 `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`。
+- coordinator 复验 merge 状态：`git fetch origin main pull/37/head` 后确认 `origin/main` 为 `f01e4b1362d4387cbfd1e3d13986391680d6f2d1`，PR #37 head 为 `28c78fcc8db75eaf7a39395c50d1ca6e8dcd6627`；merge diff 只涉及 worker 状态和 task050 管理文档，未修改 `code2env/` 或 tests。
+- dependency-aware accepted-data run 已按要求启用安装：未使用 `--no-install-deps`，venv cache 为 `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/venv_cache`，并使用 `--min-semantic-helpers 3 --require-real-value --determinism-runs 2`。
+- coordinator 复核 run2 manifest `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/dependency_batch/install_enabled_targeted_run2/manifest.json`：`candidates_scanned=6207`、`semantic_gate_passed=58`、`build_ok=30`、`smoke_ok=1`、`strict_usable=1`、`real_value=1`、`deterministic=1`、`weak_oracle=29`。
+- artifact 复核：accepted JSONL `/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session25_dependency_aware_samples/task050_dependency_aware_samples_valid_trajectories/accepted_valid_helper_trajectories.jsonl` 存在且为 0 lines；`summary.json` 中 `accepted_count=0`；validator `python3 validate_task050_outputs.py --jsonl accepted_valid_helper_trajectories.jsonl --summary summary.json` 返回 `{"accepted_count": 0, "ok": true, "records": 0}`。
+- 唯一 strict usable env `code2env.scripts.check-versions.check_language_version.21a74cc9.v1` 被拒绝的原因已复核：`final_correct=true`、`helper_trace_complete=true`，但 `helper_calls_successful=false`、`helper_trace_valid=false`、`all_source_tool_returns_ok=false`；`call_get_docker_latest_version` 因缺少 `image/tag_filter` 参数 TypeError 失败，`call_get_github_latest_version` 因 sandbox network disabled 失败，`call_entrypoint` 返回 `ok=true`。
+- worker_2 独立验证结论为 PASS：exact head `36127f7573a1b30837097c777813e078293a7d05` 与 drift 至 `26ca35bd9eb628164ec87e7516858edeb36bdd72` 均被核对为 metadata-only，且 `code2env/` 与 tests diff 为空；full pytest 未重跑的理由是 PR 为 data/metadata-only，沿用既有产品 baseline `182 passed, 1 skipped`。
+- blocker breakdown 已记录：`dependency_install_failed=0`、`system_only_dependency=10`、`package_metadata_or_import_path=9`、`cli_stdout_executor_envelope=9`、`untyped_or_unsupported_required_params=28`、`side_effect_or_network_sandbox=169`、`helper_argument_synthesis_unavailable=1`、`runtime_timeout_or_execution_failure=1`。default behavior impact 为 none；残余风险为 targeted rerun、blocker categories 可重叠、accepted_count 仍为 0。
+- coordinator 已通过 peer send 回信确认复核通过，返回 `{"status":"delivered"}`。
+
+## Session 27 - Trace helper executability handoff
+
+- 按用户“执行下一步”要求，继续推进 task050 后的核心瓶颈：dependency-aware rerun 已证明单纯安装依赖不能增加 accepted valid helper-return records，剩余关键问题是 required trace helpers 本身不可执行或不该作为 sandbox-safe helper 被强制调用。
+- coordinator 复查 task050 artifact `summary.json` 与 strict usable rollout：`scripts.check-versions:check_language_version` 的 `final_correct=true`、`helper_trace_complete=true`，但 `helper_calls_successful=false`、`helper_trace_valid=false`、`all_source_tool_returns_ok=false`；`call_get_docker_latest_version` 缺少 `image/tag_filter` 参数，`call_get_github_latest_version` 被 sandbox network policy 拒绝。
+- coordinator 复查代码路径：`code2env/spec.py:_partition_helpers` 只看直接 helper candidate 的 `possible_side_effect` risk flags；`get_docker_latest_version` 和 `get_github_latest_version` 经 `fetch_json -> urllib.request.Request/urlopen` 间接触发网络调用，但 transitive side-effect 没有传播，导致它们被暴露成 `side_effects="none"` 的 dedicated required helpers。
+- 写出 handoff 文件 `../outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate_goal.md`，建议任务 id `task051_trace_helper_executability_gate`。目标：产品化 strict trace helper executability gate，改进 transitive network/side-effect helper classification、trace required-helper preflight、executable helper count metadata 和 precise skip/rejection reasons。
+- 验收口径写入 handoff：不放宽 accepted-data gates；focused tests 覆盖 transitive network helper、pure helper 兼容、unmappable arg preflight、default-mode compatibility；产品代码变更需跑 full `python3 -m pytest -q`；必须复验 task050 strict env 并给出 before/after 解释。
+- 投递结果：`/api/intern/goal/set` 设置 `client_goal_id=task051_trace_helper_executability_gate` 等待 25 秒超时，未获得可靠 transport 回执；随后通过 `/api/intern/peer/send` fallback 通知 `intern_code2env_lead`，返回 `{"status":"delivered"}`。回执保存到 `../outputs/session27_trace_helper_executability/task051_handoff_delivery.json`。
+
+## Session 28 - task051 progress acknowledged
+
+- 收到 `intern_code2env_lead` 关于 `task051_trace_helper_executability_gate` 的阶段性进展回报；本次不是完成态，尚无 product implementation、ready-for-test exact head 或 merge。
+- lead 已创建标准 task docs 到 `workspace/tasks/task051_trace_helper_executability_gate/`，并通过 shared main commits `0c5ad34` 和 `6dd9ae7` push；coordinator `git fetch origin main pull/38/head` 后确认 `origin/main` 为 `6dd9ae73ad8e9fde7d9dfc67d39a3ab0efbc8624`。
+- PR #38 为 `https://github.com/songCNMS/code2env/pull/38`，当前 head 为 `89007b221d237061b1599d6196e19670e8d54603`；coordinator 读取 PR diff，当前变更集中在 worker 状态和 task051 管理文档，属于 dirty/bootstrap-only 状态，不作为完成验收依据。
+- 分工记录：worker_1 是 implementation owner；worker_4 负责 task050 before/after reproduction/audit support；worker_2 预留 independent exact-head tester。w1/w4/w2 均已接受角色。
+- lead 已要求 w1 在 ready-for-test 前同步 latest `origin/main`；当前等待 w1 product implementation、focused/full tests、task050 strict-env before/after artifacts 和 exact ready head，然后由 w2 独立验证。
+- coordinator 已通过 peer send 回信确认收到并重申当前只按进展态记录，完成回报需包含 PR/head/merge 状态、focused/full tests、task050 strict-env before/after artifacts、w2 exact-head validation、default behavior impact 与 residual risks；peer send 返回 `{"status":"delivered"}`。
+
+## Session 29 - task051 completion verified
+
+- 收到 `intern_code2env_lead` 完成回报：`task051_trace_helper_executability_gate` 已完成并 merge；PR #38 `https://github.com/songCNMS/code2env/pull/38` merge 到 `main`，merge commit / `origin/main` 为 `b4e499e4862d5723042fb40a5d5251b2d8df5d2e`，final pre-merge head 为 `0ea82b6ebf39a0d45dbbfc109f18937b285238b0`，product head 为 `796dc4f190a2e129ceaae0ffbf4cf82cb214882e`。
+- coordinator 复验 merge 状态：`git fetch origin main +pull/38/head` 后确认 `origin/main=b4e499e4862d5723042fb40a5d5251b2d8df5d2e`、`origin/pr/38=0ea82b6ebf39a0d45dbbfc109f18937b285238b0`；merge commit 修改产品文件 `code2env/spec.py`、`code2env/rollout.py`、`code2env/batch.py` 和 tests，同时包含 worker/task metadata。
+- 实现摘要已核对：新增 recursive transitive network/side-effect helper classification、strict subfunction trace executable-helper preflight/skip metadata、executable min-helper batch gate metadata，以及 `insufficient_executable_semantic_helpers` rejection。
+- artifact 复核路径：`/home/leisong/codes/work-agents/intern_code2env_lead/outputs/session27_trace_helper_executability/task051_trace_helper_executability_gate/`；关键文件包括 `task050_strict_env_reproduction/task050_strict_env_reproduction.json` / `.md`、`worker4_audit/worker4_trace_helper_executability_audit.json` / `.md`、`test_logs/full_pytest.log`、`focused_batch_rollout_files.log`、`focused_semantic_rollout.log`。
+- task050 strict env before/after 复核通过：旧行为 `final_correct=true`、`helper_trace_complete=true`，但 helper/source return 严格字段失败；post-fix `candidate_semantic_helper_count=3`、`executable_semantic_helper_count=1`，required helper 只剩 `call_get_current_version_from_csv`，`get_docker_latest_version` 和 `get_github_latest_version` 被记录为 `transitive_side_effect:fetch_json:network_sandboxed`，docker helper 还记录 `argument_unavailable:image` 和 `argument_unavailable:tag_filter`，min3 gate 拒绝原因为 `insufficient_executable_semantic_helpers:1/3`。
+- lead/w1/w2 报告的测试结果：w1 focused narrow `17 passed`，focused files `52 passed`，full `python3 -m pytest -q` 为 `184 passed, 1 skipped`；w2 在 product head 独立运行 `tests/test_batch.py tests/test_rollout.py` 为 `52 passed`，full pytest 为 `184 passed, 1 skipped`，latest validated head focused rerun为 `52 passed`。
+- coordinator 在 detached merge-commit worktree `../debug/code2env_main_task051_verify` 复跑 focused tests：`python3 -m pytest -q tests/test_batch.py tests/test_rollout.py`，结果 `52 passed in 45.81s`。
+- 默认行为影响符合验收：default rollout 仍保持 black-box unless `trace_mode=subfunctions`；default batch `min_semantic_helpers=0` 保持兼容；accepted-data predicates 未放宽。
+- 残余风险已记录：static/intra-module side-effect propagation 可能漏掉动态 alias 或 cross-module helper chains；argument preflight 仍保守；当可执行 helper 少于 3 个时 accepted JSONL 仍可能为 0。
+- coordinator 已通过 peer send 回信确认复核通过，返回 `{"status":"delivered"}`。
