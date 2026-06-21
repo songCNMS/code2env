@@ -14,7 +14,6 @@ from code2env.rich_fixtures import (
     dataframe_descriptor,
     fixture_component_descriptor,
     hydrate_value,
-    numpy_array_descriptor,
     path_descriptor,
     torch_tensor_descriptor,
 )

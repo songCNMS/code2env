@@ -49,7 +49,7 @@ def call_symbol(
     module_name, qualname = symbol.split(":", 1)
     root = str(Path(source_root).resolve())
     sys.path.insert(0, root)
-    src_root = str((Path(source_root).resolve() / "src"))
+    src_root = str(Path(source_root).resolve() / "src")
     if Path(src_root).exists():
         sys.path.insert(0, src_root)
     try:
